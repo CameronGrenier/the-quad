@@ -50,7 +50,7 @@ Follow these steps to set up the development environment.
 - Git
 
 ### <a name="clone-the-repository"></a>Clone the Repository
-git clone https://github.com/yourusername/the-quad.git](https://github.com/CameronGrenier/The-Quad.git
+git clone https://github.com/CameronGrenier/The-Quad.git
 cd the-quad
 
 ### <a name="back-end-setup"></a>Back-End Setup
