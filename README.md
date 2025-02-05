@@ -58,7 +58,7 @@ cd the-quad
   >```bash
   >cd server
   >```
-**2. Install dependencies:##
+**2. Install dependencies:**
 >```
 >npm install
 >bash
