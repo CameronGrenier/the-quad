@@ -1,0 +1,71 @@
+body {
+    color: gainsboro;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 100vw;
+    height: 85vh;
+    position: relative;
+    top: 0;
+    background-image: url('../../public/images/campus_photo.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(156, 90, 46, 0.616), rgba(95, 45, 143, 0.63));
+    z-index: 1; /* Overlay is behind content */
+    pointer-events: none;
+}
+
+.home {
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding-left: 4rem;
+}
+
+h2 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    color: gainsboro;
+    z-index: 2; /* Content is in front of overlay */
+}
+
+h1 {
+    font-size: 5rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    color: gainsboro;
+    z-index: 2; /* Content is in front of overlay */
+}
+
+.EventList {
+    display: flex;
+    flex-wrap: wrap;
+    padding-top: 2rem;
+    z-index: 2; /* Content is in front of overlay */
+}
+
+.CalendarOverview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 2rem;
+    height: 70vh;
+}
