@@ -15,7 +15,7 @@ function Header() {
       <header>
         <div className="logo">
           <Link to="/">
-            <img src="/images/Quad Logo.svg" alt="The Quad Logo" />
+            <img src={`${process.env.PUBLIC_URL}/images/Quad Logo.svg`} alt="The Quad Logo" />
           </Link>
         </div>
         <nav>
