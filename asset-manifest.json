@@ -1,22 +1,22 @@
 {
   "files": {
-    "main.css": "/The-Quad/static/css/main.25ad306a.css",
-    "main.js": "/The-Quad/static/js/main.579eb580.js",
-    "static/media/campus_photo.jpg": "/The-Quad/static/media/campus_photo.a5fbd04b1670f1f8699e.jpg",
-    "static/media/revicons.eot": "/The-Quad/static/media/revicons.a77de540a38981833f9e.eot",
-    "static/media/revicons.ttf": "/The-Quad/static/media/revicons.57fd05d4ae650374c8de.ttf",
-    "static/media/revicons.woff": "/The-Quad/static/media/revicons.e8746a624ed098489406.woff",
-    "static/media/fire-solid.svg": "/The-Quad/static/media/fire-solid.a15e9be5e7a8ffb40a8d38df195b2c85.svg",
-    "static/media/calendar-plus-regular.svg": "/The-Quad/static/media/calendar-plus-regular.12b29fe1469b332908aa73fb98fe9581.svg",
-    "static/media/flag-solid.svg": "/The-Quad/static/media/flag-solid.e1bbf0a94f5764dae5d04af61187e7d7.svg",
-    "static/media/magnifying-glass-solid.svg": "/The-Quad/static/media/magnifying-glass-solid.b3a7d96fee30f6d34ea5f2db32d7def7.svg",
-    "static/media/user-solid.svg": "/The-Quad/static/media/user-solid.3a8cec09672d4bfff977cfc2c953d693.svg",
-    "index.html": "/The-Quad/index.html",
-    "main.25ad306a.css.map": "/The-Quad/static/css/main.25ad306a.css.map",
-    "main.579eb580.js.map": "/The-Quad/static/js/main.579eb580.js.map"
+    "main.css": "./static/css/main.f1e0f4d5.css",
+    "main.js": "./static/js/main.2f9009f4.js",
+    "static/media/campus_photo.jpg": "./static/media/campus_photo.a5fbd04b1670f1f8699e.jpg",
+    "static/media/revicons.eot": "./static/media/revicons.a77de540a38981833f9e.eot",
+    "static/media/revicons.ttf": "./static/media/revicons.57fd05d4ae650374c8de.ttf",
+    "static/media/revicons.woff": "./static/media/revicons.e8746a624ed098489406.woff",
+    "static/media/fire-solid.svg": "./static/media/fire-solid.a15e9be5e7a8ffb40a8d38df195b2c85.svg",
+    "static/media/calendar-plus-regular.svg": "./static/media/calendar-plus-regular.12b29fe1469b332908aa73fb98fe9581.svg",
+    "static/media/flag-solid.svg": "./static/media/flag-solid.e1bbf0a94f5764dae5d04af61187e7d7.svg",
+    "static/media/magnifying-glass-solid.svg": "./static/media/magnifying-glass-solid.b3a7d96fee30f6d34ea5f2db32d7def7.svg",
+    "static/media/user-solid.svg": "./static/media/user-solid.3a8cec09672d4bfff977cfc2c953d693.svg",
+    "index.html": "./index.html",
+    "main.f1e0f4d5.css.map": "./static/css/main.f1e0f4d5.css.map",
+    "main.2f9009f4.js.map": "./static/js/main.2f9009f4.js.map"
   },
   "entrypoints": [
-    "static/css/main.25ad306a.css",
-    "static/js/main.579eb580.js"
+    "static/css/main.f1e0f4d5.css",
+    "static/js/main.2f9009f4.js"
   ]
 }
