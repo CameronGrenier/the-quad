@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/The-Quad/static/css/main.25ad306a.css",
-    "main.js": "/The-Quad/static/js/main.1933ecd0.js",
+    "main.js": "/The-Quad/static/js/main.579eb580.js",
     "static/media/campus_photo.jpg": "/The-Quad/static/media/campus_photo.a5fbd04b1670f1f8699e.jpg",
     "static/media/revicons.eot": "/The-Quad/static/media/revicons.a77de540a38981833f9e.eot",
     "static/media/revicons.ttf": "/The-Quad/static/media/revicons.57fd05d4ae650374c8de.ttf",
@@ -13,10 +13,10 @@
     "static/media/user-solid.svg": "/The-Quad/static/media/user-solid.3a8cec09672d4bfff977cfc2c953d693.svg",
     "index.html": "/The-Quad/index.html",
     "main.25ad306a.css.map": "/The-Quad/static/css/main.25ad306a.css.map",
-    "main.1933ecd0.js.map": "/The-Quad/static/js/main.1933ecd0.js.map"
+    "main.579eb580.js.map": "/The-Quad/static/js/main.579eb580.js.map"
   },
   "entrypoints": [
     "static/css/main.25ad306a.css",
-    "static/js/main.1933ecd0.js"
+    "static/js/main.579eb580.js"
   ]
 }
