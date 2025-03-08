@@ -25,7 +25,7 @@ The system is designed to support two primary categories of events:
 - **UX:** User Experience.
 - **CRUD:** Create, Read, Update, Delete.
 - **REST:** Representational State Transfer.
-- **PERN:** PostgreSQL, Express, React, Node.js.
+- **Stack:** React, Express, Node.js with Cloudflare Workers, D1, and R2.
 
 ### 1.4 References
 - IEEE Std 830-1998, IEEE Recommended Practice for Software Requirements Specifications.
@@ -45,7 +45,7 @@ This document is organized as follows:
 ## 2. Overall Description
 
 ### 2.1 Product Perspective
-**The Quad** is a standalone web application built using the PERN stack. It is designed to integrate seamlessly with university resources and will be developed using industry best practices. The application will communicate with a PostgreSQL database to manage events and resource bookings and will provide a responsive interface using React.
+**The Quad** is a standalone web application built using React, Express, and Node.js with Cloudflare services. It is designed to integrate seamlessly with university resources and will be developed using industry best practices. The application will communicate with a Cloudflare D1 SQL database to manage events and resource bookings, use R2 for object storage, and leverage Cloudflare Workers for serverless functions, providing a responsive interface using React.
 
 ### 2.2 Product Functions
 The main functions of **The Quad** include:
@@ -78,9 +78,11 @@ The main functions of **The Quad** include:
 - **Client-Side:**  
   Modern web browsers (Chrome, Firefox, Edge, Safari) on desktops, laptops, tablets, and smartphones.
 - **Server-Side:**  
-  Node.js/Express running on a Linux-based server or local development machine.
+  Node.js/Express running on a Linux-based server and Cloudflare Workers for serverless functions.
 - **Database:**  
-  PostgreSQL 12 or later.
+  Cloudflare D1 SQL database.
+- **Storage:**  
+  Cloudflare R2 object storage for images and files.
 - **Development Environment:**  
   Docker containers (optional) or local installations for development and testing.
 
@@ -102,7 +104,8 @@ User documentation will include:
 
 ### 2.7 Assumptions and Dependencies
 - Assumes that users have access to modern web browsers.
-- Depends on the reliability of the PostgreSQL database and the stability of the PERN stack.
+- Depends on the reliability of Cloudflare D1 database and R2 storage.
+- Depends on Cloudflare Workers for serverless backend functionality.
 - Assumes collaboration and timely feedback from university stakeholders and potential end-users.
 
 ---
@@ -137,12 +140,13 @@ User documentation will include:
 - **PR3:** Database queries for event retrieval and resource checks shall return results within 2 seconds.
 
 ### 3.3 Logical Database Requirements
-- **DB1:** The PostgreSQL database shall store event data, user profiles, and resource bookings.
+- **DB1:** The Cloudflare D1 SQL database shall store event data, user profiles, and resource bookings.
 - **DB2:** The database schema shall be designed to ensure referential integrity and support scalability.
-- **DB3:** Database migration scripts shall be version-controlled and executed automatically during deployment.
+- **DB3:** Database migration scripts shall be version-controlled and executed during deployment.
+- **DB4:** Cloudflare R2 storage shall be used for storing and serving images and other media files.
 
 ### 3.4 Design Constraints
-- **DC1:** The application must be developed using the PERN stack (PostgreSQL, Express, React, Node.js).
+- **DC1:** The application must be developed using React, Express, Node.js with Cloudflare Workers, D1, and R2.
 - **DC2:** The UI must be responsive and compatible with modern web browsers.
 - **DC3:** The system must comply with standard security practices, including encrypted communication (HTTPS) and secure password storage.
 
