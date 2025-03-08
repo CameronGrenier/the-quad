@@ -1,13 +1,13 @@
 {
-    "name": "the-quad",
-    "version": "1.0.0",
-    "scripts": {
-        "start": "concurrently \"npm run start --prefix server\" \"npm run start --prefix client\""
-    },
-    "devDependencies": {
-        "concurrently": "^7.0.0"
-    },
-    "dependencies": {
-        "react-multi-carousel": "^2.8.5"
-    }
+  "name": "the-quad",
+  "version": "1.0.0",
+  "description": "The Quad Application",
+  "main": "./client/src/worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "wrangler": "^3.0.0"
+  }
 }
