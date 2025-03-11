@@ -2,6 +2,7 @@ body {
     color: gainsboro;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
 }
 
 .container {
@@ -31,7 +32,7 @@ body {
     flex-direction: column;
     align-items: left;
     justify-content: center;
-    width: 100%;
+    width: 100vw;
     height: 100%;
     margin: 0;
     padding-left: 4rem;

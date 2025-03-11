@@ -8,6 +8,7 @@ import Calendar from './components/Calendar';
 import EventDetails from './components/EventDetails';
 import EventRegistration from './components/EventRegistration';
 import Questionnaire from './components/Questionnaire';
+import OrganizationRegistration from './components/OrganizationRegistration';
 import './App.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/event/:id" element={<EventDetails />} />
           <Route path="/register-event" element={<EventRegistration />} />
+          <Route path="/register-organization" element={<OrganizationRegistration />} /> 
           <Route path="/questionnaire" element={<Questionnaire />} />
         </Routes>
       </main>

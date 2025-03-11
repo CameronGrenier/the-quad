@@ -1,2 +1,27 @@
-node_modules
-build
+# Dependencies
+node_modules/
+
+# Build files
+dist/
+build/
+worker/
+.wrangler/
+
+# Environment variables
+.env
+.dev.vars
+.env.local
+
+# Local development
+.wrangler/
+.mf/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
