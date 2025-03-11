@@ -1,12 +1,14 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './Signup.css'; // You'll need to create this
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import './Signup.css';
 
 // Define the API URL using environment variables
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
 function Signup() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     f_name: '',
     l_name: '',
@@ -120,9 +122,8 @@ function Signup() {
       const data = await response.json();
       
       if (data.success) {
-        // Store token in localStorage
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Use the login function from AuthContext instead of manually setting localStorage
+        login(data.user, data.token);
         
         // Redirect to home page or dashboard
         navigate('/');
@@ -227,6 +228,10 @@ function Signup() {
           {isSubmitting ? 'Creating Account...' : 'Sign Up'}
         </button>
       </form>
+      
+      <div className="login-footer">
+        <p>Already have an account? <Link to="/login">Log in</Link></p>
+      </div>
     </div>
   );
 }

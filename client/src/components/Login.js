@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Login.css'; // You'll need to create this
+import { useAuth } from '../context/AuthContext';
+import './Login.css';
 
 // Define the API URL using environment variables
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -76,11 +78,10 @@ function Login() {
       const data = await response.json();
       
       if (data.success) {
-        // Store token and user data in localStorage
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Use the login function from AuthContext
+        login(data.user, data.token);
         
-        // Redirect to home page or dashboard
+        // Redirect to home page
         navigate('/');
       } else {
         setLoginError(data.error || 'Invalid email or password');
