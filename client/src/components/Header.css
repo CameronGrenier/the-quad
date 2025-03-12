@@ -180,65 +180,15 @@ padding: 0.5rem;
   background-color: #553c9a;
 }
 
-/* User menu styling when user is logged in */
-.user-menu {
-  position: relative;
+/* Add this style for the account link */
+.account-link {
   display: flex;
   align-items: center;
   margin-right: 1.5rem;
-}
-
-.user-menu .account {
-  cursor: pointer;
-}
-
-.account-dropdown {
-  position: absolute;
-  top: 50px;
-  right: 0;
-  width: 200px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  display: none;
-  flex-direction: column;
-  z-index: 1000;
-}
-
-.user-menu:hover .account-dropdown {
-  display: flex;
-}
-
-.user-name {
-  font-weight: bold;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.account-dropdown a {
   text-decoration: none;
-  color: #333;
-  padding: 8px 0;
-  transition: color 0.3s;
 }
 
-.account-dropdown a:hover {
-  color: #6b46c1;
-}
-
-.logout-button {
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 8px 0;
-  color: #e53e3e;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 5px;
-}
-
-.logout-button:hover {
-  text-decoration: underline;
+.account-link:hover .account {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
 }

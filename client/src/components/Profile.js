@@ -1,9 +1,16 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
 function Profile() {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   if (!currentUser) {
     return (
@@ -51,7 +58,10 @@ function Profile() {
             </div>
           )}
           
-          <button className="edit-profile-button">Edit Profile</button>
+          <div className="profile-actions">
+            <button className="edit-profile-button">Edit Profile</button>
+            <button className="logout-button" onClick={handleLogout}>Logout</button>
+          </div>
         </div>
       </div>
     </div>

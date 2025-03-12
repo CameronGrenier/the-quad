@@ -1,6 +1,6 @@
 .profile-container {
   max-width: 800px;
-  margin: 120px auto 30px;
+  margin: 200px auto 30px;
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
@@ -97,4 +97,27 @@
 
 .edit-profile-button:hover {
   background-color: #553c9a;
+}
+
+/* Add this to your existing Profile.css */
+.profile-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.logout-button {
+  padding: 12px 20px;
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: #c53030;
 }

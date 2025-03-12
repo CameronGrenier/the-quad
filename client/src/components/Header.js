@@ -10,13 +10,8 @@ import { ReactComponent as Organization } from '../icons/people-group-solid.svg'
 import { useAuth } from '../context/AuthContext';
 
 function Header() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   return (
     <div className='header-container'>
@@ -53,7 +48,7 @@ function Header() {
         
         {/* User authentication section */}
         {currentUser ? (
-          <div className="user-menu">
+          <Link to="/profile" className="account-link">
             <div className="account">
               {currentUser.profile_picture ? (
                 <img 
@@ -66,12 +61,7 @@ function Header() {
                 <Account className='account-icon' />
               )}
             </div>
-            <div className="account-dropdown">
-              <span className="user-name">{currentUser.f_name} {currentUser.l_name}</span>
-              <Link to="/profile">My Profile</Link>
-              <button onClick={handleLogout} className="logout-button">Logout</button>
-            </div>
-          </div>
+          </Link>
         ) : (
           <div className="auth-links">
             <Link to="/login" className="login-link">Log In</Link>
