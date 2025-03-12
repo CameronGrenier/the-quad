@@ -20,6 +20,42 @@ function OrganizationRegistration() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login', { state: { from: '/register-organization', message: 'You need to log in to create an organization.' } });
+    }
+  }, [currentUser, navigate]);
+
+  // Add this debug effect to log user data
+  useEffect(() => {
+    console.log("OrganizationRegistration: Current user state:", currentUser ? {
+      hasUser: !!currentUser,
+      id: currentUser.id,
+      userID: currentUser.userID, // Check if it might be stored under a different property name
+      email: currentUser.email
+    } : "No user");
+    
+    // If we have a user but no ID, try to read from localStorage directly
+    if (currentUser && !currentUser.id) {
+      try {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          console.log("Parsed user from localStorage:", {
+            id: parsedUser.id,
+            userID: parsedUser.userID,
+            email: parsedUser.email
+          });
+        } else {
+          console.log("No user data in localStorage");
+        }
+      } catch (error) {
+        console.error("Error checking localStorage:", error);
+      }
+    }
+  }, [currentUser]);
 
   const handleChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -51,6 +87,15 @@ function OrganizationRegistration() {
 
   const validateForm = () => {
     let tempErrors = {};
+    
+    // Check if user is logged in
+    if (!currentUser || !currentUser.id) {
+      tempErrors.form = 'You must be logged in to create an organization';
+      // Redirect to login
+      navigate('/login', { state: { from: '/register-organization' } });
+      return false;
+    }
+    
     if (!formData.name) {
       tempErrors.name = 'Name is required';
     }
@@ -68,32 +113,74 @@ function OrganizationRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check user before validation
+    if (!currentUser) {
+      setErrors({ form: "You must be logged in to create an organization" });
+      navigate('/login', { state: { from: '/register-organization' } });
+      return;
+    }
+    
+    // Try to find any valid user ID
+    const userId = currentUser.id || currentUser.userID;
+    
+    if (!userId) {
+      console.error("No user ID available, clearing session and redirecting");
+      // Session is probably broken, clear it and redirect
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setErrors({ form: "Your session is invalid. Please log in again." });
+      navigate('/login', { state: { from: '/register-organization' } });
+      return;
+    }
+    
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
+    setErrors({});
 
     try {
       const orgFormData = new FormData();
       orgFormData.append('name', formData.name);
       orgFormData.append('description', formData.description);
-      orgFormData.append('userID', currentUser.id);
+      orgFormData.append('userID', userId);
       orgFormData.append('privacy', formData.privacy);
-      orgFormData.append('submitForOfficialStatus', formData.submitForOfficialStatus);
+      
+      console.log("Submitting organization form with user ID:", userId);
 
       if (formData.thumbnail) {
         orgFormData.append('thumbnail', formData.thumbnail);
+        console.log("Including thumbnail:", formData.thumbnail.name);
       }
 
       if (formData.banner) {
         orgFormData.append('banner', formData.banner);
+        console.log("Including banner:", formData.banner.name);
       }
 
       const response = await fetch(`${API_URL}/api/register-organization`, {
         method: 'POST',
         body: orgFormData,
       });
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        
+        if (contentType && contentType.includes("application/json")) {
+          // Parse JSON error response
+          const data = await response.json();
+          console.error('API Error:', data);
+          setErrors({ form: `Error: ${data.error || 'Unknown server error'}` });
+        } else {
+          // Handle non-JSON error response
+          const text = await response.text();
+          console.error('API Error (non-JSON):', text);
+          setErrors({ form: `Server error: ${response.status} ${response.statusText}` });
+        }
+        return;
+      }
 
       const data = await response.json();
 
@@ -111,13 +198,16 @@ function OrganizationRegistration() {
         setNameExistsError('');
         setTimeout(() => {
           setShowSuccessPopup(false);
+          navigate('/profile'); // Redirect to profile after success
         }, 3000);
       } else {
-        setErrors({ form: data.error || 'Failed to create organization' });
+        // Enhanced error display with full error message
+        console.error('API Error:', data.error);
+        setErrors({ form: `Failed to create organization: ${data.error}` });
       }
     } catch (error) {
       console.error('Error creating organization:', error);
-      setErrors({ form: 'An unexpected error occurred. Please try again.' });
+      setErrors({ form: `An unexpected error occurred: ${error.message}` });
     } finally {
       setIsSubmitting(false);
     }

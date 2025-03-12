@@ -1,70 +1,180 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
 function Profile() {
   const { currentUser, logout } = useAuth();
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [organizations, setOrganizations] = useState([]);
+  const [events, setEvents] = useState([]);
   const navigate = useNavigate();
-  
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+
+  useEffect(() => {
+    // Redirect if not logged in
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    async function fetchUserData() {
+      try {
+        // For now, just use the currentUser data we already have
+        setUserData(currentUser);
+        
+        // Fetch organizations where user is admin
+        const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+        const orgResponse = await fetch(`${API_URL}/api/user-organizations?userID=${currentUser.id}`);
+        
+        if (!orgResponse.ok) {
+          throw new Error(`Error fetching organizations: ${orgResponse.status}`);
+        }
+        
+        const orgData = await orgResponse.json();
+        if (orgData.success) {
+          setOrganizations(orgData.organizations || []);
+        }
+        
+        // You could also fetch events the user has created or is attending
+        // For now, we'll leave this empty
+        setEvents([]);
+        
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+        setError("Failed to load profile data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUserData();
+  }, [currentUser, navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      console.error("Failed to log out", err);
+    }
   };
 
-  if (!currentUser) {
+  if (loading) {
     return (
-      <div className="profile-container">
-        <h2>Please log in to view your profile</h2>
+      <div className="profile-page-container">
+        <div className="profile-container">
+          <div className="loading">Loading profile data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !userData) {
+    return (
+      <div className="profile-page-container">
+        <div className="profile-container">
+          <div className="error-message">{error || "Profile data could not be loaded"}</div>
+          <button className="profile-button" onClick={() => navigate('/')}>Return Home</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="profile-container">
-      <h2>My Profile</h2>
-      
-      <div className="profile-info">
-        <div className="profile-header">
-          <div className="profile-image">
-            {currentUser.profile_picture ? (
+    <>
+      <div className="profile-page-container"></div>
+      <div className="profile-container">
+        <h2>Your Profile</h2>
+        
+        <div className="profile-section">
+          <div className="profile-avatar">
+            {userData.profile_picture ? (
               <img 
-                src={currentUser.profile_picture.startsWith('/images/') 
-                  ? `${process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev'}${currentUser.profile_picture}` 
-                  : currentUser.profile_picture} 
-                alt="Profile" 
+                src={userData.profile_picture} 
+                alt={`${userData.f_name}'s profile`} 
               />
             ) : (
-              <div className="default-avatar">
-                {currentUser.f_name[0]}{currentUser.l_name[0]}
+              <div className="profile-avatar-placeholder">
+                {userData.f_name ? userData.f_name[0] : ''}
+                {userData.l_name ? userData.l_name[0] : ''}
               </div>
             )}
           </div>
-          <div className="profile-name">
-            <h3>{currentUser.f_name} {currentUser.l_name}</h3>
+          
+          <div className="profile-info">
+            <h3>{userData.f_name} {userData.l_name}</h3>
+            <p><strong>Email:</strong> {userData.email}</p>
+            {userData.phone && <p><strong>Phone:</strong> {userData.phone}</p>}
           </div>
         </div>
         
-        <div className="profile-details">
-          <div className="detail-item">
-            <span className="detail-label">Email:</span>
-            <span className="detail-value">{currentUser.email}</span>
-          </div>
-          
-          {currentUser.phone && (
-            <div className="detail-item">
-              <span className="detail-label">Phone:</span>
-              <span className="detail-value">{currentUser.phone}</span>
+        <div className="profile-section">
+          <h3>Your Organizations</h3>
+          {organizations.length > 0 ? (
+            <div className="card-grid">
+              {organizations.map(org => (
+                <div key={org.orgID} className="card">
+                  <div className="card-header">
+                    {org.thumbnail && (
+                      <img src={org.thumbnail} alt={org.name} />
+                    )}
+                  </div>
+                  <div className="card-body">
+                    <h4>{org.name}</h4>
+                    <p>{org.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="empty-state">You haven't created any organizations yet</p>
           )}
           
-          <div className="profile-actions">
-            <button className="edit-profile-button">Edit Profile</button>
-            <button className="logout-button" onClick={handleLogout}>Logout</button>
-          </div>
+          <button 
+            className="profile-button" 
+            onClick={() => navigate('/register-organization')}
+          >
+            Create Organization
+          </button>
         </div>
+        
+        <div className="profile-section">
+          <h3>Your Events</h3>
+          {events.length > 0 ? (
+            <div className="card-grid">
+              {events.map(event => (
+                <div key={event.eventID} className="card">
+                  <div className="card-header">
+                    {event.thumbnail && (
+                      <img src={event.thumbnail} alt={event.title} />
+                    )}
+                  </div>
+                  <div className="card-body">
+                    <h4>{event.title}</h4>
+                    <p>{event.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-state">You haven't created any events yet</p>
+          )}
+          
+          <button 
+            className="profile-button" 
+            onClick={() => navigate('/register-event')}
+          >
+            Create Event
+          </button>
+        </div>
+        
+        <button className="logout-button" onClick={handleLogout}>
+          Log Out
+        </button>
       </div>
-    </div>
+    </>
   );
 }
 

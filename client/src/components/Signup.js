@@ -8,8 +8,8 @@ function Signup() {
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: ''
+    f_name: '',
+    l_name: ''
   });
   
   const [error, setError] = useState('');
@@ -28,6 +28,14 @@ function Signup() {
   async function handleSubmit(e) {
     e.preventDefault();
     
+    // Debug the form data being sent
+    console.log("Submitting form data:", {
+      f_name: formData.f_name,
+      l_name: formData.l_name,
+      email: formData.email,
+      password: formData.password ? "password provided" : "no password"
+    });
+    
     // Validate form
     if (formData.password !== formData.confirmPassword) {
       return setError('Passwords do not match');
@@ -36,13 +44,18 @@ function Signup() {
     try {
       setError('');
       setLoading(true);
-      await signup(
-        formData.email, 
-        formData.password, 
-        formData.firstName, 
-        formData.lastName
-      );
-      navigate('/');
+      const result = await signup({
+        f_name: formData.f_name,
+        l_name: formData.l_name,
+        email: formData.email,
+        password: formData.password
+      });
+      
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.error || 'Failed to create an account');
+      }
     } catch (error) {
       setError('Failed to create an account');
       console.error(error);
@@ -63,8 +76,8 @@ function Signup() {
             <label>First Name</label>
             <input
               type="text"
-              name="firstName"
-              value={formData.firstName}
+              name="f_name" // Must be f_name, not firstName
+              value={formData.f_name || ""}
               onChange={handleChange}
               required
             />
@@ -74,8 +87,8 @@ function Signup() {
             <label>Last Name</label>
             <input
               type="text"
-              name="lastName"
-              value={formData.lastName}
+              name="l_name" // Must be l_name, not lastName
+              value={formData.l_name || ""}
               onChange={handleChange}
               required
             />

@@ -14,6 +14,9 @@ function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
     
+    // Log the email and password being sent
+    console.log("Submitting login data:", { email, password });
+    
     try {
       setError('');
       setLoading(true);
