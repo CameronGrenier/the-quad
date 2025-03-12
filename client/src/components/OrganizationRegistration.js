@@ -143,16 +143,15 @@ function OrganizationRegistration() {
             <option value="private">Admin Invite Only</option>
           </select>
         </div>
-        <div className="form-group">
-          <label>
-            <input
-              type="checkbox"
-              name="submitForOfficialStatus"
-              checked={formData.submitForOfficialStatus}
-              onChange={handleChange}
-            />
-            Submit for Official Status
-          </label>
+        <div className="form-group checkbox-group">
+          <label htmlFor="submitForOfficialStatus">Submit for Official Status</label>
+          <input
+            type="checkbox"
+            id="submitForOfficialStatus"
+            name="submitForOfficialStatus"
+            checked={formData.submitForOfficialStatus}
+            onChange={handleChange}
+          />
         </div>
         <button type="submit" className="submit-button">Register</button>
       </form>

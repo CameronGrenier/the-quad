@@ -1,39 +1,62 @@
+body {
+    /* Darker shades of purple and orange */
+    background: linear-gradient(to bottom, #4c2889, #c05621);
+    background-attachment: fixed;
+    min-height: 100vh;
+    margin: 0;
+}
+
 .registration-container {
   max-width: 600px;
   margin: 20px auto;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  background-color: #f9f9f9;
+  padding: 30px;
+  border-radius: 16px;
+  /* Frosted glass effect */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* For Safari */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   margin-top: 200px;
 }
 
 .registration-container h2 {
   text-align: center;
-  color: #333;
+  color: white;
+  margin-bottom: 30px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   font-weight: bold;
-  color: #555;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .form-group input[type="text"],
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
   box-sizing: border-box;
-  font-size: 14px;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .form-group textarea {
@@ -41,29 +64,68 @@
 }
 
 .form-group input[type="file"] {
-  padding: 5px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
 }
 
 .form-group input[type="checkbox"] {
-  margin-right: 5px;
+  margin-right: 8px;
+  accent-color: #6b46c1;
 }
 
 .submit-button {
-  background-color: #5cb85c;
+  background-color: rgba(73, 0, 133, 0.8);
   color: white;
-  padding: 10px 15px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: bold;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition: background-color 0.3s, transform 0.2s;
+  width: 100%;
+  margin-top: 10px;
 }
 
 .submit-button:hover {
-  background-color: #449d44;
+  background-color: rgb(153, 0, 184);
+  transform: translateY(-2px);
 }
 
 .error {
-  color: #d9534f;
+  color: #ff8080;
   font-size: 14px;
   margin-top: 5px;
+  font-weight: 500;
+}
+
+/* Style for the checkbox container */
+.checkbox-group {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Style for the label inside checkbox group */
+.checkbox-group label {
+  margin-bottom: 0;
+  flex-grow: 1;
+}
+
+/* Style for the checkbox input */
+.checkbox-group input[type="checkbox"] {
+  margin-left: 10px;
+  margin-right: 0;
+  order: 2;
+  width: 18px;
+  height: 18px;
+  accent-color: rgba(95, 0, 204, 0.8);
 }
