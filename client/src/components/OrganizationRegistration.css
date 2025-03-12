@@ -1,9 +1,22 @@
-body {
-    /* Darker shades of purple and orange */
+/* Remove the body style that affects entire site */
+/* body {
     background: linear-gradient(to bottom, #4c2889, #c05621);
     background-attachment: fixed;
     min-height: 100vh;
     margin: 0;
+} */
+
+/* Create a page-container that will have the gradient */
+.org-page-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, #4c2889, #c05621);
+    background-attachment: fixed;
+    overflow-y: auto;
+    z-index: -1;
 }
 
 .registration-container {
@@ -17,7 +30,7 @@ body {
   -webkit-backdrop-filter: blur(10px); /* For Safari */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  margin-top: 200px;
+  margin-top: 150px;
 }
 
 .registration-container h2 {
@@ -52,6 +65,7 @@ body {
   color: white;
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
+  font-family: inherit; /* Add this line to inherit the font from parent */
 }
 
 .form-group input::placeholder,
@@ -128,4 +142,86 @@ body {
   width: 18px;
   height: 18px;
   accent-color: rgba(95, 0, 204, 0.8);
+}
+
+/* Success popup styles */
+.success-popup {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(46, 204, 113, 0.95);
+  border-radius: 8px;
+  padding: 15px 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: slideDown 0.5s ease-out forwards, fadeOut 0.5s ease-out 2.5s forwards;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 90%;
+  width: 400px;
+}
+
+.success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.success-icon {
+  background-color: white;
+  color: #2ecc71;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.success-popup h3 {
+  color: white;
+  margin: 0 0 5px 0;
+  font-size: 18px;
+}
+
+.success-popup p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-size: 14px;
+}
+
+@keyframes slideDown {
+  0% {
+    transform: translate(-50%, -100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Add a class for form errors too */
+.error-message {
+  background: rgba(231, 76, 60, 0.8);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  text-align: center;
 }

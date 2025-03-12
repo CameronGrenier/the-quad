@@ -30,6 +30,14 @@ export default {
         return await login(request, env, corsHeaders);
       } else if (path === "/api/check-email") {
         return await checkEmailExists(request, env, corsHeaders);
+      } else if (path === "/api/user-organizations") {
+        return await getUserOrganizations(request, env, corsHeaders);
+      } else if (path === "/api/landmarks") {
+        return await getLandmarks(env, corsHeaders);
+      } else if (path === "/api/check-landmark-availability" && request.method === "POST") {
+        return await checkLandmarkAvailability(request, env, corsHeaders);
+      } else if (path === "/api/register-event" && request.method === "POST") {
+        return await registerEvent(request, env, corsHeaders);
       } else if (path.startsWith("/images/")) {
         const imagePath = path.replace("/images/", "");
         return await serveImageFromR2(env, imagePath, corsHeaders);
@@ -374,4 +382,236 @@ function generateJWT(payload) {
   const signature = btoa(`${encodedHeader}.${encodedPayload}-signature`);
   
   return `${encodedHeader}.${encodedPayload}.${signature}`;
+}
+
+// Function to get organizations where user is admin
+async function getUserOrganizations(request, env, corsHeaders) {
+  try {
+    const url = new URL(request.url);
+    const userID = url.searchParams.get('userID');
+
+    if (!userID) {
+      return new Response(JSON.stringify({ success: false, error: "User ID is required" }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    // Query organizations where the user is an admin
+    const { results } = await env.D1_DB.prepare(`
+      SELECT o.* FROM organization o
+      JOIN organization_user ou ON o.orgID = ou.orgID
+      WHERE ou.userID = ? AND ou.role = 'admin'
+    `).bind(userID).all();
+
+    return new Response(JSON.stringify({ success: true, organizations: results || [] }), {
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500,
+      headers: corsHeaders,
+    });
+  }
+}
+
+// Function to get landmarks
+async function getLandmarks(env, corsHeaders) {
+  try {
+    const { results } = await env.D1_DB.prepare(`
+      SELECT * FROM landmark
+    `).all();
+
+    return new Response(JSON.stringify({ success: true, landmarks: results || [] }), {
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500,
+      headers: corsHeaders,
+    });
+  }
+}
+
+// Function to check landmark availability
+async function checkLandmarkAvailability(request, env, corsHeaders) {
+  try {
+    const data = await request.json();
+    const { landmarkID, startDate, endDate } = data;
+
+    if (!landmarkID || !startDate || !endDate) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Landmark ID, start date, and end date are required" 
+      }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    // First check if multi-event is allowed for this landmark
+    const { results: landmarkResults } = await env.D1_DB.prepare(`
+      SELECT multiEventAllowed FROM landmark WHERE landmarkID = ?
+    `).bind(landmarkID).all();
+
+    if (!landmarkResults || landmarkResults.length === 0) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Landmark not found" 
+      }), {
+        status: 404,
+        headers: corsHeaders,
+      });
+    }
+
+    const multiEventAllowed = landmarkResults[0].multiEventAllowed === 1;
+
+    // If multi-event is allowed, always return available
+    if (multiEventAllowed) {
+      return new Response(JSON.stringify({ success: true, available: true }), {
+        headers: corsHeaders,
+      });
+    }
+
+    // Otherwise, check for conflicting events
+    const { results: conflictingEvents } = await env.D1_DB.prepare(`
+      SELECT COUNT(*) as conflictCount FROM event 
+      WHERE landmarkID = ? AND 
+            ((startDate <= ? AND endDate >= ?) OR 
+             (startDate <= ? AND endDate >= ?) OR
+             (startDate >= ? AND endDate <= ?))
+    `).bind(
+      landmarkID,
+      endDate,    // Event starts before our end
+      startDate,  // Event ends after our start
+      startDate,  // Event starts before our start
+      startDate,  // Event ends after our start
+      startDate,  // Event starts after our start
+      endDate     // Event ends before our end
+    ).all();
+
+    const available = conflictingEvents[0].conflictCount === 0;
+
+    return new Response(JSON.stringify({ success: true, available }), {
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500,
+      headers: corsHeaders,
+    });
+  }
+}
+
+// Function to register an event
+async function registerEvent(request, env, corsHeaders) {
+  try {
+    const formData = await request.formData();
+    const organizationID = formData.get('organizationID');
+    const title = formData.get('title');
+    const description = formData.get('description');
+    const thumbnailFile = formData.get('thumbnail');
+    const bannerFile = formData.get('banner');
+    const startDate = formData.get('startDate');
+    const endDate = formData.get('endDate');
+    const privacy = formData.get('privacy');
+    const submitForOfficialStatus = formData.get('submitForOfficialStatus') === 'true';
+    const landmarkID = formData.get('landmarkID');
+    const customLocation = formData.get('customLocation');
+
+    // Check required fields
+    if (!organizationID || !title || !startDate || !endDate || !privacy) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Missing required fields" 
+      }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    let thumbnailPath = null;
+    let bannerPath = null;
+
+    // Create sanitized event title for file paths
+    const sanitizedTitle = title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_');
+
+    if (thumbnailFile) {
+      // Store in Thumbnails/Events folder with event title
+      const fileExtension = thumbnailFile.name.split('.').pop().toLowerCase();
+      thumbnailPath = `thumbnails/events/${sanitizedTitle}_${Date.now()}.${fileExtension}`;
+      
+      // Upload to R2
+      await env.R2_BUCKET.put(thumbnailPath, thumbnailFile);
+    }
+
+    if (bannerFile) {
+      // Store in Banners/Events folder with event title
+      const fileExtension = bannerFile.name.split('.').pop().toLowerCase();
+      bannerPath = `banners/events/${sanitizedTitle}_${Date.now()}.${fileExtension}`;
+      
+      // Upload to R2
+      await env.R2_BUCKET.put(bannerPath, bannerFile);
+    }
+
+    // Check landmark availability if a landmark is provided
+    if (landmarkID) {
+      const landmarkAvailabilityCheck = await checkLandmarkAvailability(
+        new Request('', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ landmarkID, startDate, endDate }),
+        }),
+        env,
+        corsHeaders
+      );
+      
+      const availabilityData = await landmarkAvailabilityCheck.json();
+      
+      if (!availabilityData.available) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Selected landmark is not available for the specified time period" 
+        }), {
+          status: 400,
+          headers: corsHeaders,
+        });
+      }
+    }
+
+    // Insert event data into D1
+    const result = await env.D1_DB.prepare(`
+      INSERT INTO event (
+        organizationID, title, description, thumbnail, banner, 
+        startDate, endDate, privacy, officialStatus, landmarkID, customLocation
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      organizationID,
+      title,
+      description,
+      thumbnailPath ? `/images/${thumbnailPath}` : null,
+      bannerPath ? `/images/${bannerPath}` : null,
+      startDate,
+      endDate,
+      privacy,
+      submitForOfficialStatus ? 1 : 0,
+      landmarkID || null,
+      customLocation || null
+    ).run();
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: "Event created successfully",
+      eventID: result.lastInsertRowid,
+      thumbnailPath: thumbnailPath ? `/images/${thumbnailPath}` : null,
+      bannerPath: bannerPath ? `/images/${bannerPath}` : null
+    }), {
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500,
+      headers: corsHeaders,
+    });
+  }
 }

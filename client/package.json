@@ -5,6 +5,7 @@
   "homepage": ".",
   "dependencies": {
     "react": "^18.0.0",
+    "react-datepicker": "^8.2.0",
     "react-dom": "^18.0.0",
     "react-multi-carousel": "^2.8.5",
     "react-router-dom": "^6.0.0",
