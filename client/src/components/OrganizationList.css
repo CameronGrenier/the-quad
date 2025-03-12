@@ -1,7 +1,49 @@
+/* Add a dark gradient background with subtle animation */
 .org-list-page {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  position: relative;
+}
+
+/* Create a fixed background container that sits behind all content */
+.org-list-page::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #1c1033 0%, #2d1537 50%, #1c1033 100%);
+  z-index: -10;
+}
+
+/* Add subtle animated particles/stars in the background */
+.org-list-page::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.07) 2px, transparent 2px);
+  background-size: 100px 100px, 120px 120px, 70px 70px;
+  background-position: 0 0, 25px 25px, 15px 15px;
+  z-index: -9;
+  opacity: 0.5;
+  animation: shimmer 120s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0 0, 25px 25px, 15px 15px;
+  }
+  100% {
+    background-position: 1000px 1000px, 1025px 1025px, 1015px 1015px;
+  }
 }
 
 .org-list-header {
@@ -9,15 +51,19 @@
   margin-bottom: 40px;
 }
 
+/* Improve header contrast */
 .org-list-header h1 {
   font-size: 32px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   color: white;
   margin-bottom: 10px;
 }
 
+/* Improve header contrast */
 .org-list-header p {
   font-size: 18px;
   color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Search and Filter Controls */
@@ -30,36 +76,82 @@
   gap: 15px;
 }
 
+/* Simplified search container and input styling */
 .search-container {
   position: relative;
   flex: 1;
   min-width: 250px;
+  max-width: 500px;
 }
 
+/* Updated search input with white text and cursor */
 .org-search-input {
   width: 100%;
-  padding: 12px 40px 12px 15px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 12px 20px 12px 45px;
+  background: rgba(48, 30, 103, 0.6);  /* Solid color, no gradient */
+  border: 1px solid rgba(124, 77, 255, 0.2);
   border-radius: 8px;
-  color: white;
-  font-size: 16px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  color: white !important; /* Force white text */
+  caret-color: white; /* Make cursor white */
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  height: 46px;
+  transition: border-color 0.2s ease;
 }
 
+.org-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Ensure text selection is visible on dark background */
+.org-search-input::selection {
+  background: rgba(124, 77, 255, 0.5);
+  color: white;
+}
+
+/* Simplified focus state */
 .org-search-input:focus {
   outline: none;
-  border-color: rgba(124, 77, 255, 0.6);
-  box-shadow: 0 0 0 2px rgba(124, 77, 255, 0.2);
+  border-color: rgba(124, 77, 255, 0.5);
 }
 
+/* Search icon positioning */
 .search-icon {
   position: absolute;
-  right: 15px;
+  left: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+/* Simple clear button */
+.search-container button.clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 5px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Show clear button when there's text */
+.search-container.has-text button.clear-search {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* No hover effect on clear button */
+.search-container button.clear-search:hover {
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .filter-container {
@@ -83,9 +175,11 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Add a subtle highlight to the filter buttons when active */
 .filter-btn.active {
   background: linear-gradient(to right, rgba(76, 40, 137, 0.8), rgba(192, 86, 33, 0.8));
   border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(124, 77, 255, 0.5);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -102,16 +196,20 @@
   color: inherit;
 }
 
+/* Update card styling for better contrast */
 .org-card {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .org-card:hover {

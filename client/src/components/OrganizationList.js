@@ -82,7 +82,8 @@ function OrganizationList() {
       </div>
       
       <div className="org-list-controls">
-        <div className="search-container">
+        <div className={`search-container ${searchTerm ? 'has-text' : ''}`}>
+          <i className="fas fa-search search-icon"></i>
           <input
             type="text"
             placeholder="Search organizations..."
@@ -90,7 +91,15 @@ function OrganizationList() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="org-search-input"
           />
-          <i className="fas fa-search search-icon"></i>
+          {searchTerm && (
+            <button 
+              className="clear-search" 
+              onClick={() => setSearchTerm('')}
+              aria-label="Clear search"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
         </div>
         
         <div className="filter-container">
