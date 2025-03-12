@@ -160,6 +160,37 @@
   font-weight: 500;
 }
 
+/* Error message styles */
+.error-message {
+  background: rgba(231, 76, 60, 0.8);
+  color: white;
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.error-message p {
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.dismiss-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 5px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dismiss-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 /* Customize date picker styles to match our theme */
 .react-datepicker-wrapper {
   width: 100%;
@@ -288,4 +319,14 @@
 .button-container .submit-button:hover {
   background-color: rgb(153, 0, 173);
   transform: translateY(-2px);
+}
+
+/* Add this style for informational messages */
+.info-message {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin-top: 5px;
+  background: rgba(52, 152, 219, 0.3);
+  padding: 8px;
+  border-radius: 4px;
 }

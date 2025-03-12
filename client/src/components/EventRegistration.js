@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom'; // Add this import
 import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
+import { useAuth } from '../context/AuthContext';
+import 'react-datepicker/dist/react-datepicker.css';
 import './EventRegistration.css';
 
 // Define the API URL using environment variables
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
 function EventRegistration() {
+  // Add this line near the top of your component
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [organizations, setOrganizations] = useState([]);
   const [landmarks, setLandmarks] = useState([]);
   const [landmarkAvailable, setLandmarkAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Add this line
   
   const [formData, setFormData] = useState({
     organizationID: '',
@@ -31,13 +36,40 @@ function EventRegistration() {
   const [errors, setErrors] = useState({});
   const [useCustomLocation, setUseCustomLocation] = useState(true);
 
-  // Fetch user's organizations where they are an admin
+  // Update the useEffect to set loading to false properly
   useEffect(() => {
-    const fetchUserOrganizations = async () => {
-      if (!currentUser) return;
+    // Redirect if not logged in
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    let organizationsLoaded = false;
+    let landmarksLoaded = false;
+    
+    // Function to check if all data is loaded
+    const checkAllLoaded = () => {
+      if (organizationsLoaded && landmarksLoaded) {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch organizations if we have a valid user ID
+    async function fetchUserOrganizations() {
+      if (!currentUser?.id) {
+        console.log("No user ID available, skipping organization fetch");
+        organizationsLoaded = true;
+        checkAllLoaded();
+        return;
+      }
       
       try {
-        const response = await fetch(`${API_URL}/api/user-organizations?userID=${currentUser.userID}`);
+        const response = await fetch(`${API_URL}/api/user-organizations?userID=${currentUser.id}`);
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.success) {
@@ -50,29 +82,43 @@ function EventRegistration() {
           }
         }
       } catch (error) {
-        console.error('Error fetching organizations:', error);
+        console.error('Error fetching user organizations:', error);
+        // Display friendly error message
+        setApiError('Unable to load your organizations. Please try again later.');
+        setOrganizations([]);
       } finally {
-        setLoading(false);
+        organizationsLoaded = true;
+        checkAllLoaded();
       }
-    };
-    
-    // Fetch landmarks
-    const fetchLandmarks = async () => {
+    }
+
+    // Fix landmarks fetch with proper error handling
+    async function fetchLandmarks() {
       try {
         const response = await fetch(`${API_URL}/api/landmarks`);
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.success) {
-          setLandmarks(data.landmarks || []);
+          setLandmarks(data.landmarks);
         }
       } catch (error) {
         console.error('Error fetching landmarks:', error);
+        // No need to display error for landmarks as it's not critical
+        setLandmarks([]);
+      } finally {
+        landmarksLoaded = true;
+        checkAllLoaded();
       }
-    };
-    
+    }
+
     fetchUserOrganizations();
     fetchLandmarks();
-  }, [currentUser]);
+  }, [currentUser, navigate]);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -186,39 +232,48 @@ function EventRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (!validateForm()) {
       return;
     }
     
-    const submitData = new FormData();
-    
-    // Add form fields to FormData
-    submitData.append('organizationID', formData.organizationID);
-    submitData.append('title', formData.title);
-    submitData.append('description', formData.description);
-    submitData.append('startDate', formData.startDate.toISOString());
-    submitData.append('endDate', formData.endDate.toISOString());
-    submitData.append('privacy', formData.privacy);
-    submitData.append('submitForOfficialStatus', formData.submitForOfficialStatus);
-    
-    if (formData.thumbnail) {
-      submitData.append('thumbnail', formData.thumbnail);
-    }
-    
-    if (formData.banner) {
-      submitData.append('banner', formData.banner);
-    }
-    
-    // Add location data
-    if (useCustomLocation) {
-      submitData.append('customLocation', formData.customLocation);
-      submitData.append('landmarkID', '');
-    } else {
-      submitData.append('landmarkID', formData.landmarkID);
-      submitData.append('customLocation', '');
-    }
+    setIsSubmitting(true);
     
     try {
+      const submitData = new FormData();
+      
+      // Add basic event data
+      submitData.append('organizationID', formData.organizationID);
+      submitData.append('title', formData.title);
+      submitData.append('description', formData.description);
+      submitData.append('startDate', formData.startDate.toISOString());
+      submitData.append('endDate', formData.endDate.toISOString());
+      submitData.append('privacy', formData.privacy);
+      submitData.append('submitForOfficialStatus', formData.submitForOfficialStatus);
+      
+      // Include the current user's ID
+      submitData.append('userID', currentUser.id);
+      
+      // Add thumbnail if provided
+      if (formData.thumbnail) {
+        submitData.append('thumbnail', formData.thumbnail);
+      }
+      
+      // Add banner if provided
+      if (formData.banner) {
+        submitData.append('banner', formData.banner);
+      }
+      
+      // Add location data
+      if (useCustomLocation) {
+        submitData.append('customLocation', formData.customLocation);
+        submitData.append('landmarkID', '');
+      } else {
+        submitData.append('landmarkID', formData.landmarkID);
+        submitData.append('customLocation', '');
+      }
+      
+      // Submit the form
       const response = await fetch(`${API_URL}/api/register-event`, {
         method: 'POST',
         body: submitData,
@@ -228,12 +283,15 @@ function EventRegistration() {
       
       if (result.success) {
         alert('Event created successfully!');
-        // Reset form or redirect
+        navigate('/'); // Redirect to homepage or events page
       } else {
-        alert(`Failed to create event: ${result.error}`);
+        setApiError(`Failed to create event: ${result.error}`);
       }
     } catch (error) {
-      alert(`Error creating event: ${error.message}`);
+      console.error('Error creating event:', error);
+      setApiError(`An unexpected error occurred: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -271,6 +329,19 @@ function EventRegistration() {
       <div className="event-page-container"></div>
       <div className="registration-container">
         <h2>Create Event</h2>
+        
+        {apiError && (
+          <div className="error-message">
+            <p>{apiError}</p>
+            <button 
+              className="dismiss-button"
+              onClick={() => setApiError(null)}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Organization:</label>
@@ -406,12 +477,19 @@ function EventRegistration() {
                 onChange={handleChange}
               >
                 <option value="">-- Select a landmark --</option>
-                {landmarks.map(landmark => (
-                  <option key={landmark.landmarkID} value={landmark.landmarkID}>
-                    {landmark.name}
-                  </option>
-                ))}
+                {landmarks.length === 0 ? (
+                  <option value="" disabled>No landmarks available</option>
+                ) : (
+                  landmarks.map(landmark => (
+                    <option key={landmark.landmarkID} value={landmark.landmarkID}>
+                      {landmark.name}
+                    </option>
+                  ))
+                )}
               </select>
+              {landmarks.length === 0 && (
+                <p className="info-message">No campus landmarks are currently available. Please use a custom location.</p>
+              )}
               {!landmarkAvailable && (
                 <p className="error">This landmark is not available during the selected time.</p>
               )}
@@ -443,7 +521,9 @@ function EventRegistration() {
             />
           </div>
           
-          <button type="submit" className="submit-button">Create Event</button>
+          <button type="submit" className="submit-button" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating...' : 'Create Event'}
+          </button>
         </form>
       </div>
     </>

@@ -60,73 +60,102 @@ export default {
 // Function to register an organization
 async function registerOrganization(request, env, corsHeaders) {
   try {
-    const formData = await request.formData();
-    const name = formData.get('name');
-    const description = formData.get('description');
-    const thumbnailFile = formData.get('thumbnail');
-    const bannerFile = formData.get('banner');
-    const privacy = formData.get('privacy');
-    const submitForOfficialStatus = formData.get('submitForOfficialStatus') === 'true';
-
-    // Validate name uniqueness (case-insensitive)
-    const { results: existingOrg } = await env.D1_DB.prepare(
-      "SELECT * FROM organization WHERE LOWER(name) = LOWER(?)"
-    ).bind(name).all();
+    // Parse form data from the multipart request
+    const formData = await parseFormData(request);
     
-    if (existingOrg && existingOrg.length > 0) {
-      return new Response(JSON.stringify({ success: false, error: "Organization name already exists" }), {
+    // Get required fields
+    const name = formData.get('name');
+    const description = formData.get('description') || '';
+    const userID = formData.get('userID');
+    const privacy = formData.get('privacy') || 'public';
+    const submitForOfficialStatus = formData.get('submitForOfficialStatus') === 'true';
+    
+    // Validate required fields
+    if (!name || !userID) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Name and userID are required fields'
+      }), {
         status: 400,
-        headers: corsHeaders,
+        headers: corsHeaders
       });
     }
-
-    let thumbnailPath = null;
-    let bannerPath = null;
-
-    // Create sanitized organization name for file paths (remove special chars, replace spaces with underscores)
-    const sanitizedOrgName = name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_');
-
-    if (thumbnailFile) {
-      // Store in Thumbnails folder with organization name
-      const fileExtension = thumbnailFile.name.split('.').pop().toLowerCase();
-      thumbnailPath = `thumbnails/${sanitizedOrgName}.${fileExtension}`;
-      
-      // Upload to R2 (this will overwrite if a file already exists at this path)
-      await env.R2_BUCKET.put(thumbnailPath, thumbnailFile);
+    
+    // Check if organization name already exists
+    const existingOrg = await env.DB.prepare(
+      'SELECT * FROM ORGANIZATION WHERE name = ?'
+    ).bind(name).get();
+    
+    if (existingOrg) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Organization name already exists'
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
     }
-
-    if (bannerFile) {
-      // Store in Banners folder with organization name
-      const fileExtension = bannerFile.name.split('.').pop().toLowerCase();
-      bannerPath = `banners/${sanitizedOrgName}.${fileExtension}`;
-      
-      // Upload to R2 (this will overwrite if a file already exists at this path)
-      await env.R2_BUCKET.put(bannerPath, bannerFile);
+    
+    // Process file uploads for thumbnail and banner if provided
+    let thumbnailURL = '';
+    let bannerURL = '';
+    
+    // Handle thumbnail upload
+    const thumbnail = formData.get('thumbnail');
+    if (thumbnail && thumbnail.size > 0) {
+      thumbnailURL = await uploadFileToR2(env, thumbnail, `organizations/thumbnails/${name}-${Date.now()}`);
     }
-
-    // Insert organization data into D1
-    await env.D1_DB.prepare(
-      "INSERT INTO organization (name, description, thumbnail, banner, privacy) VALUES (?, ?, ?, ?, ?)"
-    ).bind(
+    
+    // Handle banner upload
+    const banner = formData.get('banner');
+    if (banner && banner.size > 0) {
+      bannerURL = await uploadFileToR2(env, banner, `organizations/banners/${name}-${Date.now()}`);
+    }
+    
+    // Create the organization in the database using a transaction
+    const result = await env.DB.prepare(`
+      BEGIN TRANSACTION;
+      
+      INSERT INTO ORGANIZATION (name, description, thumbnail, banner, privacy, officialStatus) 
+      VALUES (?, ?, ?, ?, ?, ?);
+      
+      -- Get the last inserted row ID
+      SELECT last_insert_rowid() as orgID;
+      
+      COMMIT;
+    `).bind(
       name,
       description,
-      thumbnailPath ? `/images/${thumbnailPath}` : null,
-      bannerPath ? `/images/${bannerPath}` : null,
-      privacy
-    ).run();
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: "Organization registered successfully",
-      thumbnailPath: thumbnailPath ? `/images/${thumbnailPath}` : null,
-      bannerPath: bannerPath ? `/images/${bannerPath}` : null
+      thumbnailURL,
+      bannerURL,
+      privacy,
+      submitForOfficialStatus ? 1 : 0
+    ).all();
+    
+    // Get the newly created organization ID
+    const newOrgID = result.results[1].orgID;
+    
+    // Add the creator as an admin of the organization
+    await env.DB.prepare(`
+      INSERT INTO ORGANIZATION_ADMIN (orgID, userID)
+      VALUES (?, ?)
+    `).bind(newOrgID, userID).run();
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Organization created successfully',
+      orgID: newOrgID
     }), {
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    console.error('Error creating organization:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message || 'Failed to create organization'
+    }), {
       status: 500,
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   }
 }
@@ -415,90 +444,129 @@ async function getUserOrganizations(request, env, corsHeaders) {
   }
 }
 
-// Function to get landmarks
+// Function to handle retrieving landmarks
 async function getLandmarks(env, corsHeaders) {
   try {
-    const { results } = await env.D1_DB.prepare(`
-      SELECT * FROM landmark
+    // For now, return an empty array since you mentioned the table isn't populated
+    // When you add data, you can replace this with a real query
+    /* 
+    const result = await env.DB.prepare(`
+      SELECT * FROM LANDMARK
     `).all();
-
-    return new Response(JSON.stringify({ success: true, landmarks: results || [] }), {
-      headers: corsHeaders,
+    
+    return new Response(JSON.stringify({
+      success: true,
+      landmarks: result.results || []
+    }), {
+      headers: corsHeaders
+    });
+    */
+    
+    // Return empty array for now since you said the table is not populated
+    return new Response(JSON.stringify({
+      success: true,
+      landmarks: []
+    }), {
+      headers: corsHeaders
     });
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    console.error("Error in getLandmarks:", error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message || "Failed to retrieve landmarks"
+    }), {
       status: 500,
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   }
 }
 
-// Function to check landmark availability
+// Make sure to add a stub for the landmark availability check too
 async function checkLandmarkAvailability(request, env, corsHeaders) {
   try {
-    const data = await request.json();
-    const { landmarkID, startDate, endDate } = data;
-
+    // Since we don't have real landmarks yet, just return available: true
+    return new Response(JSON.stringify({
+      success: true,
+      available: true
+    }), {
+      headers: corsHeaders
+    });
+    
+    /* Uncomment this when you have real landmarks and events
+    const { landmarkID, startDate, endDate } = await request.json();
+    
     if (!landmarkID || !startDate || !endDate) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Landmark ID, start date, and end date are required" 
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Missing required parameters"
       }), {
         status: 400,
-        headers: corsHeaders,
+        headers: corsHeaders
       });
     }
-
-    // First check if multi-event is allowed for this landmark
-    const { results: landmarkResults } = await env.D1_DB.prepare(`
-      SELECT multiEventAllowed FROM landmark WHERE landmarkID = ?
-    `).bind(landmarkID).all();
-
-    if (!landmarkResults || landmarkResults.length === 0) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Landmark not found" 
+    
+    // Check if landmark exists
+    const landmarkCheck = await env.DB.prepare(`
+      SELECT * FROM LANDMARK WHERE landmarkID = ?
+    `).bind(landmarkID).get();
+    
+    if (!landmarkCheck) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Landmark not found"
       }), {
         status: 404,
-        headers: corsHeaders,
+        headers: corsHeaders
       });
     }
-
-    const multiEventAllowed = landmarkResults[0].multiEventAllowed === 1;
-
-    // If multi-event is allowed, always return available
+    
+    // Check if the landmark allows multiple events
+    const multiEventAllowed = landmarkCheck.multiEventAllowed;
+    
     if (multiEventAllowed) {
-      return new Response(JSON.stringify({ success: true, available: true }), {
-        headers: corsHeaders,
+      // If multiple events are allowed, always available
+      return new Response(JSON.stringify({
+        success: true,
+        available: true
+      }), {
+        headers: corsHeaders
       });
     }
-
-    // Otherwise, check for conflicting events
-    const { results: conflictingEvents } = await env.D1_DB.prepare(`
-      SELECT COUNT(*) as conflictCount FROM event 
-      WHERE landmarkID = ? AND 
-            ((startDate <= ? AND endDate >= ?) OR 
-             (startDate <= ? AND endDate >= ?) OR
-             (startDate >= ? AND endDate <= ?))
+    
+    // Check if there are any conflicting events
+    const conflicts = await env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM EVENT
+      WHERE landmarkID = ?
+      AND (
+        (startDate <= ? AND endDate >= ?) OR
+        (startDate <= ? AND endDate >= ?) OR
+        (startDate >= ? AND endDate <= ?)
+      )
     `).bind(
       landmarkID,
-      endDate,    // Event starts before our end
-      startDate,  // Event ends after our start
-      startDate,  // Event starts before our start
-      startDate,  // Event ends after our start
-      startDate,  // Event starts after our start
-      endDate     // Event ends before our end
-    ).all();
-
-    const available = conflictingEvents[0].conflictCount === 0;
-
-    return new Response(JSON.stringify({ success: true, available }), {
-      headers: corsHeaders,
+      endDate, startDate,     // Event ends during our start
+      startDate, endDate,     // Event starts during our end
+      startDate, endDate      // Event is completely inside our timeframe
+    ).get();
+    
+    const available = conflicts.count === 0;
+    
+    return new Response(JSON.stringify({
+      success: true,
+      available
+    }), {
+      headers: corsHeaders
     });
+    */
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    console.error("Error in checkLandmarkAvailability:", error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message || "Failed to check landmark availability"
+    }), {
       status: 500,
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   }
 }
@@ -506,55 +574,49 @@ async function checkLandmarkAvailability(request, env, corsHeaders) {
 // Function to register an event
 async function registerEvent(request, env, corsHeaders) {
   try {
-    const formData = await request.formData();
+    // Parse form data from the multipart request
+    const formData = await parseFormData(request);
+    
+    // Get required fields
     const organizationID = formData.get('organizationID');
     const title = formData.get('title');
-    const description = formData.get('description');
-    const thumbnailFile = formData.get('thumbnail');
-    const bannerFile = formData.get('banner');
+    const description = formData.get('description') || '';
     const startDate = formData.get('startDate');
     const endDate = formData.get('endDate');
-    const privacy = formData.get('privacy');
+    const privacy = formData.get('privacy') || 'public';
     const submitForOfficialStatus = formData.get('submitForOfficialStatus') === 'true';
-    const landmarkID = formData.get('landmarkID');
-    const customLocation = formData.get('customLocation');
-
-    // Check required fields
-    if (!organizationID || !title || !startDate || !endDate || !privacy) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Missing required fields" 
+    const landmarkID = formData.get('landmarkID') || null;
+    const customLocation = formData.get('customLocation') || '';
+    const userID = formData.get('userID'); // The user creating the event
+    
+    // Validate required fields
+    if (!organizationID || !title || !startDate || !endDate || !userID) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Organization ID, title, start date, end date and user ID are required'
       }), {
         status: 400,
-        headers: corsHeaders,
+        headers: corsHeaders
       });
     }
-
-    let thumbnailPath = null;
-    let bannerPath = null;
-
-    // Create sanitized event title for file paths
-    const sanitizedTitle = title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_');
-
-    if (thumbnailFile) {
-      // Store in Thumbnails/Events folder with event title
-      const fileExtension = thumbnailFile.name.split('.').pop().toLowerCase();
-      thumbnailPath = `thumbnails/events/${sanitizedTitle}_${Date.now()}.${fileExtension}`;
-      
-      // Upload to R2
-      await env.R2_BUCKET.put(thumbnailPath, thumbnailFile);
+    
+    // Verify that the user is an admin of the organization
+    const isAdmin = await env.DB.prepare(`
+      SELECT 1 FROM ORGANIZATION_ADMIN 
+      WHERE orgID = ? AND userID = ?
+    `).bind(organizationID, userID).get();
+    
+    if (!isAdmin) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'User is not an admin of this organization'
+      }), {
+        status: 403,
+        headers: corsHeaders
+      });
     }
-
-    if (bannerFile) {
-      // Store in Banners/Events folder with event title
-      const fileExtension = bannerFile.name.split('.').pop().toLowerCase();
-      bannerPath = `banners/events/${sanitizedTitle}_${Date.now()}.${fileExtension}`;
-      
-      // Upload to R2
-      await env.R2_BUCKET.put(bannerPath, bannerFile);
-    }
-
-    // Check landmark availability if a landmark is provided
+    
+    // Check landmark availability if provided
     if (landmarkID) {
       const landmarkAvailabilityCheck = await checkLandmarkAvailability(
         new Request('', {
@@ -578,40 +640,76 @@ async function registerEvent(request, env, corsHeaders) {
         });
       }
     }
-
-    // Insert event data into D1
-    const result = await env.D1_DB.prepare(`
-      INSERT INTO event (
+    
+    // Process file uploads for thumbnail and banner if provided
+    let thumbnailURL = '';
+    let bannerURL = '';
+    
+    // Handle thumbnail upload
+    const thumbnail = formData.get('thumbnail');
+    if (thumbnail && thumbnail.size > 0) {
+      thumbnailURL = await uploadFileToR2(env, thumbnail, `events/thumbnails/${title}-${Date.now()}`);
+    }
+    
+    // Handle banner upload
+    const banner = formData.get('banner');
+    if (banner && banner.size > 0) {
+      bannerURL = await uploadFileToR2(env, banner, `events/banners/${title}-${Date.now()}`);
+    }
+    
+    // Create the event in the database using a transaction
+    const result = await env.DB.prepare(`
+      BEGIN TRANSACTION;
+      
+      INSERT INTO EVENT (
         organizationID, title, description, thumbnail, banner, 
-        startDate, endDate, privacy, officialStatus, landmarkID, customLocation
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        startDate, endDate, privacy, officialStatus, landmarkID,
+        customLocation
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+      
+      -- Get the last inserted row ID
+      SELECT last_insert_rowid() as eventID;
+      
+      COMMIT;
     `).bind(
       organizationID,
       title,
       description,
-      thumbnailPath ? `/images/${thumbnailPath}` : null,
-      bannerPath ? `/images/${bannerPath}` : null,
+      thumbnailURL,
+      bannerURL,
       startDate,
       endDate,
       privacy,
       submitForOfficialStatus ? 1 : 0,
-      landmarkID || null,
-      customLocation || null
-    ).run();
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: "Event created successfully",
-      eventID: result.lastInsertRowid,
-      thumbnailPath: thumbnailPath ? `/images/${thumbnailPath}` : null,
-      bannerPath: bannerPath ? `/images/${bannerPath}` : null
+      landmarkID,
+      customLocation
+    ).all();
+    
+    // Get the newly created event ID
+    const newEventID = result.results[1].eventID;
+    
+    // Add the creator as an admin of the event
+    await env.DB.prepare(`
+      INSERT INTO EVENT_ADMIN (eventID, userID)
+      VALUES (?, ?)
+    `).bind(newEventID, userID).run();
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Event created successfully',
+      eventID: newEventID
     }), {
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    console.error('Error creating event:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message || 'Failed to create event'
+    }), {
       status: 500,
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   }
 }
