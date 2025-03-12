@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // Import useLocation
 import './Header.css';
 import { ReactComponent as Calendar } from '../icons/calendar-plus-regular.svg';
 import { ReactComponent as Flag } from '../icons/flag-solid.svg';
@@ -12,9 +12,12 @@ import { useAuth } from '../context/AuthContext';
 function Header() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // Get current location
+  const isHomePage = location.pathname === '/'; // Check if we're on home page
 
   return (
-    <div className='header-container'>
+    // Apply conditional class based on page
+    <div className={isHomePage ? "header-container fixed" : "header-container static"}>
       <header>
         <div className="logo">
           <Link to="/">

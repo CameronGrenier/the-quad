@@ -1,13 +1,25 @@
+/* Base header container styling */
 .header-container {
-    position: fixed;
-    top: 0px;
-    left: 0;
     width: 100%;
     height: fit-content;
     background-color: #ffffff00;
     z-index: 1000;
-  }
+}
 
+/* Fixed positioning for homepage only */
+.header-container.fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+/* Static positioning for other pages */
+.header-container.static {
+    position: relative;
+    margin-bottom: 20px; /* Add some space below the header */
+}
+
+/* Rest of your header styles remain the same */
 header {
   display: flex;
   justify-content: space-between;
