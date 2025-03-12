@@ -1,0 +1,266 @@
+.location-map-container {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.map-search-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+/* Updated search input styling for better readability */
+.map-search-input {
+  width: 100%;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.25); /* Lighter background */
+  color: #b794f4; /* Purple text color */
+  font-size: 15px;
+  font-weight: 500; /* Slightly bolder */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.map-search-input::placeholder {
+  color: rgba(183, 148, 244, 0.6); /* Lighter purple for placeholder */
+}
+
+.map-search-input:focus {
+  outline: none;
+  border-color: rgba(125, 55, 160, 0.8);
+  box-shadow: 0 0 0 2px rgba(192, 86, 33, 0.4);
+  background: rgba(255, 255, 255, 0.35); /* Slightly lighter when focused */
+}
+
+/* More forceful styling for Google Maps search input */
+.map-search-input,
+input.map-search-input,
+.map-search-input.pac-target-input {
+  width: 100% !important;
+  padding: 10px 15px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #b794f4 !important; /* Purple text color */
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Target placeholder text specifically */
+.map-search-input::placeholder,
+input.map-search-input::placeholder,
+.map-search-input.pac-target-input::placeholder {
+  color: rgba(183, 148, 244, 0.6) !important;
+  opacity: 1 !important;
+}
+
+/* Target the text being typed */
+.map-search-input,
+input.map-search-input,
+.map-search-input.pac-target-input {
+  color: #b794f4 !important;
+}
+
+/* Focus state needs to be forceful too */
+.map-search-input:focus,
+input.map-search-input:focus,
+.map-search-input.pac-target-input:focus {
+  outline: none !important;
+  border-color: rgba(125, 55, 160, 0.8) !important;
+  box-shadow: 0 0 0 2px rgba(192, 86, 33, 0.4) !important;
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Additional selector to increase specificity for Chrome */
+input[type="text"].map-search-input {
+  color: #b794f4 !important;
+}
+
+.selected-location-info {
+  margin-top: 10px;
+  padding: 12px;
+  background: rgba(50, 30, 90, 0.85);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(125, 55, 160, 0.3);
+  color: white;
+}
+
+.location-name {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 6px;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.location-address {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
+}
+
+/* Error state */
+.map-error-container {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(76, 40, 137, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 15px;
+}
+
+.map-error-message {
+  text-align: center;
+  padding: 20px;
+}
+
+.map-error-message h3 {
+  color: #ff8080;
+  margin-bottom: 10px;
+}
+
+.map-error-message p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Loading state */
+.map-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(30, 15, 60, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+}
+
+.map-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  border-top-color: rgba(192, 86, 33, 1);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.map-loading-overlay p {
+  color: white;
+  font-weight: 500;
+}
+
+/* Style for Google Maps autocomplete dropdown - these may not always work due to Google's styling restrictions */
+.pac-container {
+  background-color: rgba(50, 30, 90, 0.95) !important;
+  border: 1px solid rgba(125, 55, 160, 0.5) !important;
+  border-radius: 0 0 8px 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  font-family: inherit !important;
+  margin-top: 2px !important;
+}
+
+.pac-item {
+  padding: 10px !important;
+  color: white !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.pac-item:hover {
+  background-color: rgba(125, 55, 160, 0.6) !important;
+}
+
+.pac-item-query {
+  color: white !important;
+}
+
+.pac-matched {
+  color: #ff9966 !important;
+  font-weight: bold !important;
+}
+
+.pac-icon {
+  filter: brightness(2.5) !important;
+}
+
+/* Override Google Maps controls text color */
+
+/* Map type controls (Map/Satellite) */
+.gm-style-mtc button,
+.gm-style-mtc div,
+.gm-style-mtc label,
+.gm-style-mtc span {
+  color: #000000 !important;
+  font-weight: 500 !important;
+}
+
+/* Info window text */
+.gm-style .gm-style-iw-c,
+.gm-style .gm-style-iw-d,
+.gm-style .gm-style-iw-t {
+  color: #000000 !important;
+}
+
+/* Title in info windows */
+.gm-title,
+.gm-style .gm-style-iw-c .gm-title,
+div[class*="gm-title"],
+.gm-full-width {
+  color: #000000 !important;
+  font-weight: bold !important;
+  text-shadow: none !important;
+}
+
+/* All text within info windows */
+.gm-style-iw-d div,
+.gm-style-iw-d span,
+.gm-style-iw-d p {
+  color: #000000 !important;
+}
+
+/* Ensure popups and their contents have black text */
+.gm-style div[role="dialog"],
+.gm-style div[role="dialog"] div,
+.gm-style div[role="dialog"] span,
+.gm-style div[role="dialog"] p {
+  color: #000000 !important;
+}
+
+/* For map controls like zoom, street view, etc. */
+.gm-control-active,
+.gm-svpc,
+.gmnoprint div {
+  color: #000000 !important;
+}
+
+/* Fix any other white text that might appear */
+.gm-style .gm-style-cc span,
+.gm-style .gm-style-cc a {
+  color: #000000 !important;
+}

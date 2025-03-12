@@ -230,6 +230,16 @@ export default {
         return await getDatabaseSchema(env, corsHeaders);
       }
       
+      // For organization details
+      if (url.pathname.match(/^\/api\/organizations\/\d+$/)) {
+        return getOrganization(request, env, corsHeaders);
+      }
+
+      // For organization events
+      if (url.pathname.match(/^\/api\/organizations\/\d+\/events$/)) {
+        return getOrganizationEvents(request, env, corsHeaders);
+      }
+
       // Default response for unknown routes
       return new Response(JSON.stringify({ error: "Not found" }), {
         status: 404,
@@ -1197,3 +1207,163 @@ async function getUserProfile(request, env, corsHeaders) {
     });
   }
 }
+
+// Add these new handler functions
+
+// Function to get a specific organization by ID
+async function getOrganization(request, env, corsHeaders) {
+  try {
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const orgId = pathParts[pathParts.length - 1]; // Get the last part of the URL path
+
+    if (!orgId) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Organization ID is required"
+      }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    // Get organization details
+    const org = await env.D1_DB.prepare(`
+      SELECT * FROM ORGANIZATION WHERE orgID = ?
+    `).bind(orgId).first();
+
+    if (!org) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Organization not found"
+      }), {
+        status: 404,
+        headers: corsHeaders,
+      });
+    }
+
+    // Get admins for this organization
+    const { results: admins } = await env.D1_DB.prepare(`
+      SELECT u.userID as id, u.username, u.email, u.f_name, u.l_name 
+      FROM USERS u
+      JOIN ORG_ADMIN oa ON u.userID = oa.userID
+      WHERE oa.orgID = ?
+    `).bind(orgId).all();
+
+    // Get member count
+    const memberCount = await env.D1_DB.prepare(`
+      SELECT COUNT(*) as count FROM ORG_MEMBER WHERE orgID = ?
+    `).bind(orgId).first();
+
+    // Include admins in the organization data
+    const organizationData = {
+      ...org,
+      admins: admins || [],
+      memberCount: memberCount?.count || 0
+    };
+
+    return new Response(JSON.stringify({
+      success: true,
+      organization: organizationData
+    }), {
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: corsHeaders,
+    });
+  }
+}
+
+// Function to get events for a specific organization
+async function getOrganizationEvents(request, env, corsHeaders) {
+  try {
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    // The orgId should be the second to last part in /organizations/[orgId]/events
+    const orgId = pathParts[pathParts.length - 2];
+
+    if (!orgId) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Organization ID is required"
+      }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    // Get events for this organization
+    const { results: events } = await env.D1_DB.prepare(`
+      SELECT e.*, o.name as organizationName, o.thumbnail as organizationThumbnail
+      FROM EVENT e
+      JOIN ORGANIZATION o ON e.organizationID = o.orgID
+      WHERE e.organizationID = ?
+      ORDER BY e.startDate ASC
+    `).bind(orgId).all();
+
+    return new Response(JSON.stringify({
+      success: true,
+      events: events || []
+    }), {
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: corsHeaders,
+    });
+  }
+}
+
+// This goes in your backend worker.js file, NOT in App.js
+
+// Function to get all organizations
+async function getAllOrganizations(request, env, corsHeaders) {
+  try {
+    // Get all organizations with member counts
+    const { results: organizations } = await env.D1_DB.prepare(`
+      SELECT o.*,
+             COUNT(om.userID) as memberCount
+      FROM ORGANIZATION o
+      LEFT JOIN ORG_MEMBER om ON o.orgID = om.orgID
+      GROUP BY o.orgID
+      ORDER BY o.name ASC
+    `).all();
+
+    return new Response(JSON.stringify({
+      success: true,
+      organizations: organizations || []
+    }), {
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: corsHeaders,
+    });
+  }
+}
+
+// In your fetch event handler, add this routing:
+// Example:
+addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  
+  // Handle organization listing endpoint
+  if (url.pathname === '/api/organizations') {
+    event.respondWith(getAllOrganizations(event.request, env, corsHeaders));
+  }
+  
+  // Your other route handlers...
+});

@@ -11,6 +11,9 @@ worker/
 .env
 .dev.vars
 .env.local
+.env.development
+.env.test
+.env.production
 
 # Local development
 .wrangler/

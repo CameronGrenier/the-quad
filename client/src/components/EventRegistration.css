@@ -330,3 +330,261 @@
   padding: 8px;
   border-radius: 4px;
 }
+
+/* Import the custom select styles if they're not already in this file */
+
+/* If you have a separate EventRegistration.css, copy these styles from OrganizationRegistration.css */
+/* Custom dropdown styling with animated gradient */
+
+/* Hide the native select element but keep it in the DOM for form functionality */
+.custom-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-container select {
+  display: none; /* Hide the native select */
+}
+
+/* The custom dropdown button */
+.custom-select-button {
+  width: 100%;
+  padding: 12px 35px 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 16px;
+  background: rgba(76, 40, 137, 0.8);
+  color: white;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Arrow icon */
+.custom-select-button::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid white;
+  transition: transform 0.3s;
+}
+
+/* Rotate arrow when dropdown is open */
+.custom-select-button.open::after {
+  transform: rotate(180deg);
+}
+
+.custom-select-button:hover {
+  background-color: rgba(92, 50, 168, 0.9);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+/* The dropdown menu */
+.custom-select-dropdown {
+  position: absolute;
+  width: 100%;
+  top: 100%;
+  left: 0;
+  margin-top: 5px;
+  background: rgba(50, 30, 90, 0.95);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  max-height: 0;
+  transition: max-height 0.3s ease;
+}
+
+.custom-select-dropdown.open {
+  max-height: 200px;
+}
+
+/* Each option in the dropdown */
+.custom-select-option {
+  padding: 12px 15px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.3s, text-shadow 0.3s;
+  z-index: 1; /* Ensure text remains above the gradient */
+}
+
+/* Selected option */
+.custom-select-option.selected {
+  font-weight: bold;
+  background: rgba(76, 40, 137, 0.4);
+}
+
+/* The gradient overlay for hover effect - softer version */
+.custom-select-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%; /* Start further off-screen to the left */
+  width: 120%; /* Make wider than the container */
+  height: 100%;
+  /* Use a more complex gradient for softer edges */
+  background: linear-gradient(
+    to right,
+    rgba(76, 40, 137, 0) 0%,
+    rgba(76, 40, 137, 0.7) 10%,
+    rgba(125, 55, 160, 0.8) 30%,
+    rgba(192, 86, 33, 0.9) 70%,
+    rgba(192, 86, 33, 0.7) 90%,
+    rgba(192, 86, 33, 0) 100%
+  );
+  opacity: 0;
+  z-index: -1;
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  /* Add a slight blur effect for even softer edges */
+  filter: blur(3px);
+}
+
+/* Animate the gradient in from left on hover */
+.custom-select-option:hover::before {
+  left: 0;
+  opacity: 1;
+}
+
+/* Add a subtle glow effect when hovering */
+.custom-select-option:hover {
+  color: white;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+/* Add some extra styling for dropdowns with many options */
+.custom-select-dropdown.open {
+  overflow-y: auto;
+  max-height: 200px; /* Adjust as needed */
+}
+
+/* Scrollbar styling for the dropdown */
+.custom-select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-track {
+  background: rgba(30, 15, 60, 0.5);
+  border-radius: 3px;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(125, 55, 160, 0.8);
+  border-radius: 3px;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(192, 86, 33, 0.8);
+}
+
+/* Simplified Location Type Buttons */
+
+.location-type-container {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.location-type-button {
+  flex: 1;
+  position: relative;
+}
+
+.location-type-button input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+}
+
+.location-type-button label {
+  display: block;
+  padding: 12px 15px;
+  text-align: center;
+  background: rgba(76, 40, 137, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.location-type-button label:hover {
+  background: rgba(92, 50, 168, 0.6);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Selected state - orange highlight */
+.location-type-button input[type="radio"]:checked + label {
+  background: linear-gradient(145deg, rgba(76, 40, 137, 0.8), rgba(192, 86, 33, 0.8));
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(192, 86, 33, 0.4);
+  color: white;
+  font-weight: 500;
+}
+
+/* Focus state for accessibility */
+.location-type-button input[type="radio"]:focus + label {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive adjustment */
+@media (max-width: 480px) {
+  .location-type-container {
+    flex-direction: column;
+  }
+}
+
+/* Manual location entry styling */
+.manual-location-entry {
+  margin-top: 10px;
+}
+
+.sublabel {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+.manual-location-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+}
+
+.manual-location-input:focus {
+  outline: none;
+  border-color: rgba(125, 55, 160, 0.8);
+  box-shadow: 0 0 0 2px rgba(192, 86, 33, 0.4);
+}
+
+/* Location search input styling */
+.location-search-container {
+  margin-bottom: 12px;
+}
+
+.location-search-input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+}
+
+.location-search-input:focus {
+  outline: none;
+  border-color: rgba(125, 55, 160, 0.8);
+  box-shadow: 0 0 0 2px rgba(192, 86, 33, 0.4);
+}

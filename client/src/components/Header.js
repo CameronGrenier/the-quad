@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // Import useLocation
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Header.css';
 import { ReactComponent as Calendar } from '../icons/calendar-plus-regular.svg';
 import { ReactComponent as Flag } from '../icons/flag-solid.svg';
@@ -7,16 +7,32 @@ import { ReactComponent as Fire } from '../icons/fire-solid.svg';
 import { ReactComponent as Account } from '../icons/user-solid.svg';
 import { ReactComponent as Search } from '../icons/magnifying-glass-solid.svg';
 import { ReactComponent as Organization } from '../icons/people-group-solid.svg';
+import { ReactComponent as MyOrganization } from '../icons/user-group-solid.svg';
 import { useAuth } from '../context/AuthContext';
 
 function Header() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation(); // Get current location
-  const isHomePage = location.pathname === '/'; // Check if we're on home page
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+  const [exploreOpen, setExploreOpen] = useState(false);
+  const exploreRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exploreRef.current && !exploreRef.current.contains(event.target)) {
+        setExploreOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
-    // Apply conditional class based on page
     <div className={isHomePage ? "header-container fixed" : "header-container static"}>
       <header>
         <div className="logo">
@@ -25,27 +41,43 @@ function Header() {
           </Link>
         </div>
         <nav>
+          {/* Navigation list removed as requested */}
           <div className="nav-item">
             <Organization />
-            <Link to="/register-organization">Create Organization</Link>
+            <Link to="/register-organization">Create Group</Link>
           </div>
           <div className="nav-item">
             <Calendar />
             <Link to="/register-event">Create Event</Link>
           </div>
+          
+          {/* Explore dropdown - replacing search bar */}
+          <div className="nav-item dropdown" ref={exploreRef}>
+            <div className="dropdown-trigger" onClick={() => setExploreOpen(!exploreOpen)}>
+              <Fire />
+              <span>Explore</span>
+            </div>
+            {exploreOpen && (
+              <div className="dropdown-menu">
+                <Link to="/organizations" className="dropdown-item" onClick={() => setExploreOpen(false)}>
+                  <Organization />
+                  <span>Explore Organizations</span>
+                </Link>
+                <Link to="/events" className="dropdown-item" onClick={() => setExploreOpen(false)}>
+                  <Calendar />
+                  <span>Explore Events</span>
+                </Link>
+              </div>
+            )}
+          </div>
+          
           <div className="nav-item">
             <Flag />
             <Link to="/my-events">My Events</Link>
           </div>
           <div className="nav-item">
-            <Fire />
-            <Link to="/featured">Featured</Link>
-          </div>
-          {/* Search bar */}
-          <div className="search-container">
-            <Search className='search-icon'/>
-            <input type="text" placeholder=""/>
-            <button type="submit">Search</button>
+            <MyOrganization />
+            <Link to="/my-organizations">My Groups</Link>
           </div>
         </nav>
         

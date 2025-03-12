@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'; // Add this import
 import DatePicker from 'react-datepicker';
 import { useAuth } from '../context/AuthContext';
 import 'react-datepicker/dist/react-datepicker.css';
 import './EventRegistration.css';
+import CustomSelect from './CustomSelect';
+import LocationMap from './LocationMap';
 
 // Define the API URL using environment variables
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
@@ -18,6 +20,7 @@ function EventRegistration() {
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false); // Add this line
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false); // Add this line
   
   const [formData, setFormData] = useState({
     organizationID: '',
@@ -31,10 +34,15 @@ function EventRegistration() {
     submitForOfficialStatus: false,
     landmarkID: '',
     customLocation: '',
+    customLocationData: null,
+    locationType: 'landmark', // Add this line
   });
   
   const [errors, setErrors] = useState({});
   const [useCustomLocation, setUseCustomLocation] = useState(true);
+
+  // Add this inside your component before the return statement
+  const locationSearchRef = useRef(null);
 
   // Update the useEffect to set loading to false properly
   useEffect(() => {
@@ -185,6 +193,21 @@ function EventRegistration() {
     }
   };
 
+  // Add a handler for location selection from the map
+  const handleLocationSelect = (locationData) => {
+    setFormData(prev => ({
+      ...prev,
+      customLocation: locationData.address, // Use the full address here
+      customLocationData: locationData
+    }));
+    
+    // Clear any location errors when a new location is selected
+    if (errors.customLocation) {
+      setErrors(prev => ({ ...prev, customLocation: '' }));
+    }
+  };
+
+  // Update the validateForm function
   const validateForm = () => {
     let tempErrors = {};
     
@@ -201,22 +224,23 @@ function EventRegistration() {
       tempErrors.date = 'End time must be after start time';
     }
     
-    // If not using custom location and no landmark selected
-    if (!useCustomLocation && !formData.landmarkID) {
-      tempErrors.landmarkID = 'Please select a landmark';
+    // Location validation based on location type
+    if (formData.locationType === 'landmark') {
+      if (!formData.landmarkID) {
+        tempErrors.landmarkID = 'Please select a landmark';
+      }
+      
+      // If landmark is selected but not available
+      if (formData.landmarkID && !landmarkAvailable) {
+        tempErrors.landmarkID = 'This landmark is not available during the selected time period';
+      }
+    } else if (formData.locationType === 'custom') {
+      if (!formData.customLocation.trim()) {
+        tempErrors.customLocation = 'Location is required';
+      }
     }
     
-    // If using custom location but no location provided
-    if (useCustomLocation && !formData.customLocation.trim()) {
-      tempErrors.customLocation = 'Location is required';
-    }
-    
-    // If landmark is selected but not available
-    if (!useCustomLocation && formData.landmarkID && !landmarkAvailable) {
-      tempErrors.landmarkID = 'This landmark is not available during the selected time period';
-    }
-    
-    // If submitting for official status
+    // Check for official status requirements
     if (formData.submitForOfficialStatus) {
       if (!formData.thumbnail) {
         tempErrors.thumbnail = 'Thumbnail is required for official status';
@@ -264,26 +288,41 @@ function EventRegistration() {
         submitData.append('banner', formData.banner);
       }
       
-      // Add location data
-      if (useCustomLocation) {
-        submitData.append('customLocation', formData.customLocation);
-        submitData.append('landmarkID', '');
-      } else {
+      // Update the location data submission
+      if (formData.locationType === 'landmark') {
         submitData.append('landmarkID', formData.landmarkID);
         submitData.append('customLocation', '');
+        submitData.append('locationType', 'landmark');
+      } else {
+        submitData.append('landmarkID', '');
+        submitData.append('customLocation', formData.customLocation);
+        submitData.append('locationType', 'custom');
+        
+        // Add detailed location data if available
+        if (formData.customLocationData) {
+          submitData.append('locationAddress', formData.customLocationData.address);
+          submitData.append('locationLatitude', formData.customLocationData.coordinates.lat);
+          submitData.append('locationLongitude', formData.customLocationData.coordinates.lng);
+        }
       }
       
       // Submit the form
-      const response = await fetch(`${API_URL}/api/register-event`, {
+      const response = await fetch(`${API_URL}/api/events`, {
         method: 'POST',
         body: submitData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
       });
       
       const result = await response.json();
       
       if (result.success) {
-        alert('Event created successfully!');
-        navigate('/'); // Redirect to homepage or events page
+        setShowSuccessPopup(true); // Show success popup
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+          navigate('/'); // Redirect to homepage or events page
+        }, 3000); // Hide popup after 3 seconds
       } else {
         setApiError(`Failed to create event: ${result.error}`);
       }
@@ -342,19 +381,30 @@ function EventRegistration() {
           </div>
         )}
         
+        {/* Success popup */}
+        {showSuccessPopup && (
+          <div className="success-popup">
+            <div className="success-content">
+              <div className="success-icon">✓</div>
+              <h3>Event Created!</h3>
+              <p>Your event has been created successfully.</p>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Organization:</label>
-            <select
+            <CustomSelect
               name="organizationID"
               value={formData.organizationID}
               onChange={handleChange}
-              required
-            >
-              {organizations.map(org => (
-                <option key={org.orgID} value={org.orgID}>{org.name}</option>
-              ))}
-            </select>
+              options={organizations.map(org => ({
+                value: org.id || org.organizationID,
+                label: org.name
+              }))}
+              placeholder="Select an organization"
+            />
             {errors.organizationID && <p className="error">{errors.organizationID}</p>}
           </div>
           
@@ -430,63 +480,54 @@ function EventRegistration() {
             {errors.date && <p className="error">{errors.date}</p>}
           </div>
           
-          <div className="form-group checkbox-group">
+          {/* Location type selection - simplified with just Landmark and Custom options */}
+          <div className="form-group">
             <label>Location Type:</label>
-            <div className="radio-options">
-              <div className="radio-option">
-                <input
-                  type="radio"
-                  id="customLocation"
-                  name="locationType"
-                  checked={useCustomLocation}
-                  onChange={() => setUseCustomLocation(true)}
+            <div className="location-type-container">
+              <div className="location-type-button">
+                <input 
+                  type="radio" 
+                  id="landmark" 
+                  name="locationType" 
+                  value="landmark"
+                  checked={formData.locationType === 'landmark'}
+                  onChange={handleChange}
                 />
-                <label htmlFor="customLocation">Custom Location</label>
+                <label htmlFor="landmark">
+                  <span className="location-type-text">Campus Landmark</span>
+                </label>
               </div>
-              <div className="radio-option">
-                <input
-                  type="radio"
-                  id="campusLocation"
-                  name="locationType"
-                  checked={!useCustomLocation}
-                  onChange={() => setUseCustomLocation(false)}
+              
+              <div className="location-type-button">
+                <input 
+                  type="radio" 
+                  id="custom" 
+                  name="locationType" 
+                  value="custom"
+                  checked={formData.locationType === 'custom'}
+                  onChange={handleChange}
                 />
-                <label htmlFor="campusLocation">Campus Landmark</label>
+                <label htmlFor="custom">
+                  <span className="location-type-text">Custom Location</span>
+                </label>
               </div>
             </div>
           </div>
           
-          {useCustomLocation ? (
-            <div className="form-group">
-              <label>Location:</label>
-              <input
-                type="text"
-                name="customLocation"
-                value={formData.customLocation}
-                onChange={handleChange}
-                placeholder="Enter location details"
-              />
-              {errors.customLocation && <p className="error">{errors.customLocation}</p>}
-            </div>
-          ) : (
+          {/* Conditional rendering based on location type selection */}
+          {formData.locationType === 'landmark' ? (
             <div className="form-group">
               <label>Select Landmark:</label>
-              <select
+              <CustomSelect
                 name="landmarkID"
                 value={formData.landmarkID}
                 onChange={handleChange}
-              >
-                <option value="">-- Select a landmark --</option>
-                {landmarks.length === 0 ? (
-                  <option value="" disabled>No landmarks available</option>
-                ) : (
-                  landmarks.map(landmark => (
-                    <option key={landmark.landmarkID} value={landmark.landmarkID}>
-                      {landmark.name}
-                    </option>
-                  ))
-                )}
-              </select>
+                options={landmarks.map(landmark => ({
+                  value: landmark.id || landmark.landmarkID,
+                  label: landmark.name
+                }))}
+                placeholder="Select a campus location"
+              />
               {landmarks.length === 0 && (
                 <p className="info-message">No campus landmarks are currently available. Please use a custom location.</p>
               )}
@@ -495,19 +536,41 @@ function EventRegistration() {
               )}
               {errors.landmarkID && <p className="error">{errors.landmarkID}</p>}
             </div>
+          ) : (
+            <div className="form-group">
+              <label>Location:</label>
+              <div className="location-search-container">
+                <input
+                  ref={locationSearchRef}
+                  type="text"
+                  name="customLocation"
+                  value={formData.customLocation}
+                  onChange={handleChange}
+                  placeholder="Search for or enter a location"
+                  className="form-input location-search-input"
+                />
+              </div>
+              <LocationMap 
+                onLocationSelect={handleLocationSelect} 
+                initialLocation={formData.customLocationData?.coordinates}
+                searchInputRef={locationSearchRef}
+              />
+              {errors.customLocation && <p className="error">{errors.customLocation}</p>}
+            </div>
           )}
           
           <div className="form-group">
             <label>Privacy:</label>
-            <select
+            <CustomSelect
               name="privacy"
               value={formData.privacy}
               onChange={handleChange}
-            >
-              <option value="public">Public - Anyone can view and join</option>
-              <option value="organization">Organization - Only members can view and join</option>
-              <option value="private">Private - Invitation only</option>
-            </select>
+              options={[
+                { value: 'public', label: 'Public' },
+                { value: 'organization', label: 'Organization' },
+                { value: 'private', label: 'Private' }
+              ]}
+            />
           </div>
           
           <div className="form-group checkbox-group">

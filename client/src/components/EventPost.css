@@ -1,0 +1,211 @@
+.event-post {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.event-post:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Post header with org info */
+.event-post-header {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.event-post-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 12px;
+  background: linear-gradient(to bottom right, #4c2889, #c05621);
+}
+
+.event-post-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.event-org-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+}
+
+.event-post-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.event-org-name {
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  margin-bottom: 3px;
+}
+
+.event-org-name:hover {
+  text-decoration: underline;
+}
+
+.event-timestamp {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.event-time-remaining {
+  background: linear-gradient(to right, rgba(76, 40, 137, 0.8), rgba(192, 86, 33, 0.8));
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: white;
+  font-weight: 600;
+}
+
+/* Event title */
+.event-post-title {
+  padding: 15px 15px 0;
+  margin: 0;
+  font-size: 22px;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.event-post-link {
+  text-decoration: none;
+}
+
+.event-post-link:hover .event-post-title {
+  text-decoration: underline;
+}
+
+/* Event details */
+.event-post-details {
+  padding: 10px 15px;
+}
+
+.event-date-location {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.event-date, .event-location {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.event-date i, .event-location i {
+  margin-right: 6px;
+  color: #7c4dff;
+}
+
+/* Event image */
+.event-post-image {
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.event-post-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.event-post:hover .event-post-image img {
+  transform: scale(1.05);
+}
+
+/* Event description */
+.event-post-content {
+  padding: 15px;
+}
+
+.event-description {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
+/* Event actions */
+.event-post-actions {
+  display: flex;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+}
+
+.event-action-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+}
+
+.event-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.rsvp-btn {
+  color: #7c4dff;
+}
+
+.rsvp-btn:hover {
+  background-color: rgba(124, 77, 255, 0.1);
+}
+
+/* Responsive styles */
+@media (max-width: 600px) {
+  .event-post-header {
+    flex-wrap: wrap;
+  }
+  
+  .event-time-remaining {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+  
+  .event-post-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .event-action-btn {
+    flex: auto;
+    min-width: 45%;
+  }
+}

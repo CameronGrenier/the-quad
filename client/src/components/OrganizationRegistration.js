@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './OrganizationRegistration.css';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import CustomSelect from './CustomSelect';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -272,14 +273,15 @@ function OrganizationRegistration() {
           </div>
           <div className="form-group">
             <label>Privacy:</label>
-            <select
+            <CustomSelect
               name="privacy"
               value={formData.privacy}
               onChange={handleChange}
-            >
-              <option value="public">Public</option>
-              <option value="private">Admin Invite Only</option>
-            </select>
+              options={[
+                { value: 'public', label: 'Public' },
+                { value: 'private', label: 'Admin Invite Only' }
+              ]}
+            />
           </div>
           <div className="form-group checkbox-group">
             <label htmlFor="submitForOfficialStatus">Submit for Official Status</label>

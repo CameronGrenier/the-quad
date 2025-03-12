@@ -76,7 +76,18 @@ padding: 0.5rem;
       margin-right: 0;
     }
 
+/* Special styling for dropdown nav items to remove the gray background */
+.nav-item.dropdown {
+  background-color: transparent;
+  padding: 0;
+  margin-right: 1.5rem;
+  width: auto; /* Let the dropdown-trigger control the width */
+}
 
+/* Make sure hover doesn't add background */
+.nav-item.dropdown:hover {
+  background-color: transparent;
+}
 
   .nav-item svg {
     width: 20px;
@@ -203,4 +214,158 @@ padding: 0.5rem;
 .account-link:hover .account {
   transform: scale(1.1);
   transition: transform 0.2s ease;
+}
+
+/* Add these styles to Header.css for the dropdown */
+
+.dropdown {
+  position: relative;
+}
+
+/* Updated styling for dropdown trigger button with glint animation */
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center content horizontally */
+  gap: 8px;
+  cursor: pointer;
+  color: white;
+  font-weight: 600;
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: linear-gradient(to right, rgba(76, 40, 137, 0.8), rgba(192, 86, 33, 0.8));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  width: 140px; /* Make the button wider */
+  position: relative;
+  overflow: hidden; /* Ensure the glint doesn't go outside the button */
+}
+
+/* Add the light glint element */
+.dropdown-trigger::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 70px;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.1s;
+}
+
+/* Trigger the glint animation on hover */
+.dropdown-trigger:hover::after {
+  opacity: 1;
+  animation: glint 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Glint animation keyframes */
+@keyframes glint {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 200%; /* Move beyond the right edge */
+  }
+}
+
+/* Make sure the icon in the dropdown trigger is white */
+.dropdown-trigger svg {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.5rem;
+  fill: white !important; /* Override the default icon color */
+  position: relative; /* Make sure the SVG is above the glint effect */
+  z-index: 2;
+}
+
+/* Keep text above the glint effect */
+.dropdown-trigger span {
+  position: relative;
+  z-index: 2;
+}
+
+/* Add subtle scaling on hover for more interactivity */
+.dropdown-trigger:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Solid background for the dropdown menu */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 5px;
+  background: rgba(50, 30, 90, 0.95);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  min-width: 200px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dropdown items with animated gradient hover effect */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 15px;
+  text-decoration: none;
+  color: white;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Animated gradient overlay for dropdown items */
+.dropdown-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%; /* Start off-screen to the left */
+  width: 120%; /* Make wider than the container */
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(76, 40, 137, 0) 0%,
+    rgba(76, 40, 137, 0.7) 10%,
+    rgba(125, 55, 160, 0.8) 30%,
+    rgba(192, 86, 33, 0.9) 70%,
+    rgba(192, 86, 33, 0.7) 90%,
+    rgba(192, 86, 33, 0) 100%
+  );
+  opacity: 0;
+  z-index: -1;
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  filter: blur(3px);
+}
+
+/* Animate the gradient in from left on hover */
+.dropdown-item:hover::before {
+  left: 0;
+  opacity: 1;
+}
+
+/* Add a subtle glow effect when hovering */
+.dropdown-item:hover {
+  color: white;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.dropdown-item svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
 }

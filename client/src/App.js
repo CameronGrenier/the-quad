@@ -9,7 +9,9 @@ import EventDetails from './components/EventDetails';
 import EventRegistration from './components/EventRegistration';
 import Questionnaire from './components/Questionnaire';
 import OrganizationRegistration from './components/OrganizationRegistration';
-import Profile from './components/Profile'; // We'll create this next
+import Profile from './components/Profile';
+import OrganizationPage from './components/OrganizationPage';
+import OrganizationList from './components/OrganizationList';
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
@@ -29,6 +31,8 @@ function App() {
             <Route path="/register-organization" element={<OrganizationRegistration />} /> 
             <Route path="/questionnaire" element={<Questionnaire />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/organizations" element={<OrganizationList />} />
+            <Route path="/organizations/:orgId" element={<OrganizationPage />} />
           </Routes>
         </main>
       </Router>
