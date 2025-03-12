@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './OrganizationList.css';
+import ImageLoader from './ImageLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -10,6 +11,30 @@ function OrganizationList() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all'); // 'all', 'public', 'private'
+
+  // Update the formatImageUrl function to handle banner paths correctly
+  const formatImageUrl = (url, isBackground = false) => {
+    if (!url) return null;
+    
+    // Return null for empty strings
+    if (url === '') return null;
+    
+    // If URL is already absolute (starts with http or https)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      // For direct R2 URLs, extract the proper path
+      if (url.includes('r2.cloudflarestorage.com')) {
+        // Extract everything after "/images/" including subdirectories
+        const pathMatch = url.match(/\/images\/(.+)$/);
+        if (pathMatch && pathMatch[1]) {
+          return `${API_URL}/images/${pathMatch[1]}`;
+        }
+      }
+      return url;
+    }
+    
+    // Otherwise, route through our API
+    return `${API_URL}/images/${url}`;
+  };
 
   useEffect(() => {
     async function fetchOrganizations() {
@@ -24,6 +49,7 @@ function OrganizationList() {
         const data = await response.json();
         
         if (data.success) {
+          console.log("Fetched organizations:", data.organizations);
           setOrganizations(data.organizations);
         } else {
           throw new Error(data.error || 'Failed to load organizations');
@@ -106,11 +132,19 @@ function OrganizationList() {
               <Link to={`/organizations/${org.orgID}`} key={org.orgID} className="org-card-link">
                 <div className="org-card">
                   <div className="org-card-banner" 
-                    style={{ backgroundImage: org.banner ? `url(${org.banner})` : 'linear-gradient(to right, #4c2889, #c05621)' }}>
+                    style={org.banner ? {
+                      backgroundImage: `url(${formatImageUrl(org.banner, true)})`
+                    } : {
+                      background: 'linear-gradient(to right, #4c2889, #c05621)'
+                    }}>
                   </div>
                   <div className="org-card-avatar">
                     {org.thumbnail ? (
-                      <img src={org.thumbnail} alt={org.name} />
+                      <ImageLoader 
+                        src={org.thumbnail} 
+                        alt={org.name}
+                        className="org-avatar-img" 
+                      />
                     ) : (
                       <div className="org-avatar-placeholder">
                         {org.name.charAt(0).toUpperCase()}

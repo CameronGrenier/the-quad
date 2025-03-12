@@ -3,8 +3,29 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import EventPost from './EventPost';
 import './OrganizationPage.css';
+import ImageLoader from './ImageLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+
+const formatImageUrl = (url) => {
+  if (!url) return null;
+  
+  // Return null for empty strings
+  if (url === '') return null;
+  
+  // If URL is already absolute (starts with http or https), return it as is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // If URL contains 'r2.cloudflarestorage.com', it's a direct R2 URL and should be used as is
+  if (url.includes('r2.cloudflarestorage.com')) {
+    return url;
+  }
+  
+  // Otherwise, route through our API
+  return `${API_URL}/images/${url}`;
+};
 
 function OrganizationPage() {
   const { orgId } = useParams();
@@ -89,7 +110,7 @@ function OrganizationPage() {
     <div className="organization-page">
       <div className="org-banner-container">
         <div className="org-banner" 
-          style={{ backgroundImage: organization.banner ? `url(${organization.banner})` : 'linear-gradient(to right, #4c2889, #c05621)' }}>
+          style={{ backgroundImage: organization.banner ? `url(${formatImageUrl(organization.banner)})` : 'linear-gradient(to right, #4c2889, #c05621)' }}>
           <div className="org-banner-overlay"></div>
         </div>
       </div>
@@ -98,7 +119,11 @@ function OrganizationPage() {
         <div className="org-profile">
           <div className="org-avatar">
             {organization.thumbnail ? (
-              <img src={organization.thumbnail} alt={organization.name} />
+              <ImageLoader 
+                src={organization.thumbnail} 
+                alt={organization.name} 
+                className="org-avatar-img"
+              />
             ) : (
               <div className="org-avatar-placeholder">
                 {organization.name.charAt(0).toUpperCase()}

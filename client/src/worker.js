@@ -240,6 +240,30 @@ export default {
         return getOrganizationEvents(request, env, corsHeaders);
       }
 
+      // Add these organization-related routes:
+    
+      // Get all organizations
+      if (path === "/api/organizations" && request.method === "GET") {
+        return await getAllOrganizations(request, env, corsHeaders);
+      }
+      
+      // Get specific organization by ID
+      if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "GET") {
+        return await getOrganization(request, env, corsHeaders);
+      }
+      
+      // Get events for a specific organization
+      if (path.match(/^\/api\/organizations\/\d+\/events$/) && request.method === "GET") {
+        return await getOrganizationEvents(request, env, corsHeaders);
+      }
+
+      // Add this route for serving images from R2
+      if (path.startsWith("/images/")) {
+        const imagePath = path.substring(8); // Remove "/images/" from the path
+        console.log("Image request received for:", imagePath);
+        return await serveImageFromR2(env, imagePath, corsHeaders);
+      }
+
       // Default response for unknown routes
       return new Response(JSON.stringify({ error: "Not found" }), {
         status: 404,
@@ -419,16 +443,35 @@ async function checkOrganizationName(request, env, corsHeaders) {
 // Function to serve images from R2
 async function serveImageFromR2(env, imagePath, corsHeaders) {
   try {
-    const object = await env.R2_BUCKET.get(imagePath);
+    console.log("Attempting to serve image:", imagePath);
+    
+    // If we're dealing with the organization thumbnails from the database
+    // that contain the full path including 'thumbnails/' prefix, we need to handle that
+    
+    let object;
+    
+    // First attempt with the path as is
+    object = await env.R2_BUCKET.get(imagePath);
+    
+    // If not found and path includes directories, try alternative approaches
+    if (object === null && imagePath.includes('/')) {
+      // Try to access without the first directory segment
+      // In case the R2 bucket doesn't include the top-level directories in object keys
+      const alternativePath = imagePath.split('/').slice(1).join('/');
+      console.log("Trying alternative path:", alternativePath);
+      object = await env.R2_BUCKET.get(alternativePath);
+    }
 
     if (object === null) {
+      console.error("Image not found:", imagePath);
       return new Response("Image not found", {
         status: 404,
-        headers: corsHeaders, // Apply CORS headers here
+        headers: corsHeaders,
       });
     }
 
     const contentType = getContentTypeFromPath(imagePath);
+    console.log("Serving image with content type:", contentType);
 
     return new Response(object.body, {
       headers: {
@@ -440,9 +483,10 @@ async function serveImageFromR2(env, imagePath, corsHeaders) {
       }
     });
   } catch (error) {
+    console.error("Error serving image:", error);
     return new Response(`Error serving image: ${error.message}`, {
       status: 500,
-      headers: corsHeaders, // And here
+      headers: corsHeaders,
     });
   }
 }
@@ -455,7 +499,10 @@ function getContentTypeFromPath(path) {
     'jpeg': 'image/jpeg',
     'png': 'image/png',
     'gif': 'image/gif',
-    'webp': 'image/webp'
+    'svg': 'image/svg+xml',
+    'webp': 'image/webp',
+    'bmp': 'image/bmp',
+    'ico': 'image/x-icon'
   };
   return contentTypes[extension] || 'application/octet-stream';
 }
@@ -1354,16 +1401,3 @@ async function getAllOrganizations(request, env, corsHeaders) {
     });
   }
 }
-
-// In your fetch event handler, add this routing:
-// Example:
-addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-  
-  // Handle organization listing endpoint
-  if (url.pathname === '/api/organizations') {
-    event.respondWith(getAllOrganizations(event.request, env, corsHeaders));
-  }
-  
-  // Your other route handlers...
-});
