@@ -432,23 +432,55 @@ function EventRegistration() {
           
           <div className="form-group">
             <label>Thumbnail:</label>
-            <input
-              type="file"
-              name="thumbnail"
-              onChange={handleChange}
-              accept="image/*"
-            />
+            <div className="custom-file-upload">
+              <input
+                type="file"
+                name="thumbnail"
+                onChange={handleChange}
+                accept="image/*"
+              />
+              <div className="file-upload-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5-5 5z"/>
+                </svg>
+                Choose Thumbnail
+              </div>
+              {formData.thumbnail && (
+                <div className="file-name">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                  </svg>
+                  {formData.thumbnail.name}
+                </div>
+              )}
+            </div>
             {errors.thumbnail && <p className="error">{errors.thumbnail}</p>}
           </div>
-          
+
           <div className="form-group">
             <label>Banner:</label>
-            <input
-              type="file"
-              name="banner"
-              onChange={handleChange}
-              accept="image/*"
-            />
+            <div className="custom-file-upload">
+              <input
+                type="file"
+                name="banner"
+                onChange={handleChange}
+                accept="image/*"
+              />
+              <div className="file-upload-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5-5 5z"/>
+                </svg>
+                Choose Banner
+              </div>
+              {formData.banner && (
+                <div className="file-name">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                  </svg>
+                  {formData.banner.name}
+                </div>
+              )}
+            </div>
             {errors.banner && <p className="error">{errors.banner}</p>}
           </div>
           
