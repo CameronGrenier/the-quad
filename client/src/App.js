@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import MobileNavbar from './components/MobileNavbar';
 import Home from './components/Home';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -16,11 +17,25 @@ import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
 function App() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1370);
+  
+  // Handle window resize and update isMobile state
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1370);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
-        <Header />
-        <main>
+        {!isMobile && <Header />}
+        <main className={isMobile ? 'has-mobile-nav' : ''}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -35,6 +50,7 @@ function App() {
             <Route path="/organizations/:orgId" element={<OrganizationPage />} />
           </Routes>
         </main>
+        {isMobile && <MobileNavbar />}
       </Router>
     </AuthProvider>
   );

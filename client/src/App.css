@@ -1,22 +1,60 @@
 /* Mobile-first styles */
-body {
-  margin: 0;
+html, body, #root {
+  min-height: 100%;
+  height: 100%;
+  margin: 0; /* Remove any margins */
+  padding: 0; /* Remove any padding */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  width: 100%;
   font-family: Arial, Helvetica, sans-serif;
-  /* overflow-x: hidden;
-  scrollbar-width: none; */
 }
+
+body {
+  position: relative; /* Establish positioning context for absolute elements */
+}
+
+/* Add a mobile-specific class to your main element in App.js when isMobile is true */
+main.has-mobile-nav {
+  padding-bottom: 60px; /* Match the height of your mobile navbar */
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 /* Chrome, Safari, and Opera */
 body::-webkit-scrollbar {
   display: none;
 }
 
 main {
-  padding: 0rem;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  min-height: 100%;
+  padding-bottom: 0; /* No padding by default */
+}
+
+/* Ensure all images and media are responsive */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
 }
 
 /* Larger screens */
 @media (min-width: 768px) {
   main {
-    padding: 0rem;
+    padding: 0;
+    min-height: 100%;
+    padding-bottom: 0 !important; /* Force no padding on desktop */
+  }
+  main.has-mobile-nav {
+    padding-bottom: 0;
+  }
+  body {
+    min-height: 100%;
+    margin-bottom: 0 !important; /* Ensure no margin on desktop */
   }
 }
