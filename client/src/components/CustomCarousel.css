@@ -18,12 +18,15 @@
 }
 
 .custom-dot-list-style {
-  position: absolute;
-  bottom: -70%; /* Adjust this value as needed */
-  left: 0;
-  width: fit-content;
-  text-align: center;
-  margin: 0 auto;
+  position: relative; /* Changed from absolute */
+  bottom: auto; /* Remove bottom positioning */
+  left: auto; /* Remove left positioning */
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px !important; /* Add a small top margin for spacing */
+  margin-bottom: 10px !important;
+  padding: 0;
 }
 
 .custom-dot-list-style li {
