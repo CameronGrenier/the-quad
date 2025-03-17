@@ -44,7 +44,7 @@ function Header() {
           {/* Navigation list removed as requested */}
           <div className="nav-item">
             <Organization />
-            <Link to="/register-organization">Create Group</Link>
+            <Link to="/register-organization">Create Organization</Link>
           </div>
           <div className="nav-item">
             <Calendar />
@@ -77,7 +77,7 @@ function Header() {
           </div>
           <div className="nav-item">
             <MyOrganization />
-            <Link to="/my-organizations">My Groups</Link>
+            <Link to="/my-organizations">My Organizations</Link>
           </div>
         </nav>
         

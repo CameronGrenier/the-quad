@@ -12,7 +12,7 @@ function OrganizationList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all'); // 'all', 'public', 'private'
 
-  // Update the formatImageUrl function to handle banner paths correctly
+  // Update the formatImageUrl function to handle paths correctly
   const formatImageUrl = (url, isBackground = false) => {
     if (!url) return null;
     
@@ -30,6 +30,12 @@ function OrganizationList() {
         }
       }
       return url;
+    }
+    
+    // Check if path already has /images/ prefix to avoid duplication
+    if (url.startsWith('/images/')) {
+      // URL already has correct prefix, just add API base URL
+      return `${API_URL}${url}`;
     }
     
     // Otherwise, route through our API

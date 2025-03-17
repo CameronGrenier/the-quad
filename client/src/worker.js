@@ -121,10 +121,14 @@ function verifyJWT(token) {
 // File upload helper function
 async function uploadFileToR2(env, file, path) {
   try {
-    // Check if BUCKET and R2_PUBLIC_URL are configured
-    if (!env.BUCKET) {
-      throw new Error("Missing BUCKET binding in worker environment");
+    // Check if R2_BUCKET binding is configured
+    if (!env.R2_BUCKET) {
+      throw new Error("Missing R2_BUCKET binding in worker environment");
     }
+    
+    // Format the path correctly - we want it without a leading /images/ 
+    // since the bucket itself is already named "images"
+    const cleanPath = path;
     
     // Convert file to ArrayBuffer for upload
     const buffer = await file.arrayBuffer();
@@ -132,23 +136,16 @@ async function uploadFileToR2(env, file, path) {
     // Determine content type from file
     const contentType = file.type || 'application/octet-stream';
     
-    console.log(`Uploading file to R2: ${path}, size: ${buffer.byteLength}, type: ${contentType}`);
+    console.log(`Uploading file to R2 with path: ${cleanPath}, size: ${buffer.byteLength}, type: ${contentType}`);
     
-    // Upload to R2
-    await env.BUCKET.put(path, buffer, {
+    // Upload to R2 with the path directly to the bucket
+    await env.R2_BUCKET.put(cleanPath, buffer, {
       httpMetadata: { contentType }
     });
     
-    // Check if R2_PUBLIC_URL is configured
-    if (!env.R2_PUBLIC_URL) {
-      console.warn("R2_PUBLIC_URL not configured, returning path as URL");
-      return path;
-    }
-    
-    // Return the file URL
-    const url = `${env.R2_PUBLIC_URL}/${path}`;
-    console.log(`File uploaded successfully, URL: ${url}`);
-    return url;
+    // This is the important change - return an absolute path with *single* /images/ prefix
+    // The worker route already has /images/ in its prefix
+    return `/images/${cleanPath}`;
   } catch (error) {
     console.error('Error uploading file to R2:', error);
     throw new Error(`File upload failed: ${error.message}`);
@@ -336,31 +333,24 @@ async function registerOrganization(request, env, corsHeaders) {
     let thumbnailURL = '';
     let bannerURL = '';
     
-    try {
-      // Handle thumbnail upload
-      const thumbnail = formData.get('thumbnail');
-      if (thumbnail && thumbnail.size > 0) {
-        console.log("Attempting to upload thumbnail:", thumbnail.name, thumbnail.size);
-        thumbnailURL = await uploadFileToR2(env, thumbnail, `organizations/thumbnails/${name}-${Date.now()}`);
-        console.log("Thumbnail uploaded:", thumbnailURL);
-      }
-      
-      // Handle banner upload
-      const banner = formData.get('banner');
-      if (banner && banner.size > 0) {
-        console.log("Attempting to upload banner:", banner.name, banner.size);
-        bannerURL = await uploadFileToR2(env, banner, `organizations/banners/${name}-${Date.now()}`);
-        console.log("Banner uploaded:", bannerURL);
-      }
-    } catch (uploadError) {
-      console.error('File upload error:', uploadError);
-      return new Response(JSON.stringify({
-        success: false,
-        error: `File upload failed: ${uploadError.message}`
-      }), {
-        status: 500,
-        headers: corsHeaders
-      });
+    // Handle thumbnail upload
+    const thumbnail = formData.get('thumbnail');
+    if (thumbnail && thumbnail.size > 0) {
+      console.log("Attempting to upload thumbnail:", thumbnail.name, thumbnail.size);
+      // Format name to replace spaces with underscores
+      const cleanName = name.replace(/\s+/g, '_');
+      thumbnailURL = await uploadFileToR2(env, thumbnail, `thumbnails/Thumb_${cleanName}`);
+      console.log("Thumbnail uploaded:", thumbnailURL);
+    }
+    
+    // Handle banner upload
+    const banner = formData.get('banner');
+    if (banner && banner.size > 0) {
+      console.log("Attempting to upload banner:", banner.name, banner.size);
+      // Format name to replace spaces with underscores
+      const cleanName = name.replace(/\s+/g, '_');
+      bannerURL = await uploadFileToR2(env, banner, `banners/Banner_${cleanName}`);
+      console.log("Banner uploaded:", bannerURL);
     }
     
     try {
@@ -443,27 +433,27 @@ async function checkOrganizationName(request, env, corsHeaders) {
 // Function to serve images from R2
 async function serveImageFromR2(env, imagePath, corsHeaders) {
   try {
-    console.log("Attempting to serve image:", imagePath);
-    
-    // If we're dealing with the organization thumbnails from the database
-    // that contain the full path including 'thumbnails/' prefix, we need to handle that
+    console.log("Attempting to serve image with path:", imagePath);
     
     let object;
     
-    // First attempt with the path as is
+    // First attempt with the path directly - no "images/" prefix needed
+    // since the bucket is already named "images"
     object = await env.R2_BUCKET.get(imagePath);
     
-    // If not found and path includes directories, try alternative approaches
-    if (object === null && imagePath.includes('/')) {
-      // Try to access without the first directory segment
-      // In case the R2 bucket doesn't include the top-level directories in object keys
-      const alternativePath = imagePath.split('/').slice(1).join('/');
-      console.log("Trying alternative path:", alternativePath);
-      object = await env.R2_BUCKET.get(alternativePath);
+    if (object === null) {
+      console.error("Image not found, trying alternative path");
+      // If this fails, try removing any subdirectory prefixes
+      if (imagePath.includes('/')) {
+        const parts = imagePath.split('/');
+        const lastPart = parts[parts.length - 1];
+        console.log("Trying with just filename:", lastPart);
+        object = await env.R2_BUCKET.get(lastPart);
+      }
     }
 
     if (object === null) {
-      console.error("Image not found:", imagePath);
+      console.error("Image not found with any path:", imagePath);
       return new Response("Image not found", {
         status: 404,
         headers: corsHeaders,
