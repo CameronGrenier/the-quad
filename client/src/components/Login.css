@@ -64,6 +64,19 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
+/* Target input and label text specifically for Safari */
+.form-group label,
+.form-group input {
+  color: white !important; /* Force white text */
+  -webkit-text-fill-color: rgb(0, 0, 0) !important; /* Safari-specific property */
+}
+
+/* Also target the placeholder text */
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.7) !important;
+}
+
 .submit-button {
   background-color: rgb(133, 0, 160);
   color: white;
