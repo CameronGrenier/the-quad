@@ -6,8 +6,8 @@ body {
 }
 
 .container {
-    width: 100vw;
-    height: 85vh;
+    width: 100%;
+    height: 80vh; /* Slightly shorter on mobile */
     position: relative;
     top: 0;
     background-image: url('../../public/images/campus_photo.jpg');
@@ -20,7 +20,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 100%;
     height: 100%;
     background: linear-gradient(to bottom, rgba(156, 90, 46, 0.616), rgba(95, 45, 143, 0.63));
     z-index: 1; /* Overlay is behind content */
@@ -30,16 +30,18 @@ body {
 .home {
     display: flex;
     flex-direction: column;
-    align-items: left;
+    align-items: flex-start; /* Changed from 'left' which isn't a valid value for align-items */
     justify-content: center;
-    width: 100vw;
+    width: 100%;
     height: 100%;
     margin: 0;
-    padding-left: 4rem;
+    padding-left: 1.5rem; /* Smaller padding for mobile */
+    padding-right: 1.5rem;
+    box-sizing: border-box;
 }
 
 h2 {
-    font-size: 3rem;
+    font-size: 1.8rem; /* Smaller for mobile */
     font-weight: 700;
     margin: 0;
     padding: 0;
@@ -48,9 +50,9 @@ h2 {
 }
 
 h1 {
-    font-size: 5rem;
+    font-size: 3rem; /* Smaller for mobile */
     font-weight: 700;
-    margin: 0;
+    margin: 0.5rem 0;
     padding: 0;
     color: gainsboro;
     z-index: 2; /* Content is in front of overlay */
@@ -59,14 +61,130 @@ h1 {
 .EventList {
     display: flex;
     flex-wrap: wrap;
-    padding-top: 2rem;
-    z-index: 2; /* Content is in front of overlay */
+    padding-top: 1.5rem;
+    z-index: 2;
+    width: 100%;
+    justify-content: center; /* Center events on small screens */
 }
 
 .CalendarOverview {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 2rem;
-    height: 70vh;
+    padding-top: 1.5rem;
+    height: auto; /* Let it adjust based on content */
+    min-height: 60vh;
+    width: 100%;
+}
+
+/* Mobile improvements for event cards */
+.event-card {
+    width: 100%; /* Full width on small screens */
+    margin-bottom: 1rem;
+}
+
+/* Media queries for responsive design */
+@media (min-width: 768px) {
+    .home {
+        padding-left: 3rem;
+    }
+    
+    h2 {
+        font-size: 2.5rem;
+    }
+    
+    h1 {
+        font-size: 4rem;
+    }
+    
+    .event-card {
+        width: calc(50% - 1rem); /* Two cards per row on medium screens */
+    }
+}
+
+@media (min-width: 1024px) {
+    .home {
+        padding-left: 4rem;
+    }
+    
+    h2 {
+        font-size: 3rem;
+    }
+    
+    h1 {
+        font-size: 5rem;
+    }
+    
+    .container {
+        height: 85vh; /* Back to original height on desktop */
+    }
+    
+    .event-card {
+        width: calc(33.333% - 1rem); /* Three cards per row on larger screens */
+    }
+}
+
+/* Fix potential issues with event listings */
+.event-section {
+    width: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+/* Improve readability on smaller screens */
+.event-details p, 
+.event-details h3 {
+    margin: 0.5rem 0;
+}
+
+/* Ensure buttons and interactive elements are large enough for touch */
+button, 
+.event-card a,
+.nav-link {
+    min-height: 44px; /* Apple's recommended minimum touch target size */
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Fix for react-multi-carousel dot size */
+.react-multi-carousel-dot-list {
+  margin: 0;
+  padding: 0;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.react-multi-carousel-dot button {
+  min-height: unset !important; /* Override our previous touch target sizing */
+  min-width: unset !important;
+  width: 15px !important; /* Smaller dot size */
+  height: 15px !important;
+  border-radius: 50% !important;
+  border: 1px solid #fff !important;
+  margin: 0 5px;
+  padding: 0;
+  background: transparent;
+  display: inline-block !important; /* Important to override flex settings */
+}
+
+.react-multi-carousel-dot--active button {
+  background: #d3ba66 !important;
+}
+
+/* Make sure dots are visible against background */
+.react-multi-carousel-dot {
+  opacity: 0.7;
+}
+
+.react-multi-carousel-dot--active {
+  opacity: 1;
+}
+
+/* Add some spacing below the dots container */
+.react-multi-carousel-list {
+  margin-bottom: 20px;
 }
