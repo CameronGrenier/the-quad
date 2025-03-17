@@ -11,6 +11,39 @@ function Profile() {
   const [organizations, setOrganizations] = useState([]);
   const [events, setEvents] = useState([]);
   const navigate = useNavigate();
+  
+  // Add API URL constant
+  const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+
+  // Add formatImageUrl function to handle image paths correctly
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+    
+    // Return null for empty strings
+    if (url === '') return null;
+    
+    // If URL is already absolute (starts with http or https)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      // For direct R2 URLs, extract the proper path
+      if (url.includes('r2.cloudflarestorage.com')) {
+        // Extract everything after "/images/" including subdirectories
+        const pathMatch = url.match(/\/images\/(.+)$/);
+        if (pathMatch && pathMatch[1]) {
+          return `${API_URL}/images/${pathMatch[1]}`;
+        }
+      }
+      return url;
+    }
+    
+    // Check if path already has /images/ prefix to avoid duplication
+    if (url.startsWith('/images/')) {
+      // URL already has correct prefix, just add API base URL
+      return `${API_URL}${url}`;
+    }
+    
+    // Otherwise, route through our API
+    return `${API_URL}/images/${url}`;
+  };
 
   useEffect(() => {
     // Redirect if not logged in
@@ -115,10 +148,10 @@ function Profile() {
           {organizations.length > 0 ? (
             <div className="card-grid">
               {organizations.map(org => (
-                <div key={org.orgID} className="card">
+                <div key={org.orgID} className="card" onClick={() => navigate(`/organizations/${org.orgID}`)}>
                   <div className="card-header">
                     {org.thumbnail && (
-                      <img src={org.thumbnail} alt={org.name} />
+                      <img src={formatImageUrl(org.thumbnail)} alt={org.name} />
                     )}
                   </div>
                   <div className="card-body">
@@ -148,7 +181,7 @@ function Profile() {
                 <div key={event.eventID} className="card">
                   <div className="card-header">
                     {event.thumbnail && (
-                      <img src={event.thumbnail} alt={event.title} />
+                      <img src={formatImageUrl(event.thumbnail)} alt={event.title} />
                     )}
                   </div>
                   <div className="card-body">
