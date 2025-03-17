@@ -2,7 +2,6 @@
 .organization-page {
   width: 100%;
   min-height: 100vh;
-  padding-top: 200px; /* Add padding to accommodate fixed header */
   padding-bottom: 50px;
   position: relative;
   color: white;
