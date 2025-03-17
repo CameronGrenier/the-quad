@@ -14,7 +14,10 @@ function Header() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
+  
+  // Check if current page should have fixed header
+  const isFixedHeaderPage = location.pathname === '/' || 
+                           location.pathname.match(/^\/organizations\/\d+/);
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef(null);
 
@@ -33,7 +36,7 @@ function Header() {
   }, []);
 
   return (
-    <div className={isHomePage ? "header-container fixed" : "header-container static"}>
+    <div className={isFixedHeaderPage ? "header-container fixed" : "header-container"}>
       <header>
         <div className="logo">
           <Link to="/">

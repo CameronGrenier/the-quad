@@ -13,14 +13,15 @@ const formatImageUrl = (url) => {
   // Return null for empty strings
   if (url === '') return null;
   
-  // If URL is already absolute (starts with http or https), return it as is
+  // If URL is already absolute (starts with http or https)
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
   
-  // If URL contains 'r2.cloudflarestorage.com', it's a direct R2 URL and should be used as is
-  if (url.includes('r2.cloudflarestorage.com')) {
-    return url;
+  // Check if path already has /images/ prefix to avoid duplication
+  if (url.startsWith('/images/')) {
+    // URL already has correct prefix, just add API base URL
+    return `${API_URL}${url}`;
   }
   
   // Otherwise, route through our API
@@ -108,9 +109,40 @@ function OrganizationPage() {
 
   return (
     <div className="organization-page">
+      <div className="light-rays"></div>
+      <div className="particles">
+        {[...Array(15)].map((_, index) => {
+          const size = Math.random() * 6 + 2;
+          const left = Math.random() * 100;
+          const animationDuration = Math.random() * 15 + 10;
+          const delay = Math.random() * 15;
+          const opacity = Math.random() * 0.3 + 0.1;
+          
+          return (
+            <div
+              key={index}
+              className="particle"
+              style={{
+                width: `${size}px`,
+                height: `${size}px`,
+                left: `${left}%`,
+                bottom: '-10px',
+                animation: `float ${animationDuration}s linear ${delay}s infinite`,
+                opacity
+              }}
+            />
+          );
+        })}
+      </div>
       <div className="org-banner-container">
-        <div className="org-banner" 
-          style={{ backgroundImage: organization.banner ? `url(${formatImageUrl(organization.banner)})` : 'linear-gradient(to right, #4c2889, #c05621)' }}>
+        <div 
+          className="org-banner" 
+          style={{ 
+            backgroundImage: organization.banner ? 
+              `url(${formatImageUrl(organization.banner)})` : 
+              'linear-gradient(to right, #4c2889, #c05621)'
+          }}
+        >
           <div className="org-banner-overlay"></div>
         </div>
       </div>

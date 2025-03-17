@@ -229,12 +229,14 @@ export default {
       
       // For organization details
       if (url.pathname.match(/^\/api\/organizations\/\d+$/)) {
-        return getOrganization(request, env, corsHeaders);
+        const orgId = parseInt(url.pathname.split('/').pop());
+        return getOrganization(request, env, corsHeaders, orgId);
       }
 
       // For organization events
       if (url.pathname.match(/^\/api\/organizations\/\d+\/events$/)) {
-        return getOrganizationEvents(request, env, corsHeaders);
+        const orgId = parseInt(url.pathname.split('/')[3]); // Extract ID from path
+        return getOrganizationEvents(request, env, corsHeaders, orgId);
       }
 
       // Add these organization-related routes:
@@ -242,16 +244,6 @@ export default {
       // Get all organizations
       if (path === "/api/organizations" && request.method === "GET") {
         return await getAllOrganizations(request, env, corsHeaders);
-      }
-      
-      // Get specific organization by ID
-      if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "GET") {
-        return await getOrganization(request, env, corsHeaders);
-      }
-      
-      // Get events for a specific organization
-      if (path.match(/^\/api\/organizations\/\d+\/events$/) && request.method === "GET") {
-        return await getOrganizationEvents(request, env, corsHeaders);
       }
 
       // Add this route for serving images from R2
@@ -1248,101 +1240,71 @@ async function getUserProfile(request, env, corsHeaders) {
 // Add these new handler functions
 
 // Function to get a specific organization by ID
-async function getOrganization(request, env, corsHeaders) {
+async function getOrganization(request, env, corsHeaders, orgId) {
   try {
-    const url = new URL(request.url);
-    const pathParts = url.pathname.split('/');
-    const orgId = pathParts[pathParts.length - 1]; // Get the last part of the URL path
-
-    if (!orgId) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: "Organization ID is required"
-      }), {
-        status: 400,
-        headers: corsHeaders,
-      });
-    }
-
-    // Get organization details
-    const org = await env.D1_DB.prepare(`
-      SELECT * FROM ORGANIZATION WHERE orgID = ?
+    console.log("Getting organization with ID:", orgId);
+    
+    // Get the organization data
+    const organization = await env.D1_DB.prepare(`
+      SELECT o.*, COUNT(om.userID) as memberCount
+      FROM ORGANIZATION o
+      LEFT JOIN ORG_MEMBER om ON o.orgID = om.orgID
+      WHERE o.orgID = ?
+      GROUP BY o.orgID
     `).bind(orgId).first();
-
-    if (!org) {
+    
+    if (!organization) {
       return new Response(JSON.stringify({
         success: false,
-        error: "Organization not found"
+        error: 'Organization not found'
       }), {
         status: 404,
-        headers: corsHeaders,
+        headers: corsHeaders
       });
     }
-
-    // Get admins for this organization
+    
+    // Get organization admins - FIXED QUERY
     const { results: admins } = await env.D1_DB.prepare(`
-      SELECT u.userID as id, u.username, u.email, u.f_name, u.l_name 
-      FROM USERS u
-      JOIN ORG_ADMIN oa ON u.userID = oa.userID
+      SELECT u.userID as id, u.email, u.f_name as firstName, u.l_name as lastName, u.profile_picture as profileImage
+      FROM ORG_ADMIN oa
+      JOIN USERS u ON oa.userID = u.userID
       WHERE oa.orgID = ?
     `).bind(orgId).all();
-
-    // Get member count
-    const memberCount = await env.D1_DB.prepare(`
-      SELECT COUNT(*) as count FROM ORG_MEMBER WHERE orgID = ?
-    `).bind(orgId).first();
-
-    // Include admins in the organization data
-    const organizationData = {
-      ...org,
-      admins: admins || [],
-      memberCount: memberCount?.count || 0
-    };
-
+    
+    // Add admins to the organization object
+    organization.admins = admins || [];
+    
     return new Response(JSON.stringify({
       success: true,
-      organization: organizationData
+      organization
     }), {
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   } catch (error) {
+    console.error("Error getting organization:", error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: `Error fetching organization: ${error.message}`
     }), {
       status: 500,
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   }
 }
 
 // Function to get events for a specific organization
-async function getOrganizationEvents(request, env, corsHeaders) {
+async function getOrganizationEvents(request, env, corsHeaders, orgId) {
   try {
-    const url = new URL(request.url);
-    const pathParts = url.pathname.split('/');
-    // The orgId should be the second to last part in /organizations/[orgId]/events
-    const orgId = pathParts[pathParts.length - 2];
-
-    if (!orgId) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: "Organization ID is required"
-      }), {
-        status: 400,
-        headers: corsHeaders,
-      });
-    }
-
-    // Get events for this organization
+    console.log("Getting events for organization with ID:", orgId);
+    
+    // Get the events for this organization
     const { results: events } = await env.D1_DB.prepare(`
-      SELECT e.*, o.name as organizationName, o.thumbnail as organizationThumbnail
+      SELECT e.*
       FROM EVENT e
-      JOIN ORGANIZATION o ON e.organizationID = o.orgID
       WHERE e.organizationID = ?
       ORDER BY e.startDate ASC
     `).bind(orgId).all();
-
+    
     return new Response(JSON.stringify({
       success: true,
       events: events || []
@@ -1350,12 +1312,13 @@ async function getOrganizationEvents(request, env, corsHeaders) {
       headers: corsHeaders,
     });
   } catch (error) {
+    console.error("Error getting organization events:", error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: `Error fetching organization events: ${error.message}`
     }), {
       status: 500,
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   }
 }
