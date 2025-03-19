@@ -125,10 +125,31 @@ the-quad/
 ```
 
 ## <a name="contributing"></a>Contributing
-To get started:
-1. Fork the repository.
-2. Create a new branch for your feature or bugfix: `git checkout -b feature/your-feature-name`
-3. Commit your changes: `git commit -m 'Add some feature'`
-4. Push to the branch: `git push origin feature/your-feature-name`
-5. Open a pull request describing your changes.
+To contribute, follow these steps:
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/CameronGrenier/The-Quad.git
+   cd The-Quad
+   ```
+2. **Install Back-End Dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Install Front-End Dependencies:**
+   ```bash
+   cd client
+   npm install
+   ```
+4. **Start the Development Site (from the client directory):**
+   ```bash
+   npm start
+   ```
+5. **Note on Worker Changes:**
+   Whenever you make changes to the worker file (e.g. `client/src/worker.js`), be sure to deploy those changes by running:
+   ```bash
+   npx wrangler deploy
+   ```
+   This ensures your updates take effect.
+
+Happy coding!
 
