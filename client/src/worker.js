@@ -253,6 +253,11 @@ export default {
         return await serveImageFromR2(env, imagePath, corsHeaders);
       }
 
+      // Get organizations where user is a member
+      if (path === "/api/user-member-organizations" && request.method === "GET") {
+        return await getUserMemberOrganizations(request, env, corsHeaders);
+      }
+
       // Default response for unknown routes
       return new Response(JSON.stringify({ error: "Not found" }), {
         status: 404,
@@ -1341,6 +1346,46 @@ async function getAllOrganizations(request, env, corsHeaders) {
     return new Response(JSON.stringify({
       success: true,
       organizations: organizations || []
+    }), {
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: corsHeaders,
+    });
+  }
+}
+
+// Add this function to get organizations where user is a member
+async function getUserMemberOrganizations(request, env, corsHeaders) {
+  try {
+    const url = new URL(request.url);
+    const userID = url.searchParams.get('userID');
+
+    if (!userID) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "User ID is required"
+      }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    // Query organizations where user is a member but not admin
+    const { results } = await env.D1_DB.prepare(`
+      SELECT o.* FROM ORGANIZATION o
+      JOIN ORG_MEMBER om ON o.orgID = om.orgID
+      WHERE om.userID = ?
+    `).bind(userID).all();
+
+    return new Response(JSON.stringify({
+      success: true,
+      organizations: results || []
     }), {
       headers: corsHeaders,
     });

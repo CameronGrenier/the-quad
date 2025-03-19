@@ -282,6 +282,16 @@
   border-radius: 20px;
 }
 
+.org-admin-badge {
+  background: rgba(124, 77, 255, 0.5);
+  color: #ffffff;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
 .org-member-count {
   color: rgba(255, 255, 255, 0.7);
   font-size: 12px;

@@ -3,6 +3,7 @@
     width: 100%;
     height: fit-content;
     background-color: #ffffff00;
+    position: relative;
     z-index: 1000;
 }
 
@@ -220,6 +221,7 @@ padding: 0.5rem;
 
 .dropdown {
   position: relative;
+  z-index: 1000; /* Higher z-index for the dropdown container */
 }
 
 /* Updated styling for dropdown trigger button with glint animation */
@@ -239,6 +241,7 @@ padding: 0.5rem;
   width: 140px; /* Make the button wider */
   position: relative;
   overflow: hidden; /* Ensure the glint doesn't go outside the button */
+  z-index: 999; /* High z-index but below the menu */
 }
 
 /* Add the light glint element */
@@ -307,12 +310,13 @@ padding: 0.5rem;
   background: rgba(50, 30, 90, 0.95);
   border-radius: 8px;
   overflow: hidden;
-  z-index: 10;
+  z-index: 1001; /* Much higher z-index */
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
   min-width: 200px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: auto;
 }
 
 /* Dropdown items with animated gradient hover effect */
@@ -327,6 +331,7 @@ padding: 0.5rem;
   position: relative;
   overflow: hidden;
   z-index: 1;
+  pointer-events: auto;
 }
 
 /* Animated gradient overlay for dropdown items */
