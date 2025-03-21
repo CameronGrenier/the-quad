@@ -2,9 +2,6 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import './LocationMap.css';
 
-// API key from environment variable
-const API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-
 // Map container styles
 const mapContainerStyle = {
   width: '100%',
@@ -26,6 +23,20 @@ const LocationMap = ({ onLocationSelect, initialLocation = null, searchInputRef 
   const [placeName, setPlaceName] = useState('');
   const [mapError, setMapError] = useState(false);
   const [loadingMap, setLoadingMap] = useState(true);
+  const [apiKey, setApiKey] = useState('');
+  const libraries = ["places"]; // Define outside component to avoid reloads
+  
+  useEffect(() => {
+    // Fetch the API key when component mounts
+    fetch('/api/get-maps-api-key')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setApiKey(data.apiKey);
+        }
+      })
+      .catch(err => console.error("Failed to fetch API key:", err));
+  }, []);
   
   // Load the map
   const onMapLoad = useCallback((map) => {
@@ -161,11 +172,13 @@ const LocationMap = ({ onLocationSelect, initialLocation = null, searchInputRef 
     );
   }
 
+  if (!apiKey) return <div>Loading map...</div>;
+
   return (
     <div className="location-map-container">
       <LoadScript
-        googleMapsApiKey={API_KEY}
-        libraries={["places"]}
+        googleMapsApiKey={apiKey}
+        libraries={libraries}
         onError={handleMapError}
         loadingElement={<div className="map-loading">Loading map...</div>}
       >

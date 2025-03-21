@@ -328,6 +328,19 @@ export default {
       }
 
       // ============================================================================
+      // GOOGLE MAPS API KEY - Get Google Maps API Key
+      // ============================================================================
+
+      if (path === "/api/get-maps-api-key") {
+        return new Response(JSON.stringify({
+          success: true,
+          apiKey: env.REACT_APP_GOOGLE_MAPS_API_KEY || ''
+        }), {
+          headers: corsHeaders,
+        });
+      }
+
+      // ============================================================================
       // DEFAULT - 404 Not Found
       // ============================================================================
 

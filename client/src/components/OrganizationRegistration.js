@@ -313,7 +313,7 @@ function OrganizationRegistration() {
               onChange={handleChange}
               options={[
                 { value: 'public', label: 'Public' },
-                { value: 'private', label: 'Admin Invite Only' }
+                { value: 'private', label: 'Private' }
               ]}
             />
           </div>
