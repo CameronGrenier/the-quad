@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'; // Add useNavigate
 import { useAuth } from '../context/AuthContext';
 import EventPost from './EventPost';
 import './OrganizationPage.css';
@@ -30,12 +30,17 @@ const formatImageUrl = (url) => {
 
 function OrganizationPage() {
   const { orgId } = useParams();
+  const navigate = useNavigate(); // Add useNavigate hook
   const { currentUser } = useAuth();
   const [organization, setOrganization] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Add state for delete confirmation dialog
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchOrganizationData() {
@@ -83,6 +88,48 @@ function OrganizationPage() {
     
     fetchOrganizationData();
   }, [orgId, currentUser]);
+
+  // Add function to handle organization deletion
+  const handleDeleteOrganization = async () => {
+    if (!isAdmin || !currentUser) return;
+    
+    try {
+      setIsDeleting(true);
+      console.log("Deleting organization:", orgId);
+      console.log("Current user:", currentUser);
+      
+      const token = localStorage.getItem('token');
+      console.log("Using token:", token ? "Token exists" : "No token found");
+      
+      const response = await fetch(`${API_URL}/api/organizations/${orgId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userID: currentUser.id })
+      });
+      
+      console.log("Delete response status:", response.status);
+      
+      const data = await response.json();
+      console.log("Delete response data:", data);
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete organization');
+      }
+      
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      
+      // Navigate back to organizations list after deletion
+      navigate('/organizations');
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      setError(error.message);
+      setIsDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -176,6 +223,9 @@ function OrganizationPage() {
             <button className="edit-org-btn" onClick={() => window.location.href = `/edit-organization/${orgId}`}>
               Edit Organization
             </button>
+            <button className="delete-org-btn" onClick={() => setShowDeleteConfirm(true)}>
+              Delete Organization
+            </button>
           </div>
         )}
       </div>
@@ -225,6 +275,32 @@ function OrganizationPage() {
           )}
         </div>
       </div>
+
+      {/* Add the delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div className="delete-confirm-overlay">
+          <div className="delete-confirm-dialog">
+            <h3>Delete Organization</h3>
+            <p>Are you sure you want to delete this organization? This action cannot be undone and will delete all associated events.</p>
+            <div className="delete-confirm-buttons">
+              <button 
+                className="cancel-button" 
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button 
+                className="delete-button" 
+                onClick={handleDeleteOrganization}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Organization'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

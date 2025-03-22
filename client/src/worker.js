@@ -443,6 +443,123 @@ class OrganizationController {
     // Similar implementation to getUserOrganizations can be added here.
     return new Response(JSON.stringify({ success: true, organizations: [] }), { headers: this.corsHeaders });
   }
+
+  async deleteOrganization(request, orgId) {
+    try {
+      console.log("Delete organization request received for orgId:", orgId);
+      
+      const authHeader = request.headers.get('Authorization') || '';
+      if (!authHeader.startsWith('Bearer ')) {
+        console.log("Authentication missing");
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Authentication required"
+        }), { status: 401, headers: this.corsHeaders });
+      }
+      
+      // Verify JWT token and get user ID
+      const token = authHeader.replace('Bearer ', '');
+      let payload;
+      try {
+        payload = verifyJWT(token);
+        console.log("Token verified, payload:", payload);
+      } catch (err) {
+        console.log("Invalid token:", err);
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Invalid authentication token"
+        }), { status: 401, headers: this.corsHeaders });
+      }
+  
+      // Get the user ID from the request body
+      let userData;
+      try {
+        userData = await request.json();
+        console.log("Request body parsed:", userData);
+      } catch (err) {
+        console.log("Failed to parse request body:", err);
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Invalid request data"
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      const userID = userData.userID;
+      console.log("UserID from request:", userID);
+      
+      if (!userID) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "User ID is required"
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      // Verify the user is an admin of this organization
+      console.log("Checking if user is admin for org:", orgId);
+      const isAdmin = await this.env.D1_DB.prepare(`
+        SELECT 1 FROM ORG_ADMIN
+        WHERE orgID = ? AND userID = ?
+      `).bind(orgId, userID).first();
+      
+      console.log("Admin check result:", isAdmin);
+      
+      if (!isAdmin) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "You don't have permission to delete this organization"
+        }), { status: 403, headers: this.corsHeaders });
+      }
+      
+      // Instead of using transactions, use D1's batch API for atomicity
+      console.log("Preparing batch operations for deletion");
+      
+      // Create an array of statements to execute as a batch
+      const statements = [
+        // Delete event admins for events in this org
+        this.env.D1_DB.prepare(`
+          DELETE FROM EVENT_ADMIN 
+          WHERE eventID IN (SELECT eventID FROM EVENT WHERE organizationID = ?)
+        `).bind(orgId),
+        
+        // Delete events
+        this.env.D1_DB.prepare(
+          "DELETE FROM EVENT WHERE organizationID = ?"
+        ).bind(orgId),
+        
+        // Delete org admins
+        this.env.D1_DB.prepare(
+          "DELETE FROM ORG_ADMIN WHERE orgID = ?"
+        ).bind(orgId),
+        
+        // Delete org members
+        this.env.D1_DB.prepare(
+          "DELETE FROM ORG_MEMBER WHERE orgID = ?"
+        ).bind(orgId),
+        
+        // Delete the organization
+        this.env.D1_DB.prepare(
+          "DELETE FROM ORGANIZATION WHERE orgID = ?"
+        ).bind(orgId)
+      ];
+      
+      // Execute all statements as a batch (atomic operation)
+      console.log("Executing batch delete operations");
+      await this.env.D1_DB.batch(statements);
+      
+      console.log("Organization deletion successful");
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Organization deleted successfully"
+      }), { headers: this.corsHeaders });
+      
+    } catch (error) {
+      console.log("Deletion failed:", error.message);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
 }
 
 class EventController {
@@ -605,7 +722,7 @@ export default {
       if (path === "/api/organizations" && request.method === "GET") {
         return await orgCtrl.getAllOrganizations(request);
       }
-      if (path.match(/^\/api\/organizations\/\d+$/)) {
+      if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "GET") {
         const orgId = parseInt(path.split('/').pop());
         return await orgCtrl.getOrganization(orgId);
       }
@@ -613,6 +730,10 @@ export default {
         const parts = path.split('/');
         const orgId = parseInt(parts[3]);
         return await orgCtrl.getOrganizationEvents(orgId);
+      }
+      if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "DELETE") {
+        const orgId = parseInt(path.split('/').pop());
+        return await orgCtrl.deleteOrganization(request, orgId);
       }
 
       // Event endpoints
