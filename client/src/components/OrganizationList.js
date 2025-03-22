@@ -43,30 +43,34 @@ function OrganizationList() {
   };
 
   useEffect(() => {
-    async function fetchOrganizations() {
+    const fetchOrganizations = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/api/organizations`);
+        setError(null);
+        
+        // Check if we need to force refresh
+        const forceRefresh = localStorage.getItem('forceRefresh');
+        if (forceRefresh) {
+          localStorage.removeItem('forceRefresh');
+        }
+        
+        // Fetch organizations with cache-busting if needed
+        const timestamp = forceRefresh ? `?timestamp=${Date.now()}` : '';
+        const response = await fetch(`${API_URL}/api/organizations${timestamp}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch organizations');
         }
         
         const data = await response.json();
-        
-        if (data.success) {
-          console.log("Fetched organizations:", data.organizations);
-          setOrganizations(data.organizations);
-        } else {
-          throw new Error(data.error || 'Failed to load organizations');
-        }
+        setOrganizations(data.organizations || []);
       } catch (error) {
-        console.error('Error fetching organizations:', error);
         setError(error.message);
+        console.error('Error fetching organizations:', error);
       } finally {
         setLoading(false);
       }
-    }
+    };
     
     fetchOrganizations();
   }, []);

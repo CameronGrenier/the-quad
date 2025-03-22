@@ -287,6 +287,24 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+.delete-org-btn {
+  background: rgba(220, 53, 69, 0.8); /* Red color for dangerous actions */
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+
+.delete-org-btn:hover {
+  background: rgba(220, 53, 69, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 /* Content area */
 .org-content {
   max-width: 1200px;
@@ -469,6 +487,87 @@
 
 .back-link:hover {
   background: rgba(124, 77, 255, 0.8);
+}
+
+/* Confirmation dialog styles */
+.delete-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.delete-confirm-dialog {
+  background: rgba(26, 15, 46, 0.95);
+  border-radius: 12px;
+  padding: 25px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.delete-confirm-dialog h3 {
+  margin-top: 0;
+  color: #dc3545;
+}
+
+.delete-confirm-dialog p {
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+.delete-confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.delete-confirm-buttons button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button {
+  background: rgba(108, 117, 125, 0.8);
+  color: white;
+}
+
+.cancel-button:hover {
+  background: rgba(108, 117, 125, 1);
+}
+
+.delete-button {
+  background: rgba(220, 53, 69, 0.8);
+  color: white;
+}
+
+.delete-button:hover {
+  background: rgba(220, 53, 69, 1);
+}
+
+.delete-button:disabled, .cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Responsive design */
