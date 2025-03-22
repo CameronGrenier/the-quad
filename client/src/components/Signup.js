@@ -9,7 +9,8 @@ function Signup() {
     password: '',
     confirmPassword: '',
     f_name: '',
-    l_name: ''
+    l_name: '',
+    username: ''  // Add username field
   });
   
   const [error, setError] = useState('');
@@ -32,6 +33,7 @@ function Signup() {
     console.log("Submitting form data:", {
       f_name: formData.f_name,
       l_name: formData.l_name,
+      username: formData.username, // Include username in logging
       email: formData.email,
       password: formData.password ? "password provided" : "no password"
     });
@@ -47,6 +49,7 @@ function Signup() {
       const result = await signup({
         f_name: formData.f_name,
         l_name: formData.l_name,
+        username: formData.username, // Add username to signup data
         email: formData.email,
         password: formData.password
       });
@@ -72,6 +75,19 @@ function Signup() {
         {error && <div className="error-message">{error}</div>}
         
         <form onSubmit={handleSubmit}>
+          {/* Add username field before the name fields */}
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username || ""}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          
+          {/* Existing first name field */}
           <div className="form-group">
             <label>First Name</label>
             <input
