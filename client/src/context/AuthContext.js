@@ -168,6 +168,7 @@ export function AuthProvider({ children }) {
       const signupData = {
         f_name: userData.f_name || userData.firstName || "",
         l_name: userData.l_name || userData.lastName || "",
+        username: userData.username,
         email: userData.email || "",
         phone: userData.phone || "",
         password: userData.password || ""
