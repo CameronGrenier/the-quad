@@ -97,8 +97,9 @@ async function serveImageFromR2(env, imagePath, corsHeaders) {
 
 /* ==================== DOMAIN CLASSES ==================== */
 class User {
-  constructor({ userID, fName, lName, email, phone, profilePicture }) {
+  constructor({ userID, username, fName, lName, email, phone, profilePicture }) {
     this.userID = userID;
+    this.username = username;
     this.fName = fName;
     this.lName = lName;
     this.email = email;
@@ -178,11 +179,12 @@ class AccountController {
   async createAccount(request) {
     try {
       const data = await request.json();
-      const { f_name, l_name, email, phone, password } = data;
-      if (!f_name || !l_name || !email || !password) {
+      const { f_name, l_name, username, email, phone, password } = data;
+      if (!f_name || !l_name || !username || !email || !password) {
         const missing = [];
         if (!f_name) missing.push('First Name');
         if (!l_name) missing.push('Last Name');
+        if (!username) missing.push('Username');
         if (!email) missing.push('Email');
         if (!password) missing.push('Password');
         return new Response(JSON.stringify({
@@ -190,6 +192,19 @@ class AccountController {
           error: `Missing required fields: ${missing.join(', ')}`
         }), { status: 400, headers: this.corsHeaders });
       }
+      
+      // Check if username already exists
+      const existingUsername = await this.env.D1_DB.prepare(
+        "SELECT * FROM USERS WHERE LOWER(username)=LOWER(?)"
+      ).bind(username).first();
+      if (existingUsername) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "A user with this username already exists"
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      // Check if email already exists
       const existingUser = await this.env.D1_DB.prepare(
         "SELECT * FROM USERS WHERE LOWER(email)=LOWER(?)"
       ).bind(email).first();
@@ -199,17 +214,18 @@ class AccountController {
           error: "A user with this email already exists"
         }), { status: 400, headers: this.corsHeaders });
       }
+      
       const hashed = await hashPassword(password);
       const insertResult = await this.env.D1_DB.prepare(
-        "INSERT INTO USERS (f_name,l_name,email,phone,password) VALUES (?,?,?,?,?)"
-      ).bind(f_name, l_name, email, phone || null, hashed).run();
+        "INSERT INTO USERS (username, f_name, l_name, email, phone, password) VALUES (?,?,?,?,?,?)"
+      ).bind(username, f_name, l_name, email, phone || null, hashed).run();
       const userID = insertResult.meta.last_row_id;
-      const token = generateJWT({ email, userId: userID });
+      const token = generateJWT({ email, userId: userID, username });
       return new Response(JSON.stringify({
         success: true,
         message: "User registered successfully",
         token,
-        user: { id: userID, userID, f_name, l_name, email, phone: phone || null }
+        user: { id: userID, userID, username, f_name, l_name, email, phone: phone || null }
       }), { headers: this.corsHeaders });
     } catch (error) {
       return new Response(JSON.stringify({ success: false, error: error.message }),
@@ -240,7 +256,7 @@ class AccountController {
         return new Response(JSON.stringify({ success: false, error: "Invalid email or password" }),
           { status: 401, headers: this.corsHeaders });
       }
-      const token = generateJWT({ email: user.email, userId: user.userID });
+      const token = generateJWT({ email: user.email, userId: user.userID, username: user.username });
       return new Response(JSON.stringify({
         success: true,
         message: "Login successful",
@@ -248,6 +264,7 @@ class AccountController {
         user: {
           id: user.userID,
           userID: user.userID,
+          username: user.username,
           f_name: user.f_name,
           l_name: user.l_name,
           email: user.email,
@@ -616,6 +633,9 @@ export default {
         return await fixDatabaseSchema(env, corsHeaders);
       if (path === "/api/diagnostics/schema")
         return await getDatabaseSchema(env, corsHeaders);
+      if (path === "/api/add-username-column") {
+        return await addUsernameColumn(env, corsHeaders);
+      }
 
       // Image serving
       if (path.startsWith("/images/")) {
