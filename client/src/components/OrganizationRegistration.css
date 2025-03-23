@@ -15,8 +15,17 @@
     bottom: 0;
     background: linear-gradient(to bottom, #4c2889, #c05621);
     background-attachment: fixed;
-    overflow-y: auto;
+    overflow: hidden;  /* Prevent internal scrolling */
     z-index: -1;
+}
+
+/* Ensure the wrapper expands naturally */
+.org-registration-wrapper {
+    width: 100%;
+    padding: 30px 0 60px;  /* Adjust as needed */
+    position: relative;
+    overflow: visible;  /* Allow content to expand */
+    /* Remove any height or min-height properties if present */
 }
 
 .registration-container {

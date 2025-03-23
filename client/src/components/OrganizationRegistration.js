@@ -215,7 +215,7 @@ function OrganizationRegistration() {
   };
 
   return (
-    <>
+    <div className="org-registration-wrapper">
       <div className="org-page-container"></div>
       <div className="registration-container">
         <h2>Create Organization</h2>
@@ -233,6 +233,7 @@ function OrganizationRegistration() {
         )}
 
         <form onSubmit={handleSubmit}>
+          {/* Form content remains unchanged */}
           <div className="form-group">
             <label>Name:</label>
             <input
@@ -332,7 +333,7 @@ function OrganizationRegistration() {
           </button>
         </form>
       </div>
-    </>
+    </div>
   );
 }
 
