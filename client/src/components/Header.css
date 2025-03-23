@@ -20,6 +20,23 @@
     margin-bottom: 20px; /* Add some space below the header */
 }
 
+/* Add this style for EventPage header */
+.header-container.event-page-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: transparent; /* Make background transparent */
+  z-index: 10; /* Make sure it's above the page content */
+}
+
+/* Add a gradient background on scroll */
+.header-container.event-page-header.scrolled {
+  background: linear-gradient(to bottom, rgba(28, 16, 51, 0.9), rgba(28, 16, 51, 0.7));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 /* Rest of your header styles remain the same */
 header {
   display: flex;

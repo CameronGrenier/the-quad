@@ -23,7 +23,7 @@ function EventRegistration() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false); // Add this line
   
   const [formData, setFormData] = useState({
-    organizationID: '',
+    organizationID: '', // Make sure this starts as empty string, not null
     title: '',
     description: '',
     thumbnail: null,
@@ -207,12 +207,12 @@ function EventRegistration() {
     }
   };
 
-  // Update the validateForm function
+  // Form validation function
   const validateForm = () => {
     let tempErrors = {};
     
     // Required fields
-    if (!formData.organizationID) {
+    if (!formData.organizationID || formData.organizationID === '') {
       tempErrors.organizationID = 'Organization is required';
     }
     
@@ -250,8 +250,34 @@ function EventRegistration() {
       }
     }
     
+    console.log("Validation errors:", tempErrors);
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type } = e.target;
+    
+    if (name === 'organizationID') {
+      console.log("Organization selected:", value);
+      // Make sure it's stored as a number if it's not empty
+      const parsedValue = value !== '' ? parseInt(value, 10) : '';
+      setFormData({
+        ...formData,
+        [name]: parsedValue
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+    
+    // Clear errors when field is updated
+    setErrors({
+      ...errors,
+      [name]: ''
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -307,11 +333,11 @@ function EventRegistration() {
       }
       
       // Submit the form
-      const response = await fetch(`${API_URL}/api/events`, {
+      const response = await fetch(`${API_URL}/api/register-event`, {  // Note: Changed API endpoint to match worker.js
         method: 'POST',
         body: submitData,
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Fixed token reference
         },
       });
       

@@ -15,6 +15,8 @@ import OrganizationPage from './components/OrganizationPage';
 import OrganizationList from './components/OrganizationList';
 import MyOrganizations from './components/MyOrganizations';
 import ExploreEvents from './components/ExploreEvents';
+import EventPage from './components/EventPage';
+import EventList from './components/EventList'; // Note the 's' in EventsList
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
@@ -43,7 +45,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/calendar" element={<Calendar />} />
-            <Route path="/event/:id" element={<EventDetails />} />
+            <Route path="/events/:id" element={<EventPage />} />
             <Route path="/register-event" element={<EventRegistration />} />
             <Route path="/register-organization" element={<OrganizationRegistration />} /> 
             <Route path="/questionnaire" element={<Questionnaire />} />
@@ -52,6 +54,7 @@ function App() {
             <Route path="/organizations/:orgId" element={<OrganizationPage />} />
             <Route path="/my-organizations" element={<MyOrganizations />} />
             <Route path="/events" element={<ExploreEvents />} />
+            <Route path="/my-events" element={<EventList userOnly={true} />} />
           </Routes>
         </main>
         {isMobile && <MobileNavbar />}

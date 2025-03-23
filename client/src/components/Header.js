@@ -18,6 +18,10 @@ function Header() {
   // Check if current page should have fixed header
   const isFixedHeaderPage = location.pathname === '/' || 
                            location.pathname.match(/^\/organizations\/\d+/);
+                           
+  // Check if current page is EventPage
+  const isEventPage = location.pathname.match(/^\/events\/\d+/);
+  
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef(null);
 
@@ -36,7 +40,7 @@ function Header() {
   }, []);
 
   return (
-    <div className={isFixedHeaderPage ? "header-container fixed" : "header-container"}>
+    <div className={`header-container ${isFixedHeaderPage ? 'fixed' : 'static'} ${isEventPage ? 'event-page-header' : ''}`}>
       <header>
         <div className="logo">
           <Link to="/">

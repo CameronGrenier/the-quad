@@ -600,11 +600,15 @@ class EventController {
       let thumbnailURL = '', bannerURL = '';
       const thumbnail = formData.get('thumbnail');
       if (thumbnail && thumbnail.size > 0) {
-        thumbnailURL = await uploadFileToR2(this.env, thumbnail, `events/thumbnails/${title}-${Date.now()}`);
+        // Replace spaces with underscores in the file path
+        const sanitizedTitle = title.replace(/\s+/g, '_');
+        thumbnailURL = await uploadFileToR2(this.env, thumbnail, `events/thumbnails/${sanitizedTitle}-${Date.now()}`);
       }
       const banner = formData.get('banner');
       if (banner && banner.size > 0) {
-        bannerURL = await uploadFileToR2(this.env, banner, `events/banners/${title}-${Date.now()}`);
+        // Replace spaces with underscores in the file path
+        const sanitizedTitle = title.replace(/\s+/g, '_');
+        bannerURL = await uploadFileToR2(this.env, banner, `events/banners/${sanitizedTitle}-${Date.now()}`);
       }
       const insertResult = await this.env.D1_DB.prepare(`
         INSERT INTO EVENT (
@@ -646,6 +650,178 @@ class EventController {
       return new Response(JSON.stringify({ 
         success: true, 
         events: events || [] 
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
+
+  async getEvent(eventId) {
+    try {
+      // Get event details with organization name
+      const event = await this.env.D1_DB.prepare(`
+        SELECT e.*, o.name as organizationName, o.banner as organizationBanner
+        FROM EVENT e
+        JOIN ORGANIZATION o ON e.organizationID = o.orgID
+        WHERE e.eventID = ?
+      `).bind(eventId).first();
+      
+      if (!event) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Event not found" 
+        }), { status: 404, headers: this.corsHeaders });
+      }
+      
+      // Get RSVP count
+      const rsvpCounts = await this.env.D1_DB.prepare(`
+        SELECT rsvpStatus, COUNT(*) as count
+        FROM EVENT_RSVP
+        WHERE eventID = ?
+        GROUP BY rsvpStatus
+      `).bind(eventId).all();
+      
+      // Format RSVP counts
+      let rsvpStats = {
+        attending: 0,
+        maybe: 0,
+        declined: 0
+      };
+      
+      if (rsvpCounts.results) {
+        rsvpCounts.results.forEach(row => {
+          if (row.rsvpStatus === 'attending') rsvpStats.attending = row.count;
+          if (row.rsvpStatus === 'maybe') rsvpStats.maybe = row.count;
+          if (row.rsvpStatus === 'declined') rsvpStats.declined = row.count;
+        });
+      }
+      
+      // Get event admins
+      const { results: admins } = await this.env.D1_DB.prepare(`
+        SELECT u.userID, u.f_name, u.l_name, u.email, u.profile_picture
+        FROM EVENT_ADMIN ea
+        JOIN USERS u ON ea.userID = u.userID
+        WHERE ea.eventID = ?
+      `).bind(eventId).all();
+      
+      // Create response object with all details
+      const eventDetails = {
+        ...event,
+        admins: admins || [],
+        rsvpStats
+      };
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        event: eventDetails 
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
+  
+  async getUserRsvpStatus(request, eventId) {
+    try {
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Authentication required" 
+        }), { status: 401, headers: this.corsHeaders });
+      }
+      
+      // Verify JWT token
+      const payload = verifyJWT(token);
+      const userId = payload.userId;
+      
+      // Get user's RSVP status
+      const userRsvp = await this.env.D1_DB.prepare(`
+        SELECT rsvpStatus
+        FROM EVENT_RSVP
+        WHERE eventID = ? AND userID = ?
+      `).bind(eventId, userId).first();
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        rsvpStatus: userRsvp ? userRsvp.rsvpStatus : null 
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
+  
+  async rsvpToEvent(request, eventId) {
+    try {
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Authentication required" 
+        }), { status: 401, headers: this.corsHeaders });
+      }
+      
+      // Verify JWT token
+      const payload = verifyJWT(token);
+      const userId = payload.userId;
+      
+      // Get request data
+      const { rsvpStatus } = await request.json();
+      if (!rsvpStatus || !['attending', 'maybe', 'declined'].includes(rsvpStatus)) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Invalid RSVP status" 
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      // Check if event exists
+      const event = await this.env.D1_DB.prepare(`
+        SELECT eventID FROM EVENT WHERE eventID = ?
+      `).bind(eventId).first();
+      
+      if (!event) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Event not found" 
+        }), { status: 404, headers: this.corsHeaders });
+      }
+      
+      // Check if user has already RSVP'd
+      const existingRsvp = await this.env.D1_DB.prepare(`
+        SELECT eventID FROM EVENT_RSVP WHERE eventID = ? AND userID = ?
+      `).bind(eventId, userId).first();
+      
+      if (existingRsvp) {
+        // Update existing RSVP
+        await this.env.D1_DB.prepare(`
+          UPDATE EVENT_RSVP 
+          SET rsvpStatus = ?
+          WHERE eventID = ? AND userID = ?
+        `).bind(rsvpStatus, eventId, userId).run();
+      } else {
+        // Create new RSVP
+        await this.env.D1_DB.prepare(`
+          INSERT INTO EVENT_RSVP (eventID, userID, rsvpStatus)
+          VALUES (?, ?, ?)
+        `).bind(eventId, userId, rsvpStatus).run();
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "RSVP updated successfully",
+        rsvpStatus
       }), { headers: this.corsHeaders });
     } catch (error) {
       return new Response(JSON.stringify({ 
@@ -764,6 +940,19 @@ export default {
       if (path === "/api/events" && request.method === "GET") {
         return await eventCtrl.getAllEvents(request);
       }
+      if (path.match(/^\/api\/events\/\d+$/) && request.method === "GET") {
+        const eventId = parseInt(path.split('/').pop());
+        return await eventCtrl.getEvent(eventId);
+      }
+      // Fix syntax errors in path matching (around line 935-940)
+      if (path.match(/^\/api\/events\/\d+\/rsvp-status$/) && request.method === "GET") {
+        const eventId = parseInt(path.match(/^\/api\/events\/(\d+)\/rsvp-status$/)[1]);
+        return await eventCtrl.getUserRsvpStatus(request, eventId);
+      }
+      if (path.match(/^\/api\/events\/\d+\/rsvp$/) && request.method === "POST") {
+        const eventId = parseInt(path.match(/^\/api\/events\/(\d+)\/rsvp$/)[1]);
+        return await eventCtrl.rsvpToEvent(request, eventId);
+      }
 
       // Landmark endpoints (currently returning stub data)
       if (path === "/api/landmarks" && request.method === "GET") {
@@ -820,6 +1009,18 @@ export default {
         const itemID = parseInt(new URL(request.url).searchParams.get('itemID'));
         const item = adminDashboard.reviewSubmission(itemID);
         return new Response(JSON.stringify({ success: true, item }), { headers: corsHeaders });
+      }
+
+      // Add a dedicated endpoint for the maps API key
+      if (path === "/api/maps-api-key" && request.method === "GET") {
+        return new Response(JSON.stringify({
+          apiKey: env.MAPS_API_KEY || "your-fallback-key"
+        }), { 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders
+          } 
+        });
       }
 
       // Default 404 Not Found
