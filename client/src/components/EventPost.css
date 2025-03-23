@@ -1,20 +1,124 @@
 .event-post {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  width: 100%;
+  background: rgba(26, 15, 46, 0.8);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+              0 0 20px rgba(124, 77, 255, 0.15);
+  border: 1px solid rgba(124, 77, 255, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   margin-bottom: 20px;
 }
 
 .event-post:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3),
+              0 0 30px rgba(124, 77, 255, 0.25);
 }
 
-/* Post header with org info */
+.event-post-link {
+  display: flex;
+  color: white;
+  text-decoration: none;
+}
+
+.event-post-thumbnail {
+  width: 180px;
+  min-width: 180px;
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+}
+
+.event-image {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(48, 30, 103, 0.7);
+}
+
+.event-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #4c2889 0%, #c05621 100%);
+  font-size: 48px;
+  font-weight: bold;
+  color: white;
+}
+
+.event-date-badge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(124, 77, 255, 0.9);
+  color: white;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.event-post-content {
+  padding: 15px;
+  flex: 1;
+}
+
+.event-title {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: white !important;
+}
+
+.event-description {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: white; /* Changed from rgba(255, 255, 255, 0.9) to pure white for better contrast */
+}
+
+.event-post-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.event-status.upcoming {
+  background-color: rgba(40, 167, 69, 0.8);
+  color: white;
+}
+
+.event-status.past {
+  background-color: rgba(108, 117, 125, 0.8);
+  color: white;
+}
+
+.view-details {
+  font-size: 14px;
+  font-weight: 500;
+  color: #b29dff; /* Changed from #7c4dff to a lighter purple */
+}
+
+@media (max-width: 768px) {
+  .event-post-link {
+    flex-direction: column;
+  }
+  
+  .event-post-thumbnail {
+    width: 100%;
+    height: 140px;
+  }
+}
+
 .event-post-header {
   display: flex;
   align-items: center;
@@ -69,7 +173,7 @@
 
 .event-timestamp {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8); /* Increased from 0.7 for better readability */
 }
 
 .event-time-remaining {
@@ -88,10 +192,6 @@
   font-size: 22px;
   color: white;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.event-post-link {
-  text-decoration: none;
 }
 
 .event-post-link:hover .event-post-title {
@@ -118,7 +218,7 @@
 
 .event-date i, .event-location i {
   margin-right: 6px;
-  color: #7c4dff;
+  color: #b29dff; /* Changed from #7c4dff to a lighter purple */
 }
 
 /* Event image */
@@ -137,17 +237,6 @@
 
 .event-post:hover .event-post-image img {
   transform: scale(1.05);
-}
-
-/* Event description */
-.event-post-content {
-  padding: 15px;
-}
-
-.event-description {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.5;
 }
 
 /* Event actions */
@@ -180,11 +269,21 @@
 }
 
 .rsvp-btn {
-  color: #7c4dff;
+  color: #b29dff; /* Changed from #7c4dff to a lighter purple */
 }
 
 .rsvp-btn:hover {
   background-color: rgba(124, 77, 255, 0.1);
+}
+
+/* Ensure all text is light-colored */
+.event-post * {
+  color: white;
+}
+
+/* Ensure all paragraph text is white */
+.event-post p {
+  color: white !important;
 }
 
 /* Responsive styles */

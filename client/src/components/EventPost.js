@@ -2,96 +2,94 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './EventPost.css';
 
-function EventPost({ event }) {
-  // Format date for display
-  const formatDate = (dateString) => {
-    const options = { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-  };
-  
-  // Calculate days remaining
-  const getDaysRemaining = (dateString) => {
-    const eventDate = new Date(dateString);
-    const today = new Date();
-    const timeDiff = eventDate - today;
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    
-    if (daysDiff < 0) return 'Past event';
-    if (daysDiff === 0) return 'Today!';
-    if (daysDiff === 1) return 'Tomorrow!';
-    return `${daysDiff} days away`;
-  };
+const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
+// Use the same image URL formatter from OrganizationPage
+const formatImageUrl = (url) => {
+  if (!url) return null;
+  
+  // Return null for empty strings
+  if (url === '') return null;
+  
+  // If URL is already absolute (starts with http or https)
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Check if path already has /images/ prefix to avoid duplication
+  if (url.startsWith('/images/')) {
+    // Split into segments and encode only the necessary parts
+    const pathSegments = url.substring(8).split('/');  // Remove '/images/' prefix
+    
+    // Encode each segment properly
+    const encodedPath = pathSegments
+      .map(segment => encodeURIComponent(segment))
+      .join('/');
+      
+    return `${API_URL}/images/${encodedPath}`;
+  }
+  
+  // Otherwise, route through our API
+  return `${API_URL}/images/${encodeURIComponent(url)}`;
+};
+
+const formatDate = (dateString) => {
+  const options = { 
+    weekday: 'short',
+    month: 'short', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  };
+  return new Date(dateString).toLocaleDateString('en-US', options);
+};
+
+const EventPost = ({ event }) => {
+  const isUpcoming = new Date(event.startDate) > new Date();
+  
   return (
     <div className="event-post">
-      <div className="event-post-header">
-        <div className="event-post-avatar">
-          {event.organizationThumbnail ? (
-            <img src={event.organizationThumbnail} alt={event.organizationName} />
+      <Link to={`/events/${event.eventID}`} className="event-post-link">
+        <div className="event-post-thumbnail">
+          {event.thumbnail ? (
+            <div 
+              className="event-image" 
+              style={{
+                backgroundImage: `url(${formatImageUrl(event.thumbnail)})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            />
           ) : (
-            <div className="event-org-placeholder">
-              {event.organizationName?.charAt(0) || 'O'}
+            <div className="event-image-placeholder">
+              <span>{event.title.charAt(0)}</span>
             </div>
           )}
-        </div>
-        <div className="event-post-meta">
-          <Link to={`/organizations/${event.organizationID}`} className="event-org-name">
-            {event.organizationName}
-          </Link>
-          <span className="event-timestamp">Posted on {formatDate(event.createdAt || new Date())}</span>
+          <div className="event-date-badge">
+            {formatDate(event.startDate)}
+          </div>
         </div>
         
-        <div className="event-time-remaining">
-          <span className="days-remaining">{getDaysRemaining(event.startDate)}</span>
+        <div className="event-post-content">
+          <h3 className="event-title">{event.title}</h3>
+          <p className="event-description">
+            {event.description ? (
+              event.description.length > 120 ? 
+              `${event.description.substring(0, 120)}...` : 
+              event.description
+            ) : 'No description provided.'}
+          </p>
+          
+          <div className="event-post-footer">
+            <span className={`event-status ${isUpcoming ? 'upcoming' : 'past'}`}>
+              {isUpcoming ? 'Upcoming' : 'Past'}
+            </span>
+            <span className="view-details">View Details</span>
+          </div>
         </div>
-      </div>
-      
-      <Link to={`/events/${event.eventID}`} className="event-post-link">
-        <h3 className="event-post-title">{event.title}</h3>
       </Link>
-      
-      <div className="event-post-details">
-        <div className="event-date-location">
-          <div className="event-date">
-            <i className="far fa-calendar"></i>
-            <span>{formatDate(event.startDate)}</span>
-          </div>
-          <div className="event-location">
-            <i className="fas fa-map-marker-alt"></i>
-            <span>{event.landmarkName || event.customLocation || 'Location TBA'}</span>
-          </div>
-        </div>
-      </div>
-      
-      {event.thumbnail && (
-        <div className="event-post-image">
-          <img src={event.thumbnail} alt={event.title} />
-        </div>
-      )}
-      
-      <div className="event-post-content">
-        <p className="event-description">{event.description}</p>
-      </div>
-      
-      <div className="event-post-actions">
-        <button className="event-action-btn rsvp-btn">
-          <i className="far fa-calendar-check"></i> RSVP
-        </button>
-        <button className="event-action-btn share-btn">
-          <i className="fas fa-share-alt"></i> Share
-        </button>
-        <Link to={`/events/${event.eventID}`} className="event-action-btn details-btn">
-          <i className="fas fa-info-circle"></i> Details
-        </Link>
-      </div>
     </div>
   );
-}
+};
 
 export default EventPost;
