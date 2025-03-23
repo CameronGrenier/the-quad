@@ -1,8 +1,12 @@
-/* Add a dark gradient background with subtle animation */
+/* Modify the org-list-page class to remove nested scrolling */
 .org-list-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 2rem 2rem 4rem 2rem; /* Added bottom padding */
+  min-height: calc(100vh - 80px); /* Adjust based on your header height */
+  color: white;
+  box-sizing: border-box;
   position: relative;
 }
 
@@ -15,7 +19,7 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg, #1c1033 0%, #2d1537 50%, #1c1033 100%);
-  z-index: -10;
+  z-index: -1;
 }
 
 /* Add subtle animated particles/stars in the background */
@@ -187,8 +191,11 @@
 .org-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 30px;
-  margin-bottom: 40px;
+  gap: 25px;
+  width: 100%;
+  margin: 0 auto;
+  /* Remove any max-height property */
+  /* Remove any overflow property */
 }
 
 .org-card-link {
@@ -204,7 +211,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
-  height: 100%;
+  height: auto;
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(12px);
@@ -314,6 +321,7 @@
   align-items: center;
   min-height: 300px;
   text-align: center;
+  /* Remove height/max-height restrictions */
 }
 
 .org-loading-spinner {
@@ -358,6 +366,13 @@
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+
+/* Ensure the content area takes the full page width */
+.org-content-wrapper {
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Responsive Adjustments */

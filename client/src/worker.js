@@ -830,6 +830,47 @@ class EventController {
       }), { status: 500, headers: this.corsHeaders });
     }
   }
+
+  async getUserEvents(request) {
+    try {
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Authentication required" 
+        }), { status: 401, headers: this.corsHeaders });
+      }
+      
+      // Verify JWT token
+      const payload = verifyJWT(token);
+      const userId = payload.userId;
+      
+      // Get events where the user has RSVPs or is an admin
+      const rsvpEvents = await this.env.D1_DB.prepare(`
+        SELECT e.*, o.name as organizationName, er.rsvpStatus,
+        CASE WHEN ea.userID IS NOT NULL THEN 1 ELSE 0 END as isOrganizer
+        FROM EVENT e
+        JOIN ORGANIZATION o ON e.organizationID = o.orgID
+        LEFT JOIN EVENT_RSVP er ON e.eventID = er.eventID AND er.userID = ?
+        LEFT JOIN EVENT_ADMIN ea ON e.eventID = ea.eventID AND ea.userID = ?
+        WHERE er.userID = ? OR ea.userID = ?
+        ORDER BY e.startDate DESC
+      `).bind(userId, userId, userId, userId).all();
+      
+      return new Response(JSON.stringify({
+        success: true,
+        events: rsvpEvents.results || []
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      console.error("Error in getUserEvents:", error);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
 }
 
 // Stub implementations for official status and admin dashboard controllers:
@@ -1021,6 +1062,11 @@ export default {
             ...corsHeaders
           } 
         });
+      }
+
+      // Add this new route
+      if (path === "/api/user/events" && request.method === "GET") {
+        return await eventCtrl.getUserEvents(request);
       }
 
       // Default 404 Not Found
