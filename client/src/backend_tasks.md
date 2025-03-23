@@ -63,19 +63,17 @@ This section records the completion status of each function. The status can be o
 
 ## FAQ/Troubleshooting
 
-| Function                    | Description                                                                      | Status          | Implementation                         |
-|-----------------------------|----------------------------------------------------------------------------------|-----------------|----------------------------------------|
-| `getFAQs`                   | Retrieves FAQ entries for the support section                                    | Not Started     | Not implemented                        |
-| `submitFeedback`            | Processes and stores user feedback                                               | Not Started     | Not implemented                        |
+| Function                    | Description                                                                      | Status          |
+|-----------------------------|----------------------------------------------------------------------------------|-----------------|
+| `getFAQs`                   | Retrieves FAQ entries for the support section                                    | Not Started     |
+| `submitFeedback`            | Processes and stores user feedback                                               | Not Started     |
 
-## Additional Implemented Functions
+## Function Completion Status
 
-| Function                    | Description                                                                      | Status          | Implementation                         |
-|-----------------------------|----------------------------------------------------------------------------------|-----------------|----------------------------------------|
-| `login`                     | Authenticates users and generates JWT token                                      | Integrated      | `AccountController.login`              |
-| `getUserProfile`            | Retrieves user profile information                                               | Integrated      | `AccountController.getUserProfile`      |
-| `getUserOrganizations`      | Gets organizations where user is an admin                                        | Integrated      | `OrganizationController.getUserOrganizations` |
-| `getAllOrganizations`       | Lists all organizations in the system                                            | Integrated      | `OrganizationController.getAllOrganizations` |
-| `deleteOrganization`        | Removes an organization and related data                                         | Integrated      | `OrganizationController.deleteOrganization` |
+This section records the completion status of each function. The status can be one of the following:
+- Not Started
+- Incomplete
+- Testing Phase
+- Integrated
 
-This document provides a comprehensive overview of the backend tasks, ensuring clarity and ease of understanding for developers.
+This README provides a comprehensive overview of the backend tasks, ensuring clarity and ease of understanding for developers and stakeholders.
