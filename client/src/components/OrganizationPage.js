@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import EventPost from './EventPost';
 import './OrganizationPage.css';
 import ImageLoader from './ImageLoader';
+import MarkdownRenderer from './MarkdownRenderer';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -234,7 +235,16 @@ function OrganizationPage() {
         <div className="org-sidebar">
           <div className="org-info-card">
             <h3>About</h3>
-            <p className="org-description">{organization.description || 'No description provided.'}</p>
+            <div className="org-description-section">
+              <h2>About This Organization</h2>
+              <div className="org-description">
+                {organization.description ? (
+                  <MarkdownRenderer content={organization.description} />
+                ) : (
+                  <p className="no-description">No description provided.</p>
+                )}
+              </div>
+            </div>
             <div className="org-stats">
               <div className="stat">
                 <span className="stat-value">{events.length}</span>

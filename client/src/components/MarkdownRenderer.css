@@ -1,0 +1,89 @@
+.markdown-content {
+  line-height: 1.6;
+  color: white;
+  overflow-wrap: break-word;
+}
+
+/* Headings */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: white;
+}
+
+.markdown-content h1 { font-size: 1.75rem; }
+.markdown-content h2 { font-size: 1.5rem; }
+.markdown-content h3 { font-size: 1.25rem; }
+.markdown-content h4 { font-size: 1.1rem; }
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Paragraphs and spacing */
+.markdown-content p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+/* Links */
+.markdown-content a {
+  color: #7d4cdb;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+/* Code blocks */
+.markdown-content code {
+  background-color: rgba(45, 21, 55, 0.5);
+  border-radius: 3px;
+  padding: 0.2em 0.4em;
+  font-family: monospace;
+}
+
+.markdown-content pre {
+  background-color: rgba(45, 21, 55, 0.5);
+  border-radius: 5px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  border-left: 4px solid rgba(124, 77, 255, 0.5);
+  margin-left: 0;
+  padding-left: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Tables */
+.markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5rem;
+}
+
+.markdown-content th {
+  background-color: rgba(45, 21, 55, 0.5);
+}

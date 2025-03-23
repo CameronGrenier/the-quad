@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './EventPage.css';
+import MarkdownRenderer from './MarkdownRenderer';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -322,7 +323,7 @@ function EventPage() {
             <h2>About This Event</h2>
             <div className="event-description">
               {event.description ? (
-                <p>{event.description}</p>
+                <MarkdownRenderer content={event.description} />
               ) : (
                 <p className="no-description">No description provided.</p>
               )}

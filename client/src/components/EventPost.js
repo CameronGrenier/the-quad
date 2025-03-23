@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './EventPost.css';
+import MarkdownRenderer from './MarkdownRenderer';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -72,13 +73,18 @@ const EventPost = ({ event }) => {
         
         <div className="event-post-content">
           <h3 className="event-title">{event.title}</h3>
-          <p className="event-description">
+          <div className="event-description">
             {event.description ? (
-              event.description.length > 120 ? 
-              `${event.description.substring(0, 120)}...` : 
-              event.description
-            ) : 'No description provided.'}
-          </p>
+              <MarkdownRenderer 
+                content={event.description.length > 120 ? 
+                  `${event.description.substring(0, 120)}...` : 
+                  event.description
+                } 
+              />
+            ) : (
+              'No description provided.'
+            )}
+          </div>
           
           <div className="event-post-footer">
             <span className={`event-status ${isUpcoming ? 'upcoming' : 'past'}`}>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './OrganizationList.css';
 import ImageLoader from './ImageLoader';
+import MarkdownRenderer from './MarkdownRenderer';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -177,13 +178,18 @@ function OrganizationList() {
                         <span className="org-privacy-badge">{org.privacy === 'public' ? 'Public' : 'Private'}</span>
                         <span className="org-member-count">{org.memberCount || 0} members</span>
                       </div>
-                      <p className="org-description-preview">
+                      <div className="org-description-preview">
                         {org.description ? (
-                          org.description.length > 100 ? 
-                          `${org.description.substring(0, 100)}...` : 
-                          org.description
-                        ) : 'No description available.'}
-                      </p>
+                          <MarkdownRenderer
+                            content={org.description.length > 100 ? 
+                              `${org.description.substring(0, 100)}...` : 
+                              org.description
+                            }
+                          />
+                        ) : (
+                          'No description available.'
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Link>
