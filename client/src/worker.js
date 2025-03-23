@@ -633,6 +633,27 @@ class EventController {
     }
   }
   // Additional methods (e.g., rsvpToEvent) may be added here.
+  async getAllEvents(request) {
+    try {
+      // Get all events with organization names included
+      const { results: events } = await this.env.D1_DB.prepare(`
+        SELECT e.*, o.name as organizationName
+        FROM EVENT e
+        JOIN ORGANIZATION o ON e.organizationID = o.orgID
+        ORDER BY e.startDate ASC
+      `).all();
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        events: events || [] 
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
 }
 
 // Stub implementations for official status and admin dashboard controllers:
@@ -739,6 +760,9 @@ export default {
       // Event endpoints
       if (path === "/api/register-event" && request.method === "POST") {
         return await eventCtrl.registerEvent(request);
+      }
+      if (path === "/api/events" && request.method === "GET") {
+        return await eventCtrl.getAllEvents(request);
       }
 
       // Landmark endpoints (currently returning stub data)

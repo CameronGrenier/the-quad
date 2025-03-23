@@ -1,0 +1,392 @@
+/* Event List Page - Similar to OrganizationList.css but customized for events */
+.event-list-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+}
+
+/* Create a fixed background container that sits behind all content */
+.event-list-page::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #1c1033 0%, #2d1537 50%, #1c1033 100%);
+  z-index: -1;
+}
+
+/* Add subtle animated particles/stars in the background */
+.event-list-page::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.07) 2px, transparent 2px);
+  background-size: 100px 100px, 120px 120px, 70px 70px;
+  background-position: 0 0, 25px 25px, 15px 15px;
+  z-index: -1; /* Changed from -9 to -1 */
+  opacity: 0.5;
+  animation: shimmer 120s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0 0, 25px 25px, 15px 15px;
+  }
+  100% {
+    background-position: 1000px 1000px, 1025px 1025px, 1015px 1015px;
+  }
+}
+
+.event-list-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.event-list-header h1 {
+  font-size: 32px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  color: white;
+  margin-bottom: 10px;
+}
+
+.event-list-header p {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Search and Filter Controls */
+.event-list-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 15px;
+}
+
+/* Simplified search container and input styling */
+.search-container {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+  max-width: 500px;
+}
+
+/* Search icon positioning */
+.search-container .search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+/* Clear search button */
+.clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.clear-search:hover {
+  color: white;
+}
+
+/* Add this for has-text class */
+.search-container.has-text .search-icon {
+  color: rgba(124, 77, 255, 0.7);
+}
+
+/* Updated search input with white text and cursor */
+.event-search-input {
+  width: 100%;
+  padding: 12px 20px 12px 45px;
+  background: rgba(48, 30, 103, 0.6);
+  border: 1px solid rgba(124, 77, 255, 0.2);
+  border-radius: 8px;
+  color: white !important;
+  caret-color: white;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  height: 46px;
+  transition: border-color 0.2s ease;
+}
+
+.event-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.event-search-input::selection {
+  background: rgba(124, 77, 255, 0.5);
+  color: white;
+}
+
+.event-search-input:focus {
+  outline: none;
+  border-color: rgba(124, 77, 255, 0.5);
+}
+
+/* Filter buttons */
+.filter-container {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.filter-btn {
+  background: rgba(48, 30, 103, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(124, 77, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background: rgba(124, 77, 255, 0.2);
+  color: white;
+}
+
+.filter-btn.active {
+  background: rgba(124, 77, 255, 0.4);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(124, 77, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Event Grid - Use a more balanced layout with maximum card width */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+  margin-bottom: 40px;
+  width: 100%;
+  justify-items: center; /* Center items horizontally in grid cells */
+}
+
+/* Limit event card link width */
+.event-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  width: 100%;
+  max-width: 400px; /* Limit the maximum width of cards */
+}
+
+/* Event card styling */
+.event-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.event-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.event-card-banner {
+  height: 140px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.event-card-organization {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 5px 10px;
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.event-card-content {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.event-card-content h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  color: white;
+}
+
+.event-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.event-date {
+  color: #f9a826;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.event-privacy-badge {
+  background: rgba(124, 77, 255, 0.3);
+  color: #b794f4;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.event-description-preview {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Loading and Error States */
+.event-loading,
+.event-error,
+.no-events-found {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  text-align: center;
+}
+
+.event-loading p,
+.event-error p,
+.no-events-found h3,
+.no-events-found p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.no-events-found h3 {
+  margin-bottom: 10px;
+}
+
+.event-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #7c4dff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.event-error button,
+.create-event-button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: linear-gradient(to right, rgba(76, 40, 137, 0.8), rgba(192, 86, 33, 0.8));
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.event-error button:hover,
+.create-event-button:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(to right, rgba(76, 40, 137, 0.9), rgba(192, 86, 33, 0.9));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Create Event Button */
+.create-event-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .event-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .event-list-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-container {
+    justify-content: center;
+  }
+  
+  .event-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  
+  .event-card-link {
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 480px) {
+  .event-list-header h1 {
+    font-size: 28px;
+  }
+  
+  .event-list-header p {
+    font-size: 16px;
+  }
+  
+  .event-grid {
+    grid-template-columns: 1fr; /* Force single column at small screens */
+  }
+  
+  .event-card-link {
+    max-width: 320px;
+  }
+}
