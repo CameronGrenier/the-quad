@@ -68,5 +68,6 @@ This section records the completion status of each function. The status can be o
 | `getFAQs`                   | Retrieves FAQ entries for the support section                                    | Not Started     |
 | `submitFeedback`            | Processes and stores user feedback                                               | Not Started     |
 
+## Function Completion Status
 
 This README provides a comprehensive overview of the backend tasks, ensuring clarity and ease of understanding for developers and stakeholders.
