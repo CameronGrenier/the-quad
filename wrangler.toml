@@ -1,8 +1,9 @@
-name = "the-quad-worker"
-type = "javascript"
-workers_dev = true
-compatibility_date = "2025-03-07"
-main = "./client/src/worker.js"
+
+  {
+    "name": "the-quad-worker",
+    "compatibility_date": "2025-03-22",
+    "main": "src/index.ts"
+  }
 
 # Add D1 binding for default environment
 d1_databases = [
