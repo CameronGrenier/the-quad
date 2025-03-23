@@ -302,6 +302,93 @@ class AccountController {
         { status: 500, headers: this.corsHeaders });
     }
   }
+
+  async updateProfile(request) {
+    try {
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      if (!token) {
+        return new Response(JSON.stringify({ success: false, error: "Authentication token required" }),
+          { status: 401, headers: this.corsHeaders });
+      }
+      
+      const payload = verifyJWT(token);
+      const userId = payload.userId;
+      if (!userId) throw new Error("Invalid token: missing user ID");
+      
+      const formData = await parseFormData(request);
+      const f_name = formData.get('f_name');
+      const l_name = formData.get('l_name');
+      const email = formData.get('email');
+      const phone = formData.get('phone') || null;
+      
+      if (!f_name || !l_name || !email) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "First name, last name and email are required"
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      // Check if email is taken by another user
+      const existingUser = await this.env.D1_DB.prepare(
+        "SELECT * FROM USERS WHERE LOWER(email)=LOWER(?) AND userID != ?"
+      ).bind(email, userId).first();
+      
+      if (existingUser) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "This email address is already in use by another account"
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      // Handle profile picture upload if provided
+      let profilePictureUrl = null;
+      const profilePicture = formData.get('profile_picture');
+      
+      if (profilePicture && profilePicture.size > 0) {
+        // Generate a unique filename for the profile picture
+        profilePictureUrl = await uploadFileToR2(
+          this.env, 
+          profilePicture, 
+          `profile_pictures/user_${userId}_${Date.now()}`
+        );
+      }
+      
+      // Update user information in database
+      let updateQuery = `
+        UPDATE USERS 
+        SET f_name = ?, l_name = ?, email = ?, phone = ?
+      `;
+      
+      let params = [f_name, l_name, email, phone];
+      
+      // Only update profile picture if a new one was uploaded
+      if (profilePicture && profilePicture.size > 0) {
+        updateQuery += `, profile_picture = ?`;
+        params.push(profilePictureUrl);
+      }
+      
+      updateQuery += ` WHERE userID = ?`;
+      params.push(userId);
+      
+      await this.env.D1_DB.prepare(updateQuery).bind(...params).run();
+      
+      // Fetch updated user data to return
+      const updatedUser = await this.env.D1_DB.prepare(
+        "SELECT userID, f_name, l_name, email, phone, profile_picture FROM USERS WHERE userID = ?"
+      ).bind(userId).first();
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "Profile updated successfully",
+        user: updatedUser
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      console.error("Error in updateProfile:", error);
+      return new Response(JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: this.corsHeaders });
+    }
+  }
 }
 
 class OrganizationController {
@@ -1067,6 +1154,13 @@ export default {
       // Add this new route
       if (path === "/api/user/events" && request.method === "GET") {
         return await eventCtrl.getUserEvents(request);
+      }
+
+      // Add this to the fetch function's routes
+
+      // Update profile endpoint
+      if (path === "/api/update-profile" && request.method === "POST") {
+        return await accountCtrl.updateProfile(request);
       }
 
       // Default 404 Not Found

@@ -239,13 +239,21 @@ export function AuthProvider({ children }) {
     setCurrentUser(null);
   };
 
+  // Add updateCurrentUser function to update the user data in context
+  const updateCurrentUser = (userData) => {
+    setCurrentUser(userData);
+    // Also update localStorage to persist the changes
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
   const value = {
     currentUser,
     loading,
     login,
     signup,
     logout,
-    refreshUserData
+    refreshUserData,
+    updateCurrentUser
   };
 
   return (
