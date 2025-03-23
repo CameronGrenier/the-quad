@@ -70,10 +70,5 @@ This section records the completion status of each function. The status can be o
 
 ## Function Completion Status
 
-This section records the completion status of each function. The status can be one of the following:
-- Not Started
-- Incomplete
-- Testing Phase
-- Integrated
 
 This README provides a comprehensive overview of the backend tasks, ensuring clarity and ease of understanding for developers and stakeholders.
