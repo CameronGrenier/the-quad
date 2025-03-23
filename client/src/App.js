@@ -14,6 +14,7 @@ import Profile from './components/Profile';
 import OrganizationPage from './components/OrganizationPage';
 import OrganizationList from './components/OrganizationList';
 import MyOrganizations from './components/MyOrganizations';
+import ExploreEvents from './components/ExploreEvents';
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
@@ -50,6 +51,7 @@ function App() {
             <Route path="/organizations" element={<OrganizationList />} />
             <Route path="/organizations/:orgId" element={<OrganizationPage />} />
             <Route path="/my-organizations" element={<MyOrganizations />} />
+            <Route path="/events" element={<ExploreEvents />} />
           </Routes>
         </main>
         {isMobile && <MobileNavbar />}
