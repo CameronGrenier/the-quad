@@ -184,7 +184,7 @@ function MyEvents() {
                       </p>
                       <div className="event-status">
                         <span className={`status-badge ${event.rsvpStatus}`}>
-                          {event.rsvpStatus === 'attending' ? 'Going' : 
+                          {event.rsvpStatus === 'attending' ? 'Attending' : 
                            event.rsvpStatus === 'maybe' ? 'Maybe' : 
                            event.rsvpStatus === 'declined' ? 'Declined' : 
                            event.isOrganizer ? 'Organizing' : ''}
@@ -223,7 +223,7 @@ function MyEvents() {
                       </p>
                       <div className="event-status">
                         <span className={`status-badge ${event.rsvpStatus} past`}>
-                          {event.rsvpStatus === 'attending' ? 'Went' : 
+                          {event.rsvpStatus === 'attending' ? 'Attended' : 
                            event.rsvpStatus === 'maybe' ? 'Maybe' : 
                            event.rsvpStatus === 'declined' ? 'Declined' : 
                            event.isOrganizer ? 'Organized' : ''}
