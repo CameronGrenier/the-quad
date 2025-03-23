@@ -78,4 +78,4 @@ This section records the completion status of each function. The status can be o
 | `getAllOrganizations`       | Lists all organizations in the system                                            | Integrated      | `OrganizationController.getAllOrganizations` |
 | `deleteOrganization`        | Removes an organization and related data                                         | Integrated      | `OrganizationController.deleteOrganization` |
 
-This document provides a comprehensive overview of the backend tasks, ensuring clarity and ease of understanding for developers and stakeholders.
+This document provides a comprehensive overview of the backend tasks, ensuring clarity and ease of understanding for developers.
