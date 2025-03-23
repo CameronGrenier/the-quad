@@ -218,10 +218,10 @@ To deploy your worker:
 
 ```bash
 # Development mode
-npm run dev
+npx wrangler dev
 
 # Production deployment
-npm run deploy
+npx wrangler deploy
 ```
 
 ## Troubleshooting
@@ -252,4 +252,4 @@ return new Response(JSON.stringify(data), {
 
 ---
 
-For additional assistance or to report issues, contact the development team at info@thequad.com.
+For additional assistance or to report issues, contact Cameron on the discord
