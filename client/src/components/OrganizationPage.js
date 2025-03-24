@@ -42,6 +42,11 @@ function OrganizationPage() {
   // Add state for delete confirmation dialog
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Add new state for membership
+  const [isMember, setIsMember] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [memberCount, setMemberCount] = useState(0);
 
   useEffect(() => {
     async function fetchOrganizationData() {
@@ -55,6 +60,7 @@ function OrganizationPage() {
         
         if (orgData.success) {
           setOrganization(orgData.organization);
+          setMemberCount(orgData.organization.memberCount || 0);
           
           // Check if current user is an admin of this organization
           if (currentUser) {
@@ -72,6 +78,15 @@ function OrganizationPage() {
             
             console.log("Is admin result:", isUserAdmin);
             setIsAdmin(isUserAdmin);
+            
+            // Also check if the user is already a member
+            if (currentUser.id || currentUser.userID) {
+              const membershipResponse = await fetch(
+                `${API_URL}/api/check-membership?orgID=${orgId}&userID=${currentUser.id || currentUser.userID}`
+              );
+              const membershipData = await membershipResponse.json();
+              setIsMember(membershipData.isMember);
+            }
           }
         } else {
           throw new Error(orgData.error || 'Organization not found');
@@ -141,6 +156,47 @@ function OrganizationPage() {
       console.error('Error deleting organization:', error);
       setError(error.message);
       setIsDeleting(false);
+    }
+  };
+
+  // Add join/leave organization handler
+  const handleMembershipToggle = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      setJoinLoading(true);
+      const userId = currentUser.id || currentUser.userID;
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/organization-membership`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orgID: orgId,
+          userID: userId,
+          action: isMember ? 'leave' : 'join'
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsMember(!isMember);
+        setMemberCount(prevCount => isMember ? prevCount - 1 : prevCount + 1);
+      } else {
+        throw new Error(data.error || 'Failed to update membership');
+      }
+    } catch (error) {
+      console.error('Error updating membership:', error);
+      setError(`Membership update failed: ${error.message}`);
+    } finally {
+      setJoinLoading(false);
     }
   };
 
@@ -263,15 +319,24 @@ function OrganizationPage() {
                 <span className="stat-label">Events</span>
               </div>
               <div className="stat">
-                <span className="stat-value">{organization.memberCount || 0}</span>
+                <span className="stat-value">{memberCount}</span>
                 <span className="stat-label">Members</span>
               </div>
             </div>
           </div>
           
           {!isAdmin && currentUser && (
-            <button className="join-org-btn">
-              Join Organization
+            <button 
+              className={`${isMember ? 'leave-org-btn' : 'join-org-btn'}`}
+              onClick={handleMembershipToggle}
+              disabled={joinLoading}
+            >
+              {joinLoading 
+                ? 'Processing...' 
+                : isMember 
+                  ? 'Leave Organization' 
+                  : 'Join Organization'
+              }
             </button>
           )}
         </div>

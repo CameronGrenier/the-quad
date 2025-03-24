@@ -1,339 +1,282 @@
 import React, { useState, useEffect } from 'react';
-import './OrganizationRegistration.css';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import CustomSelect from './CustomSelect';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+import { useAuth } from '../context/AuthContext';
+import './OrganizationRegistration.css';
 
 function OrganizationRegistration() {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    thumbnail: null,
-    banner: null,
     privacy: 'public',
-    submitForOfficialStatus: false,
+    thumbnail: null,
+    banner: null
   });
   const [errors, setErrors] = useState({});
-  const [nameExistsError, setNameExistsError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
+  const [apiError, setApiError] = useState(null);
   
-  // Redirect to login if user is not authenticated
+  const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+  
+  // Redirect if not logged in
   useEffect(() => {
     if (!currentUser) {
-      navigate('/login', { state: { from: '/register-organization', message: 'You need to log in to create an organization.' } });
+      console.log("No user found, redirecting to login");
+      navigate('/login');
+      return;
+    } else {
+      console.log("Current user found:", currentUser);
     }
   }, [currentUser, navigate]);
-
-  // Add this debug effect to log user data
-  useEffect(() => {
-    console.log("OrganizationRegistration: Current user state:", currentUser ? {
-      hasUser: !!currentUser,
-      id: currentUser.id,
-      userID: currentUser.userID, // Check if it might be stored under a different property name
-      email: currentUser.email
-    } : "No user");
-    
-    // If we have a user but no ID, try to read from localStorage directly
-    if (currentUser && !currentUser.id) {
-      try {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          const parsedUser = JSON.parse(savedUser);
-          console.log("Parsed user from localStorage:", {
-            id: parsedUser.id,
-            userID: parsedUser.userID,
-            email: parsedUser.email
-          });
-        } else {
-          console.log("No user data in localStorage");
-        }
-      } catch (error) {
-        console.error("Error checking localStorage:", error);
-      }
-    }
-  }, [currentUser]);
-
-  const handleChange = async (e) => {
-    const { name, value, type, checked, files } = e.target;
-
-    setFormData(prevFormData => ({
-      ...prevFormData,
-      [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value,
-    }));
-
-    if (name === 'name') {
-      try {
-        const response = await fetch(`${API_URL}/api/check-organization-name?name=${value}`, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        const result = await response.json();
-        if (result.exists) {
-          setNameExistsError('This organization name already exists.');
-        } else {
-          setNameExistsError('');
-        }
-      } catch (error) {
-        console.error('Error checking organization name:', error);
-        setNameExistsError('Error checking name. Please try again.');
-      }
-    }
-  };
-
+  
   const validateForm = () => {
-    let tempErrors = {};
-    
-    // Check if user is logged in
-    if (!currentUser || !currentUser.id) {
-      tempErrors.form = 'You must be logged in to create an organization';
-      // Redirect to login
-      navigate('/login', { state: { from: '/register-organization' } });
-      return false;
+    const newErrors = {};
+    if (!formData.name.trim()) {
+      newErrors.name = 'Organization name is required';
     }
-    
-    if (!formData.name) {
-      tempErrors.name = 'Name is required';
-    }
-    if (formData.submitForOfficialStatus) {
-      if (!formData.thumbnail) {
-        tempErrors.thumbnail = 'Thumbnail is required for official status';
-      }
-      if (!formData.banner) {
-        tempErrors.banner = 'Banner is required for official status';
-      }
-    }
-    setErrors(tempErrors);
-    return Object.keys(tempErrors).length === 0;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
-
+  
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'thumbnail' || name === 'banner') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Check user before validation
-    if (!currentUser) {
-      setErrors({ form: "You must be logged in to create an organization" });
-      navigate('/login', { state: { from: '/register-organization' } });
-      return;
-    }
+    if (!validateForm()) return;
     
-    // Try to find any valid user ID
-    const userId = currentUser.id || currentUser.userID;
-    
-    if (!userId) {
-      console.error("No user ID available, clearing session and redirecting");
-      // Session is probably broken, clear it and redirect
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setErrors({ form: "Your session is invalid. Please log in again." });
-      navigate('/login', { state: { from: '/register-organization' } });
-      return;
-    }
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrors({});
-
     try {
-      const orgFormData = new FormData();
-      orgFormData.append('name', formData.name);
-      orgFormData.append('description', formData.description);
-      orgFormData.append('userID', userId);
-      orgFormData.append('privacy', formData.privacy);
+      setIsSubmitting(true);
+      setApiError(null);
       
-      console.log("Submitting organization form with user ID:", userId);
-
-      if (formData.thumbnail) {
-        orgFormData.append('thumbnail', formData.thumbnail);
-        console.log("Including thumbnail:", formData.thumbnail.name);
-      }
-
-      if (formData.banner) {
-        orgFormData.append('banner', formData.banner);
-        console.log("Including banner:", formData.banner.name);
-      }
-
-      const response = await fetch(`${API_URL}/api/register-organization`, {
-        method: 'POST',
-        body: orgFormData,
-      });
-
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        
-        if (contentType && contentType.includes("application/json")) {
-          // Parse JSON error response
-          const data = await response.json();
-          console.error('API Error:', data);
-          setErrors({ form: `Error: ${data.error || 'Unknown server error'}` });
-        } else {
-          // Handle non-JSON error response
-          const text = await response.text();
-          console.error('API Error (non-JSON):', text);
-          setErrors({ form: `Server error: ${response.status} ${response.statusText}` });
-        }
+      // Get auth token for the request
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("No authentication token found");
+        setApiError("You need to be logged in to create an organization");
+        navigate('/login');
         return;
       }
-
+      
+      // Determine user ID from currentUser
+      const userId = currentUser?.id || currentUser?.userID;
+      if (!userId) {
+        console.error("User ID not found in currentUser:", currentUser);
+        setApiError("User ID could not be determined");
+        return;
+      }
+      
+      // Create form data for submission
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      submitData.append('description', formData.description);
+      submitData.append('privacy', formData.privacy);
+      submitData.append('userID', userId);
+      
+      if (formData.thumbnail) {
+        submitData.append('thumbnail', formData.thumbnail);
+      }
+      
+      if (formData.banner) {
+        submitData.append('banner', formData.banner);
+      }
+      
+      // Log the request data for debugging
+      console.log("Organization registration request:", {
+        name: formData.name,
+        description: formData.description,
+        privacy: formData.privacy,
+        userID: userId,
+        thumbnail: formData.thumbnail ? "File included" : "No file",
+        banner: formData.banner ? "File included" : "No file"
+      });
+      
+      const response = await fetch(`${API_URL}/api/register-organization`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}` // Add auth token to request
+        },
+        body: submitData
+      });
+      
       const data = await response.json();
-
+      
       if (data.success) {
-        setShowSuccessPopup(true);
-        setFormData({
-          name: '',
-          description: '',
-          thumbnail: null,
-          banner: null,
-          privacy: 'public',
-          submitForOfficialStatus: false
-        });
-        setErrors({});
-        setNameExistsError('');
-        setTimeout(() => {
-          setShowSuccessPopup(false);
-          navigate('/profile'); // Redirect to profile after success
-        }, 3000);
+        // Redirect to the new organization page
+        console.log("Organization created successfully:", data);
+        navigate(`/organizations/${data.orgID}`);
       } else {
-        // Enhanced error display with full error message
-        console.error('API Error:', data.error);
-        setErrors({ form: `Failed to create organization: ${data.error}` });
+        console.error("Organization creation failed:", data.error);
+        setApiError(data.error || 'Failed to create organization');
       }
     } catch (error) {
       console.error('Error creating organization:', error);
-      setErrors({ form: `An unexpected error occurred: ${error.message}` });
+      setApiError('An error occurred while creating the organization');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="org-registration-wrapper">
+    <>
       <div className="org-page-container"></div>
-      <div className="registration-container">
-        <h2>Create Organization</h2>
-
-        {errors.form && <div className="error-message">{errors.form}</div>}
-
-        {showSuccessPopup && (
-          <div className="success-popup">
-            <div className="success-content">
-              <div className="success-icon">✓</div>
-              <h3>Organization Created!</h3>
-              <p>Your organization has been created successfully.</p>
+      <div className="org-registration-wrapper">
+        <div className="registration-container">
+          <h2>Create Organization</h2>
+          
+          {apiError && (
+            <div className="error-message">
+              <p>{apiError}</p>
+              <button 
+                className="dismiss-button"
+                onClick={() => setApiError(null)}
+              >
+                Dismiss
+              </button>
             </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          {/* Form content remains unchanged */}
-          <div className="form-group">
-            <label>Name:</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-            {errors.name && <p className="error">{errors.name}</p>}
-            {nameExistsError && <p className="error">{nameExistsError}</p>}
-          </div>
-          <div className="form-group">
-            <label>Description:</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="form-group">
-            <label>Thumbnail:</label>
-            <div className="custom-file-upload">
+          )}
+          
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Organization Name:</label>
               <input
-                type="file"
-                name="thumbnail"
+                type="text"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                accept="image/*"
+                required
               />
-              <div className="file-upload-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5-5 5z"/>
-                </svg>
-                Choose Thumbnail
-              </div>
-              {formData.thumbnail && (
-                <div className="file-name">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                  </svg>
-                  {formData.thumbnail.name}
-                </div>
-              )}
+              {errors.name && <p className="error">{errors.name}</p>}
             </div>
-            {errors.thumbnail && <p className="error">{errors.thumbnail}</p>}
-          </div>
-          <div className="form-group">
-            <label>Banner:</label>
-            <div className="custom-file-upload">
-              <input
-                type="file"
-                name="banner"
+            
+            <div className="form-group">
+              <label>Description:</label>
+              <textarea
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                accept="image/*"
+                rows="4"
               />
-              <div className="file-upload-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5-5 5z"/>
-                </svg>
-                Choose Banner
-              </div>
-              {formData.banner && (
-                <div className="file-name">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                  </svg>
-                  {formData.banner.name}
-                </div>
-              )}
             </div>
-            {errors.banner && <p className="error">{errors.banner}</p>}
-          </div>
-          <div className="form-group">
-            <label>Privacy:</label>
-            <CustomSelect
-              name="privacy"
-              value={formData.privacy}
-              onChange={handleChange}
-              options={[
-                { value: 'public', label: 'Public' },
-                { value: 'private', label: 'Private' }
-              ]}
-            />
-          </div>
-          <div className="form-group checkbox-group">
-            <label htmlFor="submitForOfficialStatus">Submit for Official Status</label>
-            <input
-              type="checkbox"
-              id="submitForOfficialStatus"
-              name="submitForOfficialStatus"
-              checked={formData.submitForOfficialStatus}
-              onChange={handleChange}
-            />
-          </div>
-          <button type="submit" className="submit-button" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create Organization'}
-          </button>
-        </form>
+            
+            <div className="form-group">
+              <label>Thumbnail Image:</label>
+              <div className="custom-file-upload">
+                <input
+                  type="file"
+                  name="thumbnail"
+                  onChange={handleChange}
+                  accept="image/*"
+                />
+                <div className="file-upload-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5-5 5z"/>
+                  </svg>
+                  Choose Thumbnail
+                </div>
+                {formData.thumbnail && (
+                  <div className="file-name">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                    </svg>
+                    {formData.thumbnail.name}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label>Banner Image:</label>
+              <div className="custom-file-upload">
+                <input
+                  type="file"
+                  name="banner"
+                  onChange={handleChange}
+                  accept="image/*"
+                />
+                <div className="file-upload-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM7 9l1.41 1.41L11 7.83V16h2V7.83l2.59 2.58L17 9l-5-5-5 5z"/>
+                  </svg>
+                  Choose Banner
+                </div>
+                {formData.banner && (
+                  <div className="file-name">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                    </svg>
+                    {formData.banner.name}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label>Privacy:</label>
+              <div className="privacy-options">
+                <div className="privacy-option">
+                  <input
+                    type="radio"
+                    id="public"
+                    name="privacy"
+                    value="public"
+                    checked={formData.privacy === 'public'}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="public">
+                    <span className="radio-circle"></span>
+                    <div>
+                      <span className="option-title">Public</span>
+                      <span className="option-description">Anyone can see this organization</span>
+                    </div>
+                  </label>
+                </div>
+                
+                <div className="privacy-option">
+                  <input
+                    type="radio"
+                    id="private"
+                    name="privacy"
+                    value="private"
+                    checked={formData.privacy === 'private'}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="private">
+                    <span className="radio-circle"></span>
+                    <div>
+                      <span className="option-title">Private</span>
+                      <span className="option-description">Only members can see this organization</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              type="submit" 
+              className="submit-button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating...' : 'Create Organization'}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

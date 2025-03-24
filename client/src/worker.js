@@ -647,6 +647,132 @@ class OrganizationController {
       }), { status: 500, headers: this.corsHeaders });
     }
   }
+
+  async checkMembership(request) {
+    try {
+      const url = new URL(request.url);
+      const orgID = url.searchParams.get('orgID');
+      const userID = url.searchParams.get('userID');
+      
+      if (!orgID || !userID) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Organization ID and User ID are required" 
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      const memberRecord = await this.env.D1_DB.prepare(`
+        SELECT 1 FROM ORG_MEMBER 
+        WHERE orgID = ? AND userID = ?
+      `).bind(orgID, userID).first();
+      
+      return new Response(JSON.stringify({
+        success: true,
+        isMember: !!memberRecord
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
+  
+  async toggleMembership(request) {
+    try {
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Authentication required" 
+        }), { status: 401, headers: this.corsHeaders });
+      }
+      
+      // Verify JWT token
+      const payload = verifyJWT(token);
+      const tokenUserId = payload.userId;
+      
+      const { orgID, userID, action } = await request.json();
+      
+      if (!orgID || !userID || !action) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Organization ID, User ID, and action are required" 
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      // Ensure the token's user matches the requested user
+      if (tokenUserId != userID) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "You can only modify your own membership" 
+        }), { status: 403, headers: this.corsHeaders });
+      }
+      
+      if (action === 'join') {
+        // Check if already a member
+        const existingMembership = await this.env.D1_DB.prepare(`
+          SELECT 1 FROM ORG_MEMBER 
+          WHERE orgID = ? AND userID = ?
+        `).bind(orgID, userID).first();
+        
+        if (existingMembership) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "You're already a member of this organization"
+          }), { status: 400, headers: this.corsHeaders });
+        }
+        
+        // Join the organization - FIXED: removed joinDate column
+        await this.env.D1_DB.prepare(`
+          INSERT INTO ORG_MEMBER (orgID, userID)
+          VALUES (?, ?)
+        `).bind(orgID, userID).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: "Successfully joined the organization"
+        }), { headers: this.corsHeaders });
+        
+      } else if (action === 'leave') {
+        // Check if is a member
+        const existingMembership = await this.env.D1_DB.prepare(`
+          SELECT 1 FROM ORG_MEMBER 
+          WHERE orgID = ? AND userID = ?
+        `).bind(orgID, userID).first();
+        
+        if (!existingMembership) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "You're not a member of this organization"
+          }), { status: 400, headers: this.corsHeaders });
+        }
+        
+        // Leave the organization
+        await this.env.D1_DB.prepare(`
+          DELETE FROM ORG_MEMBER 
+          WHERE orgID = ? AND userID = ?
+        `).bind(orgID, userID).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: "Successfully left the organization"
+        }), { headers: this.corsHeaders });
+      } else {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Invalid action. Must be 'join' or 'leave'"
+        }), { status: 400, headers: this.corsHeaders });
+      }
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
 }
 
 class EventController {
@@ -1161,6 +1287,26 @@ export default {
       // Update profile endpoint
       if (path === "/api/update-profile" && request.method === "POST") {
         return await accountCtrl.updateProfile(request);
+      }
+
+      // Add this to the fetch function's routes
+      if (path === "/api/check-membership" && request.method === "GET") {
+        return await orgCtrl.checkMembership(request);
+      }
+      if (path === "/api/toggle-membership" && request.method === "POST") {
+        return await orgCtrl.toggleMembership(request);
+      }
+
+      // Add these to your fetch function routes
+
+      // Check membership status endpoint
+      if (path === "/api/check-membership" && request.method === "GET") {
+        return await orgCtrl.checkMembership(request);
+      }
+
+      // Toggle (join/leave) organization membership
+      if (path === "/api/organization-membership" && request.method === "POST") {
+        return await orgCtrl.toggleMembership(request);
       }
 
       // Default 404 Not Found
