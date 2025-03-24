@@ -64,7 +64,10 @@ function EventRegistration() {
 
     // Only fetch organizations if we have a valid user ID
     async function fetchUserOrganizations() {
-      if (!currentUser?.id) {
+      // Get the user ID using both possible field names
+      const userId = currentUser?.id || currentUser?.userID;
+      
+      if (!userId) {
         console.log("No user ID available, skipping organization fetch");
         organizationsLoaded = true;
         checkAllLoaded();
@@ -72,7 +75,8 @@ function EventRegistration() {
       }
       
       try {
-        const response = await fetch(`${API_URL}/api/user-organizations?userID=${currentUser.id}`);
+        // Use the correct user ID in the API call
+        const response = await fetch(`${API_URL}/api/user-organizations?userID=${userId}`);
         
         if (!response.ok) {
           throw new Error(`Server responded with status: ${response.status}`);
@@ -81,17 +85,24 @@ function EventRegistration() {
         const data = await response.json();
         
         if (data.success) {
+          console.log("Organizations fetched:", data.organizations);
           setOrganizations(data.organizations);
-          if (data.organizations.length > 0) {
+          
+          // Only set first org if organizations exist
+          if (data.organizations && data.organizations.length > 0) {
+            // Get the organization ID using the right property
+            const firstOrgId = data.organizations[0].orgID || data.organizations[0].id;
             setFormData(prev => ({
               ...prev,
-              organizationID: data.organizations[0].orgID
+              organizationID: firstOrgId
             }));
           }
+        } else {
+          console.log("API returned success: false");
+          setOrganizations([]);
         }
       } catch (error) {
         console.error('Error fetching user organizations:', error);
-        // Display friendly error message
         setApiError('Unable to load your organizations. Please try again later.');
         setOrganizations([]);
       } finally {
@@ -301,8 +312,8 @@ function EventRegistration() {
       submitData.append('privacy', formData.privacy);
       submitData.append('submitForOfficialStatus', formData.submitForOfficialStatus);
       
-      // Include the current user's ID
-      submitData.append('userID', currentUser.id);
+      // Include the current user's ID (checking both property names)
+      submitData.append('userID', currentUser.id || currentUser.userID);
       
       // Add thumbnail if provided
       if (formData.thumbnail) {
@@ -426,7 +437,7 @@ function EventRegistration() {
               value={formData.organizationID}
               onChange={handleChange}
               options={organizations.map(org => ({
-                value: org.id || org.organizationID,
+                value: org.orgID || org.id,
                 label: org.name
               }))}
               placeholder="Select an organization"

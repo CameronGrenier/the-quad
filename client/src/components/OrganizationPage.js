@@ -58,9 +58,19 @@ function OrganizationPage() {
           
           // Check if current user is an admin of this organization
           if (currentUser) {
+            // Get current user ID (checking both property names)
+            const currentUserId = currentUser.id || currentUser.userID;
+            
+            // Debug the admin check
+            console.log("Admin check - Current user ID:", currentUserId);
+            console.log("Admins:", orgData.organization.admins);
+            
+            // Check against both possible ID properties in the admin objects
             const isUserAdmin = orgData.organization.admins?.some(
-              admin => admin.id === currentUser.id
+              admin => (admin.id === currentUserId || admin.userID === currentUserId)
             );
+            
+            console.log("Is admin result:", isUserAdmin);
             setIsAdmin(isUserAdmin);
           }
         } else {
@@ -90,17 +100,19 @@ function OrganizationPage() {
     fetchOrganizationData();
   }, [orgId, currentUser]);
 
-  // Add function to handle organization deletion
+  // Update the handleDeleteOrganization function
   const handleDeleteOrganization = async () => {
     if (!isAdmin || !currentUser) return;
     
     try {
       setIsDeleting(true);
       console.log("Deleting organization:", orgId);
-      console.log("Current user:", currentUser);
+      
+      // Get the user ID (checking both property names)
+      const userId = currentUser.id || currentUser.userID;
+      console.log("Using user ID for deletion:", userId);
       
       const token = localStorage.getItem('token');
-      console.log("Using token:", token ? "Token exists" : "No token found");
       
       const response = await fetch(`${API_URL}/api/organizations/${orgId}`, {
         method: 'DELETE',
@@ -108,7 +120,7 @@ function OrganizationPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ userID: currentUser.id })
+        body: JSON.stringify({ userID: userId })
       });
       
       console.log("Delete response status:", response.status);
