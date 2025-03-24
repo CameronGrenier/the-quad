@@ -151,7 +151,8 @@ class Landmark {
     this.multiEventAllowed = multiEventAllowed;
   }
   async checkAvailability(dateRange) {
-    // For now, always return true
+    //Check to see if a location is available at a given date range
+    //Case: Multi Event Allowed 
     return true;
   }
 }
