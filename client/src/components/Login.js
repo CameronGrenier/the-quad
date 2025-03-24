@@ -20,14 +20,20 @@ function Login() {
     try {
       setError('');
       setLoading(true);
-      await login(email, password);
-      navigate('/');
+      const result = await login(email, password);
+      
+      if (result.success) {
+        // Redirect to homepage after successful login
+        navigate('/');
+      } else {
+        setError(result.error || 'Failed to log in');
+      }
     } catch (error) {
       setError('Failed to log in. Please check your credentials.');
       console.error(error);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   }
 
   return (
