@@ -61,45 +61,23 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Function to refresh user data from the server
-  const refreshUserData = async (token) => {
+  const refreshUserData = async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
       const response = await fetch(`${API_URL}/api/user-profile`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.ok) {
-        const userData = await response.json();
-        if (userData.success && userData.user) {
-          // Save the complete user data
-          const user = {
-            id: userData.user.userID || userData.user.id,
-            userID: userData.user.userID || userData.user.id, // Store ID in both formats for safety
-            email: userData.user.email,
-            f_name: userData.user.f_name,
-            l_name: userData.user.l_name,
-            // Add any other fields from the response
-          };
-          
-          localStorage.setItem('user', JSON.stringify(user));
-          setCurrentUser(user);
-          return true;
-        }
-      }
+      const data = await response.json();
       
-      // If we couldn't refresh, clear the invalid session
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setCurrentUser(null);
-      return false;
+      if (data.success) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setCurrentUser(data.user);
+      }
     } catch (error) {
-      console.error("Error refreshing user data:", error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setCurrentUser(null);
-      return false;
+      console.error("Failed to refresh user data:", error);
     }
   };
 
@@ -107,49 +85,37 @@ export function AuthProvider({ children }) {
     try {
       setLoading(true);
       
-      // Log the email and password being sent
-      console.log("Sending login request with:", { email, password });
-      
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
-
+      
       const data = await response.json();
-
-      if (data.success && data.token && data.user) {
-        // Make sure we standardize the user object structure
-        const user = {
-          id: data.user.userID || data.user.id, // Handle both formats
-          userID: data.user.userID || data.user.id, // Store ID in both formats for safety
-          email: data.user.email,
-          f_name: data.user.f_name,
-          l_name: data.user.l_name,
-          // Include any other user properties
-        };
+      
+      if (data.success && data.token) {
+        localStorage.setItem('token', data.token);
         
-        console.log("Login successful, user data:", {
-          email: user.email,
-          id: user.id,
-          userID: user.userID
+        // After successful login, fetch the latest user profile
+        const userResponse = await fetch(`${API_URL}/api/user-profile`, {
+          headers: { 'Authorization': `Bearer ${data.token}` }
         });
         
-        // Make sure we have an ID before storing
-        if (!user.id) {
-          console.error("API returned user without ID");
-          return { success: false, error: "Invalid user data returned from server" };
+        const userData = await userResponse.json();
+        
+        if (userData.success) {
+          // Use the fresh user data
+          localStorage.setItem('user', JSON.stringify(userData.user));
+          setCurrentUser(userData.user);
+        } else {
+          // Fall back to login response user data
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setCurrentUser(data.user);
         }
         
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(user));
-        setCurrentUser(user);
         return { success: true };
       } else {
-        console.error("Login API error:", data.error);
-        return { success: false, error: data.error || "Login failed" };
+        return { success: false, error: data.error || 'Login failed' };
       }
     } catch (error) {
       console.error("Login error:", error);
