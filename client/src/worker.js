@@ -155,6 +155,8 @@ class Landmark {
     //Case: Multi Event Allowed 
     return true;
   }
+
+
 }
 
 // Additional Domain Classes per diagram (stubs)
