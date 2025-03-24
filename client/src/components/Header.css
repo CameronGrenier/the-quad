@@ -123,6 +123,8 @@ padding: 0.5rem;
   margin-right: 1.5rem;
   overflow: hidden;
   border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2); /* Add subtle border */
+  background-color: rgba(28, 16, 51, 0.3); /* Add background for images with transparency */
 }
 
   .account a {
@@ -138,10 +140,11 @@ padding: 0.5rem;
   }
 
   .account img {
-    width: fit-content;
+    width: 100%;  /* Change from fit-content to 100% to fill the container width */
     height: 100%;
     object-fit: cover;
     display: block;
+    border-radius: 50%; /* Ensure the image itself is also rounded */
   }
 
   .account-icon {
