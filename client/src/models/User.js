@@ -11,6 +11,7 @@ export class User {
     this.phone = phone;
     this.profilePicture = profilePicture;
   }
-  async createAccount() { /* see AccountController.createAccount */ }
+ //Create Account function implemented in account controller class
+ //Moving modify account settings to account controller class
   async modifyAccountSettings() { /* implement as needed */ }
 }

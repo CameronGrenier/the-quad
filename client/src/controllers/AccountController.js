@@ -1,4 +1,7 @@
-import { Utils, DatabaseService, BackendService } from './utils.js';
+//Imports
+import * as BackendService from '../services/BackendService.js';
+import * as DatabaseService from '../services/DatabaseService.js';
+
 
 /**
  * AccountController class handles user account-related endpoints
