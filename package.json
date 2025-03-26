@@ -4,11 +4,28 @@
   "description": "The Quad Application",
   "main": "./client/src/worker.js",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "npx wrangler deploy",
-    "build": "cd client && npm install && npm run build"
+    "build": "webpack",
+    "dev": "set NODE_ENV=development && webpack",
+    "deploy": "wrangler publish",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "wrangler": "^3.0.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1",
+    "jest": "^29.7.0",
+    "@cloudflare/workers-types": "^4.20240320.0",
+    "miniflare": "^3.20240320.0",
+    "jest-environment-miniflare": "^3.20240320.0"
+  },
+  "jest": {
+    "testEnvironment": "miniflare",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
   }
 }
