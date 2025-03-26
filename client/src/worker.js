@@ -73,5 +73,5 @@ export default {
     } catch (error) {
       return new Response(JSON.stringify({ error: "Server error", message: error.message }), { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
     }
-  },
-};
+  }
+}
