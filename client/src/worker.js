@@ -4,96 +4,10 @@
  * Domain classes represent the data model while controller classes encapsulate
  * the API endpoint logic.
  */
-
-/* ==================== UTILITY FUNCTIONS ==================== */
-async function parseFormData(request) {
-  const contentType = request.headers.get('content-type') || '';
-  if (contentType.includes('multipart/form-data') ||
-      contentType.includes('application/x-www-form-urlencoded')) {
-    return await request.formData();
-  } else if (contentType.includes('application/json')) {
-    const json = await request.json();
-    const formData = new FormData();
-    Object.entries(json).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    return formData;
-  }
-  return new FormData();
-}
-
-function generateJWT(payload) {
-  const header = { alg: "HS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const jwtPayload = { ...payload, iat: now, exp: now + (60 * 60 * 24) };
-  const base64Header = btoa(JSON.stringify(header));
-  const base64Payload = btoa(JSON.stringify(jwtPayload));
-  // Placeholder signature (in production, sign with a secret)
-  const signature = btoa("thequadsignature");
-  return `${base64Header}.${base64Payload}.${signature}`;
-}
-
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + "the-quad-salt");
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-async function verifyPassword(password, hashedPassword) {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hashedPassword;
-}
-
-function verifyJWT(token) {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) throw new Error('Invalid token format');
-    const payload = JSON.parse(atob(parts[1]));
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000))
-      throw new Error('Token has expired');
-    return payload;
-  } catch (error) {
-    throw new Error(`Invalid token: ${error.message}`);
-  }
-}
-
-async function uploadFileToR2(env, file, path) {
-  if (!env.R2_BUCKET) {
-    throw new Error("Missing R2_BUCKET binding");
-  }
-  const buffer = await file.arrayBuffer();
-  const contentType = file.type || 'application/octet-stream';
-  await env.R2_BUCKET.put(path, buffer, { httpMetadata: { contentType } });
-  return `/images/${path}`;
-}
-
-async function serveImageFromR2(env, imagePath, corsHeaders) {
-  let object = await env.R2_BUCKET.get(imagePath);
-  if (object === null && imagePath.includes('/')) {
-    const parts = imagePath.split('/');
-    object = await env.R2_BUCKET.get(parts.pop());
-  }
-  if (object === null) {
-    return new Response("Image not found", { status: 404, headers: corsHeaders });
-  }
-  const extension = imagePath.split('.').pop().toLowerCase();
-  const contentTypes = {
-    'jpg':'image/jpeg','jpeg':'image/jpeg','png':'image/png',
-    'gif':'image/gif','svg':'image/svg+xml','webp':'image/webp',
-    'bmp':'image/bmp','ico':'image/x-icon'
-  };
-  const contentType = contentTypes[extension] || 'application/octet-stream';
-  return new Response(object.body, {
-    headers: {
-      "Content-Type": contentType,
-      "Cache-Control": "public, max-age=86400",
-      "Access-Control-Allow-Origin": "*"
-    }
-  });
-}
+import { Utils } from './utils.js';
+import { AccountController } from './accountController.js';
+import { OrganizationController } from './OrganizationController.js'; // Updated import
+import { EventController } from './eventController.js';
 
 /* ==================== DOMAIN CLASSES ==================== */
 class User {
@@ -155,8 +69,6 @@ class Landmark {
     //Case: Multi Event Allowed 
     return true;
   }
-
-
 }
 
 // Additional Domain Classes per diagram (stubs)
@@ -300,12 +212,12 @@ class OrganizationController {
       const thumbnail = formData.get('thumbnail');
       if (thumbnail && thumbnail.size > 0) {
         const cleanName = name.replace(/\s+/g, '_');
-        thumbnailURL = await uploadFileToR2(this.env, thumbnail, `thumbnails/Thumb_${cleanName}`);
+        thumbnailURL = await Utils.uploadFileToR2(this.env, thumbnail, `thumbnails/Thumb_${cleanName}`);
       }
       const banner = formData.get('banner');
       if (banner && banner.size > 0) {
         const cleanName = name.replace(/\s+/g, '_');
-        bannerURL = await uploadFileToR2(this.env, banner, `banners/Banner_${cleanName}`);
+        bannerURL = await Utils.uploadFileToR2(this.env, banner, `banners/Banner_${cleanName}`);
       }
       const insertResult = await this.env.D1_DB.prepare(`
         INSERT INTO ORGANIZATION (name, description, thumbnail, banner, privacy)
@@ -534,7 +446,7 @@ class EventController {
   }
   async registerEvent(request) {
     try {
-      const formData = await parseFormData(request);
+      const formData = await Utils.parseFormData(request);
       const organizationID = formData.get('organizationID');
       const title = formData.get('title');
       const description = formData.get('description') || '';
