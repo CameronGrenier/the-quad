@@ -4,117 +4,16 @@
  * Domain classes represent the data model while controller classes encapsulate
  * the API endpoint logic.
  */
-import { Utils, BackendService } from './utils.js';
+import { BackendService } from './utils.js';
 import { AccountController } from './accountController.js';
 import { OrganizationController } from './OrganizationController.js';
 import { EventController } from './eventController.js';
-
-/* ==================== DOMAIN CLASSES ==================== */
-class User {
-  constructor({ userID, username, fName, lName, email, phone, profilePicture }) {
-    this.userID = userID;
-    this.username = username;
-    this.fName = fName;
-    this.lName = lName;
-    this.email = email;
-    this.phone = phone;
-    this.profilePicture = profilePicture;
-  }
-  async createAccount() { /* see AccountController.createAccount */ }
-  async modifyAccountSettings() { /* implement as needed */ }
-}
-
-class Organization {
-  constructor({ orgID, name, description, thumbnail, banner, privacy }) {
-    this.orgID = orgID;
-    this.name = name;
-    this.description = description;
-    this.thumbnail = thumbnail;
-    this.banner = banner;
-    this.privacy = privacy;
-  }
-  async createOrganization() { /* see OrganizationController.registerOrganization */ }
-  async modifyOrganization() { /* implement as needed */ }
-  async joinOrganization() { /* implement membership joining logic */ }
-}
-
-class Event {
-  constructor({ eventID, organizationID, title, description, thumbnail, banner,
-    startDate, endDate, privacy, officialStatus, landmarkID }) {
-    this.eventID = eventID;
-    this.organizationID = organizationID;
-    this.title = title;
-    this.description = description;
-    this.thumbnail = thumbnail;
-    this.banner = banner;
-    this.startDate = startDate;
-    this.endDate = endDate;
-    this.privacy = privacy;
-    this.officialStatus = officialStatus;
-    this.landmarkID = landmarkID;
-  }
-  async createEvent() { /* see EventController.registerEvent */ }
-  async rsvpToEvent(status) { /* implement as needed */ }
-}
-
-class Landmark {
-  constructor({ landmarkID, name, location, multiEventAllowed }) {
-    this.landmarkID = landmarkID;
-    this.name = name;
-    this.location = location;
-    this.multiEventAllowed = multiEventAllowed;
-  }
-  async checkAvailability(dateRange) {
-    //Check to see if a location is available at a given date range
-    //Case: Multi Event Allowed 
-    return true;
-  }
-}
-
-// Additional Domain Classes per diagram (stubs)
-class PendingSubmission {
-  constructor({ orgID = null, eventID = null }) {
-    this.orgID = orgID;
-    this.eventID = eventID;
-  }
-}
-class OfficialOrgs {
-  constructor({ orgID }) { this.orgID = orgID; }
-}
-class OfficialEvents {
-  constructor({ eventID }) { this.eventID = eventID; }
-}
-
-// Stub implementations for official status and admin dashboard controllers:
-class OfficialStatusController {
-  verifyOrganizationOfficialStatus(org) { 
-    // Implementation to verify official status for an organization
-    return true;
-  }
-  verifyEventOfficialStatus(event) { 
-    // Implementation to verify official status for an event 
-    return true;
-  }
-  acceptOrganization(org) { 
-    // Process acceptance (stub)
-  }
-  acceptEvent(event) { 
-    // Process acceptance (stub)
-  }
-  denySubmission(item) { 
-    // Process denial (stub)
-  }
-}
-
-class AdminDashboard {
-  displayPendingSubmissions() { return []; }
-  reviewSubmission(itemID) { return {}; }
-  processDecision(item, decision) { }
-}
+import { OfficialStatusController } from './OfficialStatusController.js';
+import { AdminDashboard } from './AdminDashboard.js';
 
 /* ==================== MAIN WORKER FUNCTION ==================== */
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -122,6 +21,8 @@ export default {
     const accountCtrl = new AccountController(env);
     const orgCtrl = new OrganizationController(env);
     const eventCtrl = new EventController(env);
+    const officialStatusCtrl = new OfficialStatusController();
+    const adminDashboard = new AdminDashboard();
 
     try {
       // Authentication endpoints
