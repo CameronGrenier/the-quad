@@ -175,93 +175,62 @@ class OfficialEvents {
 
 /* ==================== CONTROLLER CLASSES ==================== */
 class AccountController {
-  constructor(env, corsHeaders) {
+  constructor(env) {
     this.env = env;
-    this.corsHeaders = corsHeaders;
   }
+
   async createAccount(request) {
-    try {
-      const data = await request.json();
+    return BackendService.handleRequest(request, async (req) => {
+      const data = await BackendService.parseRequest(req);
       const { f_name, l_name, username, email, phone, password } = data;
       if (!f_name || !l_name || !username || !email || !password) {
-        const missing = [];
-        if (!f_name) missing.push('First Name');
-        if (!l_name) missing.push('Last Name');
-        if (!username) missing.push('Username');
-        if (!email) missing.push('Email');
-        if (!password) missing.push('Password');
-        return new Response(JSON.stringify({
-          success: false,
-          error: `Missing required fields: ${missing.join(', ')}`
-        }), { status: 400, headers: this.corsHeaders });
+        throw new Error("Missing required fields");
       }
-      
-      // Check if username already exists
-      const existingUsername = await this.env.D1_DB.prepare(
-        "SELECT * FROM USERS WHERE LOWER(username)=LOWER(?)"
-      ).bind(username).first();
-      if (existingUsername) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "A user with this username already exists"
-        }), { status: 400, headers: this.corsHeaders });
+
+      const existingUsername = await DatabaseService.query(this.env, "SELECT * FROM USERS WHERE LOWER(username)=LOWER(?)", [username]);
+      if (existingUsername.length > 0) {
+        throw new Error("A user with this username already exists");
       }
-      
-      // Check if email already exists
-      const existingUser = await this.env.D1_DB.prepare(
-        "SELECT * FROM USERS WHERE LOWER(email)=LOWER(?)"
-      ).bind(email).first();
-      if (existingUser) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "A user with this email already exists"
-        }), { status: 400, headers: this.corsHeaders });
+
+      const existingUser = await DatabaseService.query(this.env, "SELECT * FROM USERS WHERE LOWER(email)=LOWER(?)", [email]);
+      if (existingUser.length > 0) {
+        throw new Error("A user with this email already exists");
       }
-      
+
       const hashed = await hashPassword(password);
-      const insertResult = await this.env.D1_DB.prepare(
-        "INSERT INTO USERS (username, f_name, l_name, email, phone, password) VALUES (?,?,?,?,?,?)"
-      ).bind(username, f_name, l_name, email, phone || null, hashed).run();
+      const insertResult = await DatabaseService.execute(this.env, "INSERT INTO USERS (username, f_name, l_name, email, phone, password) VALUES (?,?,?,?,?,?)", [username, f_name, l_name, email, phone || null, hashed]);
       const userID = insertResult.meta.last_row_id;
       const token = generateJWT({ email, userId: userID, username });
-      return new Response(JSON.stringify({
-        success: true,
+
+      return {
         message: "User registered successfully",
         token,
-        user: { id: userID, userID, username, f_name, l_name, email, phone: phone || null }
-      }), { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: this.corsHeaders });
-    }
+        user: { id: userID, userID, username, f_name, l_name, email, phone: phone || null },
+      };
+    });
   }
+
   async login(request) {
-    try {
-      const data = await request.json();
+    return BackendService.handleRequest(request, async (req) => {
+      const data = await BackendService.parseRequest(req);
       const { email, password } = data;
       if (!email || !password) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "Email and password are required"
-        }), { status: 400, headers: this.corsHeaders });
+        throw new Error("Email and password are required");
       }
-      const usersQuery = await this.env.D1_DB.prepare(
-        "SELECT * FROM USERS WHERE LOWER(email)=LOWER(?)"
-      ).bind(email).all();
-      const users = usersQuery.results;
-      if (!users || users.length === 0) {
-        return new Response(JSON.stringify({ success: false, error: "Invalid email or password" }),
-          { status: 401, headers: this.corsHeaders });
+
+      const users = await DatabaseService.query(this.env, "SELECT * FROM USERS WHERE LOWER(email)=LOWER(?)", [email]);
+      if (users.length === 0) {
+        throw new Error("Invalid email or password");
       }
+
       const user = users[0];
       const passOk = await verifyPassword(password, user.password);
       if (!passOk) {
-        return new Response(JSON.stringify({ success: false, error: "Invalid email or password" }),
-          { status: 401, headers: this.corsHeaders });
+        throw new Error("Invalid email or password");
       }
+
       const token = generateJWT({ email: user.email, userId: user.userID, username: user.username });
-      return new Response(JSON.stringify({
-        success: true,
+      return {
         message: "Login successful",
         token,
         user: {
@@ -272,38 +241,31 @@ class AccountController {
           l_name: user.l_name,
           email: user.email,
           phone: user.phone,
-          profile_picture: user.profile_picture
-        }
-      }), { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: this.corsHeaders });
-    }
+          profile_picture: user.profile_picture,
+        },
+      };
+    });
   }
+
   async getUserProfile(request) {
-    try {
-      const authHeader = request.headers.get('Authorization') || '';
-      const token = authHeader.replace('Bearer ', '');
+    return BackendService.handleRequest(request, async (req) => {
+      const authHeader = req.headers.get("Authorization") || "";
+      const token = authHeader.replace("Bearer ", "");
       if (!token) {
-        return new Response(JSON.stringify({ success: false, error: "Authentication token required" }),
-          { status: 401, headers: this.corsHeaders });
+        throw new Error("Authentication token required");
       }
+
       const payload = verifyJWT(token);
       const userId = payload.userId;
       if (!userId) throw new Error("Invalid token: missing user ID");
-      const userQuery = await this.env.D1_DB.prepare(
-        "SELECT userID, f_name, l_name, email, phone, profile_picture FROM USERS WHERE userID = ?"
-      ).bind(userId).first();
-      if (!userQuery) {
-        return new Response(JSON.stringify({ success: false, error: "User not found" }),
-          { status: 404, headers: this.corsHeaders });
+
+      const userQuery = await DatabaseService.query(this.env, "SELECT userID, f_name, l_name, email, phone, profile_picture FROM USERS WHERE userID = ?", [userId]);
+      if (userQuery.length === 0) {
+        throw new Error("User not found");
       }
-      return new Response(JSON.stringify({ success: true, user: userQuery }),
-        { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: this.corsHeaders });
-    }
+
+      return { user: userQuery[0] };
+    });
   }
 }
 
@@ -689,24 +651,13 @@ class AdminDashboard {
 /* ==================== MAIN WORKER FUNCTION ==================== */
 export default {
   async fetch(request, env, ctx) {
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Content-Type": "application/json"
-    };
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // Instantiate controllers with environment and headers
-    const accountCtrl = new AccountController(env, corsHeaders);
-    const orgCtrl = new OrganizationController(env, corsHeaders);
-    const eventCtrl = new EventController(env, corsHeaders);
-    const officialStatusCtrl = new OfficialStatusController();
-    const adminDashboard = new AdminDashboard();
+    // Instantiate controllers with environment
+    const accountCtrl = new AccountController(env);
+    const orgCtrl = new OrganizationController(env);
+    const eventCtrl = new EventController(env);
 
     try {
       // Authentication endpoints
@@ -720,22 +671,6 @@ export default {
         return await accountCtrl.getUserProfile(request);
       }
 
-      // Validation endpoints
-      if (path === "/api/check-email" && request.method === "GET") {
-        const email = new URL(request.url).searchParams.get('email');
-        const { results } = await env.D1_DB.prepare(
-          "SELECT * FROM USERS WHERE LOWER(email)=LOWER(?)"
-        ).bind(email).all();
-        return new Response(JSON.stringify({ success: true, exists: (results && results.length > 0) }), { headers: corsHeaders });
-      }
-      if (path === "/api/check-organization-name" && request.method === "GET") {
-        const name = new URL(request.url).searchParams.get('name');
-        const { results } = await env.D1_DB.prepare(
-          "SELECT * FROM ORGANIZATION WHERE LOWER(name)=LOWER(?)"
-        ).bind(name).all();
-        return new Response(JSON.stringify({ success: true, exists: (results && results.length > 0) }), { headers: corsHeaders });
-      }
-
       // Organization endpoints
       if (path === "/api/register-organization" && request.method === "POST") {
         return await orgCtrl.registerOrganization(request);
@@ -747,16 +682,16 @@ export default {
         return await orgCtrl.getAllOrganizations(request);
       }
       if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "GET") {
-        const orgId = parseInt(path.split('/').pop());
+        const orgId = parseInt(path.split("/").pop());
         return await orgCtrl.getOrganization(orgId);
       }
       if (path.match(/^\/api\/organizations\/\d+\/events$/)) {
-        const parts = path.split('/');
+        const parts = path.split("/");
         const orgId = parseInt(parts[3]);
         return await orgCtrl.getOrganizationEvents(orgId);
       }
       if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "DELETE") {
-        const orgId = parseInt(path.split('/').pop());
+        const orgId = parseInt(path.split("/").pop());
         return await orgCtrl.deleteOrganization(request, orgId);
       }
 
@@ -768,71 +703,76 @@ export default {
         return await eventCtrl.getAllEvents(request);
       }
 
-      // Landmark endpoints (currently returning stub data)
-      if (path === "/api/landmarks" && request.method === "GET") {
-        return new Response(JSON.stringify({ success: true, landmarks: [] }), { headers: corsHeaders });
-      }
-      if (path === "/api/check-landmark-availability" && request.method === "POST") {
-        return new Response(JSON.stringify({ success: true, available: true }), { headers: corsHeaders });
-      }
-
-      // Database management endpoints
-      if (path === "/api/fix-database-schema")
-        return await fixDatabaseSchema(env, corsHeaders);
-      if (path === "/api/diagnostics/schema")
-        return await getDatabaseSchema(env, corsHeaders);
-      if (path === "/api/add-username-column") {
-        return await addUsernameColumn(env, corsHeaders);
-      }
-
-      // Image serving
-      if (path.startsWith("/images/")) {
-        const imagePath = path.substring(8);
-        return await serveImageFromR2(env, imagePath, corsHeaders);
-      }
-
-      // Expose Google Maps API key via worker endpoint
-      if (path === "/api/get-maps-api-key") {
-        return new Response(JSON.stringify({ success: true, apiKey: env.REACT_APP_GOOGLE_MAPS_API_KEY || '' }), { headers: corsHeaders });
-      }
-
-      // User membership endpoint
-      if (path === "/api/user-member-organizations" && request.method === "GET") {
-        return await orgCtrl.getUserMemberOrganizations(request);
-      }
-
-      // (Optional) Official status endpoints could be added here:
-      if (path === "/api/verify-organization-official" && request.method === "POST") {
-        // Example: verify and return official status for an organization
-        const orgData = await request.json();
-        const isOfficial = officialStatusCtrl.verifyOrganizationOfficialStatus(orgData);
-        return new Response(JSON.stringify({ success: true, official: isOfficial }), { headers: corsHeaders });
-      }
-      if (path === "/api/verify-event-official" && request.method === "POST") {
-        const eventData = await request.json();
-        const isOfficial = officialStatusCtrl.verifyEventOfficialStatus(eventData);
-        return new Response(JSON.stringify({ success: true, official: isOfficial }), { headers: corsHeaders });
-      }
-
-      // Admin dashboard stub endpoints:
-      if (path === "/api/pending-submissions" && request.method === "GET") {
-        const submissions = adminDashboard.displayPendingSubmissions();
-        return new Response(JSON.stringify({ success: true, submissions }), { headers: corsHeaders });
-      }
-      if (path === "/api/review-submission" && request.method === "GET") {
-        const itemID = parseInt(new URL(request.url).searchParams.get('itemID'));
-        const item = adminDashboard.reviewSubmission(itemID);
-        return new Response(JSON.stringify({ success: true, item }), { headers: corsHeaders });
-      }
-
       // Default 404 Not Found
-      return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
     } catch (error) {
-      return new Response(JSON.stringify({ error: "Server error", message: error.message }),
-        { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Server error", message: error.message }), { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
     }
-  }
+  },
 };
 
 /* ==================== UTILITY FUNCTIONS: Database Schema Management ==================== */
-// place utility functions here
+class DatabaseService {
+  static async query(env, sql, params = []) {
+    try {
+      const statement = env.D1_DB.prepare(sql);
+      params.forEach((param, index) => {
+        statement.bind(param, index + 1);
+      });
+      const { results } = await statement.all();
+      return results;
+    } catch (error) {
+      throw new Error(`Database query failed: ${error.message}`);
+    }
+  }
+
+  static async execute(env, sql, params = []) {
+    try {
+      const statement = env.D1_DB.prepare(sql);
+      params.forEach((param, index) => {
+        statement.bind(param, index + 1);
+      });
+      const result = await statement.run();
+      return result;
+    } catch (error) {
+      throw new Error(`Database execution failed: ${error.message}`);
+    }
+  }
+}
+
+class BackendService {
+  static async handleRequest(request, handler) {
+    try {
+      const response = await handler(request);
+      return new Response(JSON.stringify({ success: true, ...response }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ success: false, error: error.message }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+  }
+
+  static async parseRequest(request) {
+    const contentType = request.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return await request.json();
+    } else if (contentType.includes("application/x-www-form-urlencoded")) {
+      const formData = await request.formData();
+      const data = {};
+      formData.forEach((value, key) => {
+        data[key] = value;
+      });
+      return data;
+    }
+    throw new Error("Unsupported content type");
+  }
+}
