@@ -22,12 +22,19 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Content-Type": "application/json"
+    };
+
     // Instantiate controllers with environment
-    const accountCtrl = new AccountController(env);
-    const orgCtrl = new OrganizationController(env);
-    const eventCtrl = new EventController(env);
-    const officialStatusCtrl = new OfficialStatusController();
-    const adminDashboard = new AdminDashboard();
+    const accountCtrl = new AccountController(env, corsHeaders);
+    const orgCtrl = new OrganizationController(env, corsHeaders);
+    const eventCtrl = new EventController(env, corsHeaders);
+    const officialStatusCtrl = new OfficialStatusController(env, corsHeaders);
+    const adminDashboard = new AdminDashboardController(env, corsHeaders);
 
     try {
       // Authentication endpoints
