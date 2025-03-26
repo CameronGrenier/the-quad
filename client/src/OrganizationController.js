@@ -7,7 +7,7 @@
  -------------------------------------------------------
  */
 
-import { Utils } from './utils.js';
+import { Utils, DatabaseService, BackendService } from './utils.js';
 
 /**
  * OrganizationController class handles organization-related API endpoints.
@@ -24,28 +24,21 @@ export class OrganizationController {
    * @returns {Promise<Response>} - The response object.
    */
   async registerOrganization(request) {
-    try {
-      const formData = await Utils.parseFormData(request);
+    return BackendService.handleRequest(request, async (req) => {
+      const formData = await Utils.parseFormData(req);
       const name = formData.get('name');
       const description = formData.get('description') || '';
       const userID = formData.get('userID');
       const privacy = formData.get('privacy') || 'public';
 
       if (!name || !userID) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "Missing required fields: name and userID"
-        }), { status: 400, headers: this.corsHeaders });
+        throw new Error("Missing required fields: name and userID");
       }
 
-      const existingOrg = await this.env.D1_DB.prepare(
-        "SELECT * FROM ORGANIZATION WHERE name = ?"
-      ).bind(name).first();
-      if (existingOrg) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "Organization name already exists"
-        }), { status: 400, headers: this.corsHeaders });
+      const existingOrg = await DatabaseService.query(this.env, 
+        "SELECT * FROM ORGANIZATION WHERE name = ?", [name]);
+      if (existingOrg.length > 0) {
+        throw new Error("Organization name already exists");
       }
 
       let thumbnailURL = '', bannerURL = '';
@@ -60,25 +53,22 @@ export class OrganizationController {
         bannerURL = await Utils.uploadFileToR2(this.env, banner, `banners/Banner_${cleanName}`);
       }
 
-      const insertResult = await this.env.D1_DB.prepare(`
+      const insertResult = await DatabaseService.execute(this.env, `
         INSERT INTO ORGANIZATION (name, description, thumbnail, banner, privacy)
         VALUES (?, ?, ?, ?, ?)
-      `).bind(name, description, thumbnailURL, bannerURL, privacy).run();
+      `, [name, description, thumbnailURL, bannerURL, privacy]);
       const newOrgID = insertResult.meta.last_row_id;
-      await this.env.D1_DB.prepare(`
+      await DatabaseService.execute(this.env, `
         INSERT INTO ORG_ADMIN (orgID, userID)
         VALUES (?, ?)
-      `).bind(newOrgID, userID).run();
+      `, [newOrgID, userID]);
 
-      return new Response(JSON.stringify({
+      return {
         success: true,
         message: "Organization created successfully",
         orgID: newOrgID
-      }), { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: this.corsHeaders });
-    }
+      };
+    });
   }
 
   /**
@@ -87,24 +77,22 @@ export class OrganizationController {
    * @returns {Promise<Response>} - The response object.
    */
   async getUserOrganizations(request) {
-    try {
-      const url = new URL(request.url);
+    return BackendService.handleRequest(request, async (req) => {
+      const url = new URL(req.url);
       const userID = url.searchParams.get('userID');
       if (!userID) {
-        return new Response(JSON.stringify({ success: false, error: "User ID is required" }),
-          { status: 400, headers: this.corsHeaders });
+        throw new Error("User ID is required");
       }
-      const { results } = await this.env.D1_DB.prepare(`
+      const results = await DatabaseService.query(this.env, `
         SELECT o.* FROM ORGANIZATION o
         JOIN ORG_ADMIN oa ON o.orgID = oa.orgID
         WHERE oa.userID = ?
-      `).bind(userID).all();
-      return new Response(JSON.stringify({ success: true, organizations: results || [] }),
-        { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: this.corsHeaders });
-    }
+      `, [userID]);
+      return {
+        success: true,
+        organizations: results || []
+      };
+    });
   }
 
   /**
@@ -113,73 +101,71 @@ export class OrganizationController {
    * @returns {Promise<Response>} - The response object.
    */
   async getAllOrganizations(request) {
-    try {
-      const { results: organizations } = await this.env.D1_DB.prepare(`
+    return BackendService.handleRequest(request, async (req) => {
+      const organizations = await DatabaseService.query(this.env, `
         SELECT o.*, COUNT(om.userID) as memberCount
         FROM ORGANIZATION o
         LEFT JOIN ORG_MEMBER om ON o.orgID = om.orgID
         GROUP BY o.orgID
         ORDER BY o.name ASC
-      `).all();
-      return new Response(JSON.stringify({ success: true, organizations: organizations || [] }),
-        { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: this.corsHeaders });
-    }
+      `);
+      return {
+        success: true,
+        organizations: organizations || []
+      };
+    });
   }
 
   /**
    * Retrieves a specific organization by ID.
+   * @param {Request} request - The incoming request object.
    * @param {number} orgId - The ID of the organization.
    * @returns {Promise<Response>} - The response object.
    */
-  async getOrganization(orgId) {
-    try {
-      const organization = await this.env.D1_DB.prepare(`
+  async getOrganization(request, orgId) {
+    return BackendService.handleRequest(request, async (req) => {
+      const organization = await DatabaseService.query(this.env, `
         SELECT o.*, COUNT(om.userID) as memberCount
         FROM ORGANIZATION o
         LEFT JOIN ORG_MEMBER om ON o.orgID = om.orgID
         WHERE o.orgID = ?
         GROUP BY o.orgID
-      `).bind(orgId).first();
-      if (!organization) {
-        return new Response(JSON.stringify({ success: false, error: "Organization not found" }),
-          { status: 404, headers: this.corsHeaders });
+      `, [orgId]);
+      if (organization.length === 0) {
+        throw new Error("Organization not found");
       }
-      const { results: admins } = await this.env.D1_DB.prepare(`
+      const admins = await DatabaseService.query(this.env, `
         SELECT u.userID as id, u.email, u.f_name as firstName, u.l_name as lastName, u.profile_picture as profileImage
         FROM ORG_ADMIN oa
         JOIN USERS u ON oa.userID = u.userID
         WHERE oa.orgID = ?
-      `).bind(orgId).all();
-      organization.admins = admins || [];
-      return new Response(JSON.stringify({ success: true, organization }),
-        { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: this.corsHeaders });
-    }
+      `, [orgId]);
+      organization[0].admins = admins || [];
+      return {
+        success: true,
+        organization: organization[0]
+      };
+    });
   }
 
   /**
    * Retrieves events for a specific organization.
+   * @param {Request} request - The incoming request object.
    * @param {number} orgId - The ID of the organization.
    * @returns {Promise<Response>} - The response object.
    */
-  async getOrganizationEvents(orgId) {
-    try {
-      const { results: events } = await this.env.D1_DB.prepare(`
+  async getOrganizationEvents(request, orgId) {
+    return BackendService.handleRequest(request, async (req) => {
+      const events = await DatabaseService.query(this.env, `
         SELECT e.* FROM EVENT e
         WHERE e.organizationID = ?
         ORDER BY e.startDate ASC
-      `).bind(orgId).all();
-      return new Response(JSON.stringify({ success: true, events: events || [] }),
-        { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: this.corsHeaders });
-    }
+      `, [orgId]);
+      return {
+        success: true,
+        events: events || []
+      };
+    });
   }
 
   /**
@@ -189,13 +175,10 @@ export class OrganizationController {
    * @returns {Promise<Response>} - The response object.
    */
   async deleteOrganization(request, orgId) {
-    try {
-      const authHeader = request.headers.get('Authorization') || '';
+    return BackendService.handleRequest(request, async (req) => {
+      const authHeader = req.headers.get('Authorization') || '';
       if (!authHeader.startsWith('Bearer ')) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "Authentication required"
-        }), { status: 401, headers: this.corsHeaders });
+        throw new Error("Authentication required");
       }
 
       const token = authHeader.replace('Bearer ', '');
@@ -203,30 +186,21 @@ export class OrganizationController {
       try {
         payload = Utils.verifyJWT(token);
       } catch (err) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "Invalid authentication token"
-        }), { status: 401, headers: this.corsHeaders });
+        throw new Error("Invalid authentication token");
       }
 
-      const userData = await request.json();
+      const userData = await req.json();
       const userID = userData.userID;
       if (!userID) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "User ID is required"
-        }), { status: 400, headers: this.corsHeaders });
+        throw new Error("User ID is required");
       }
 
-      const isAdmin = await this.env.D1_DB.prepare(`
+      const isAdmin = await DatabaseService.query(this.env, `
         SELECT 1 FROM ORG_ADMIN
         WHERE orgID = ? AND userID = ?
-      `).bind(orgId, userID).first();
-      if (!isAdmin) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "You don't have permission to delete this organization"
-        }), { status: 403, headers: this.corsHeaders });
+      `, [orgId, userID]);
+      if (isAdmin.length === 0) {
+        throw new Error("You don't have permission to delete this organization");
       }
 
       const statements = [
@@ -250,15 +224,10 @@ export class OrganizationController {
 
       await this.env.D1_DB.batch(statements);
 
-      return new Response(JSON.stringify({
+      return {
         success: true,
         message: "Organization deleted successfully"
-      }), { headers: this.corsHeaders });
-    } catch (error) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }), { status: 500, headers: this.corsHeaders });
-    }
+      };
+    });
   }
 }
