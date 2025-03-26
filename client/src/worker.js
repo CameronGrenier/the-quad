@@ -4,12 +4,17 @@
  * Domain classes represent the data model while controller classes encapsulate
  * the API endpoint logic.
  */
-import { BackendService } from './utils.js';
-import { AccountController } from './accountController.js';
-import { OrganizationController } from './OrganizationController.js';
-import { EventController } from './eventController.js';
-import { OfficialStatusController } from './OfficialStatusController.js';
-import { AdminDashboard } from './AdminDashboard.js';
+import { parseFormData } from './utils/formData.js';
+import { generateJWT, verifyJWT, hashPassword, verifyPassword } from './utils/auth.js';
+import { uploadFileToR2, serveImageFromR2 } from './utils/storage.js';
+
+import { 
+  AccountController,
+  OrganizationController,
+  EventController,
+  OfficialStatusController,
+  AdminDashboardController 
+} from './controllers/index.js';
 
 /* ==================== MAIN WORKER FUNCTION ==================== */
 export default {
