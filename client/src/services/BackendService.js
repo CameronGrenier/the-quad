@@ -1,4 +1,4 @@
-class BackendService {
+export class BackendService {
     /**
      * Handles an HTTP request by processing it with the provided handler function
      * and wrapping the response or error in a standardized format.
@@ -11,33 +11,29 @@ class BackendService {
      * @throws {never} This method catches all errors and returns them as Response objects
      */
     static async handleRequest(request, handler) {
-        // Add CORS headers
-        const corsHeaders = {
+        // Common headers for all responses
+        const headers = {
+            "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Content-Type": "application/json"
         };
-      
+        
         // Handle preflight OPTIONS request
         if (request.method === "OPTIONS") {
-            return new Response(null, { headers: corsHeaders });
+            return new Response(null, { headers, status: 200 });
         }
+        
         try {
+            // Use the handler to process the request
             const response = await handler(request);
             return new Response(JSON.stringify({ success: true, ...response }), {
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
+                headers
             });
         } catch (error) {
             return new Response(JSON.stringify({ success: false, error: error.message }), {
-            status: 500,
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
+                status: 500,
+                headers
             });
         }
     }
