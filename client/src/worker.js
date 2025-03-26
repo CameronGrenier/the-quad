@@ -64,10 +64,27 @@ async function uploadFileToR2(env, file, path) {
   if (!env.R2_BUCKET) {
     throw new Error("Missing R2_BUCKET binding");
   }
+  
+  // Sanitize the path to handle special characters
+  // Extract the base path and filename
+  let basePath = '';
+  let fileName = path;
+  
+  if (path.includes('/')) {
+    const lastSlashIndex = path.lastIndexOf('/');
+    basePath = path.substring(0, lastSlashIndex + 1);
+    fileName = path.substring(lastSlashIndex + 1);
+  }
+  
+  // Sanitize only the filename portion
+  const sanitizedFileName = sanitizeFileName(fileName);
+  const sanitizedPath = basePath + sanitizedFileName;
+  
+  // Upload the file with the sanitized path
   const buffer = await file.arrayBuffer();
   const contentType = file.type || 'application/octet-stream';
-  await env.R2_BUCKET.put(path, buffer, { httpMetadata: { contentType } });
-  return `/images/${path}`;
+  await env.R2_BUCKET.put(sanitizedPath, buffer, { httpMetadata: { contentType } });
+  return `/images/${sanitizedPath}`;
 }
 
 async function serveImageFromR2(env, imagePath, corsHeaders) {
@@ -93,6 +110,23 @@ async function serveImageFromR2(env, imagePath, corsHeaders) {
       "Access-Control-Allow-Origin": "*"
     }
   });
+}
+
+
+function sanitizeFileName(name) {
+  // Replace spaces with underscores
+  let sanitized = name.replace(/\s+/g, '_');
+  
+  // Remove apostrophes, quotes and other problematic characters
+  sanitized = sanitized.replace(/['"&?#%:;+=@<>{}()|/\\^$!,*]/g, '');
+  
+  // Replace accented characters with their non-accented equivalents
+  sanitized = sanitized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  
+  // Ensure no double underscores
+  sanitized = sanitized.replace(/_+/g, '_');
+  
+  return sanitized;
 }
 
 /* ==================== DOMAIN CLASSES ==================== */

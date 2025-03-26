@@ -9,6 +9,7 @@
     "build": "cd client && npm install && npm run build"
   },
   "dependencies": {
+    "react-markdown": "^10.1.0",
     "wrangler": "^3.0.0"
   }
 }

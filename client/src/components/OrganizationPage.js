@@ -21,12 +21,20 @@ const formatImageUrl = (url) => {
   
   // Check if path already has /images/ prefix to avoid duplication
   if (url.startsWith('/images/')) {
-    // URL already has correct prefix, just add API base URL
-    return `${API_URL}${url}`;
+    // Preserve the directory structure by not encoding the slashes
+    // First, remove the leading /images/ prefix
+    let imagePath = url.substring('/images/'.length);
+    
+    // Split the path by '/' to encode each segment separately
+    const segments = imagePath.split('/');
+    const encodedSegments = segments.map(segment => encodeURIComponent(segment));
+    
+    // Join the segments back together with '/'
+    return `${API_URL}/images/${encodedSegments.join('/')}`;
   }
   
-  // Otherwise, route through our API
-  return `${API_URL}/images/${url}`;
+  // For paths without /images/ prefix, just encode the entire string
+  return `${API_URL}/images/${encodeURIComponent(url)}`;
 };
 
 function OrganizationPage() {
@@ -91,6 +99,10 @@ function OrganizationPage() {
         } else {
           throw new Error(orgData.error || 'Organization not found');
         }
+        
+        // Add inside useEffect after fetching organization data
+        console.log("Organization data:", orgData.organization);
+        console.log("Banner URL:", orgData.organization.banner);
         
         // Fetch organization events
         const eventsResponse = await fetch(`${API_URL}/api/organizations/${orgId}/events`);
@@ -261,6 +273,7 @@ function OrganizationPage() {
         >
           <div className="org-banner-overlay"></div>
         </div>
+        {console.log("Formatted banner URL:", organization.banner ? formatImageUrl(organization.banner) : "No banner")}
       </div>
       
       <div className="org-header">
