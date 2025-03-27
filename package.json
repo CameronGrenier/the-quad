@@ -8,7 +8,8 @@
     "dev": "wrangler dev",
     "deploy": "npx wrangler deploy",
     "build": "webpack",
-    "test": "node --experimental-vm-modules ./node_modules/.bin/jest"
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
+    "test:utils": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/utils --no-cache"
   },
   "dependencies": {
     "wrangler": "^3.0.0"
