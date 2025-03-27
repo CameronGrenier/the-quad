@@ -13,5 +13,8 @@ export class User {
   }
  //Create Account function implemented in account controller class
  //Moving modify account settings to account controller class
-  async modifyAccountSettings() { /* implement as needed */ }
-}
+  async modifyAccountSettings() {
+   /* implement as needed */ 
+   //this is a test of kcode commitment
+  }
+  }
