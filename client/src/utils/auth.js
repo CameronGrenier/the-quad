@@ -82,6 +82,6 @@ export async function hashPassword(password) {
  * @returns {Promise<boolean>} A promise that resolves to true if the password matches, false otherwise.
  */
 export async function verifyPassword(password, hashedPassword) {
-    const passwordHash = await Utils.hashPassword(password);
+    const passwordHash = await hashPassword(password);
     return passwordHash === hashedPassword;
 }
