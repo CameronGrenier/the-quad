@@ -1,4 +1,6 @@
-import { Utils, DatabaseService, BackendService } from './utils.js';
+import * as Utils from '../utils/auth.js';
+import * as DatabaseService from '../services/DatabaseService.js';
+import * as BackendService from '../services/BackendService.js';
 
 /**
  * EventController class handles event-related endpoints

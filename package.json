@@ -9,7 +9,11 @@
     "deploy": "npx wrangler deploy",
     "build": "webpack",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
-    "test:utils": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/utils --no-cache"
+    "test:utils": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/utils --no-cache",
+    "test:services": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/services --no-cache",
+    "test:integration": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/integration --no-cache",
+    "test:controllers": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/controllers --no-cache",
+    "test:all": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests --no-cache"
   },
   "dependencies": {
     "wrangler": "^3.0.0"

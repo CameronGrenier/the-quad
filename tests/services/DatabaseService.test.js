@@ -1,93 +1,182 @@
+import { jest } from '@jest/globals';
 import { DatabaseService } from '../../client/src/services/DatabaseService.js';
 
 describe('DatabaseService', () => {
-  describe('query', () => {
-    test('should execute a query and return results', async () => {
-      // Mock D1 environment
-      const mockResults = [{ id: 1, name: 'Test' }];
-      const mockAll = jest.fn().mockResolvedValue({ results: mockResults });
-      const mockBind = jest.fn().mockReturnValue({ all: mockAll });
-      const mockPrepare = jest.fn().mockReturnValue({ bind: mockBind });
-      
-      const mockEnv = {
-        D1_DB: {
-          prepare: mockPrepare
-        }
-      };
+  // Common mock setup
+  let mockD1Binding;
+  let mockPrepare;
+  let mockBind;
+  let mockAll;
+  let mockRun;
+  let env;
 
-      const sql = 'SELECT * FROM table WHERE id = ?';
-      const params = [1];
-      
-      const results = await DatabaseService.query(mockEnv, sql, params);
-      
-      expect(mockPrepare).toHaveBeenCalledWith(sql);
-      expect(mockBind).toHaveBeenCalled();
+  beforeEach(() => {
+    // Set up mock D1 database binding and chain of method calls
+    mockAll = jest.fn();
+    mockRun = jest.fn();
+    mockBind = jest.fn().mockImplementation(() => ({
+      all: mockAll,
+      run: mockRun
+    }));
+    mockPrepare = jest.fn().mockImplementation(() => ({
+      bind: mockBind
+    }));
+    mockD1Binding = {
+      prepare: mockPrepare
+    };
+    env = { D1_DB: mockD1Binding };
+  });
+
+  describe('query', () => {
+    test('should execute query and return results', async () => {
+      // Arrange
+      const expectedResults = [{ id: 1, name: 'Test' }, { id: 2, name: 'Test2' }];
+      mockAll.mockResolvedValue({ results: expectedResults });
+
+      // Act
+      const results = await DatabaseService.query(env, 'SELECT * FROM test WHERE id = ?', [1]);
+
+      // Assert
+      expect(mockPrepare).toHaveBeenCalledWith('SELECT * FROM test WHERE id = ?');
+      expect(mockBind).toHaveBeenCalledWith(1);
       expect(mockAll).toHaveBeenCalled();
-      expect(results).toEqual(mockResults);
+      expect(results).toEqual(expectedResults);
     });
 
-    test('should handle query errors', async () => {
-      // Mock D1 environment with error
-      const mockBind = jest.fn().mockImplementation(() => {
-        throw new Error('Database error');
-      });
-      
-      const mockPrepare = jest.fn().mockReturnValue({ bind: mockBind });
-      
-      const mockEnv = {
-        D1_DB: {
-          prepare: mockPrepare
-        }
-      };
+    test('should handle empty result sets', async () => {
+      // Arrange
+      mockAll.mockResolvedValue({ results: [] });
 
-      const sql = 'INVALID SQL';
-      
-      await expect(DatabaseService.query(mockEnv, sql)).rejects.toThrow('Database query failed: Database error');
+      // Act
+      const results = await DatabaseService.query(env, 'SELECT * FROM test WHERE id = ?', [999]);
+
+      // Assert
+      expect(results).toEqual([]);
+    });
+
+    test('should handle query with no parameters', async () => {
+      // Arrange
+      const expectedResults = [{ count: 5 }];
+      mockAll.mockResolvedValue({ results: expectedResults });
+
+      // Act
+      const results = await DatabaseService.query(env, 'SELECT COUNT(*) AS count FROM test');
+
+      // Assert
+      expect(mockBind).toHaveBeenCalledWith();
+      expect(results).toEqual(expectedResults);
+    });
+
+    test('should throw error when query fails', async () => {
+      // Arrange
+      mockAll.mockRejectedValue(new Error('SQL syntax error'));
+
+      // Act & Assert
+      await expect(DatabaseService.query(env, 'INVALID SQL'))
+        .rejects
+        .toThrow('Database query failed: SQL syntax error');
+    });
+
+    test('should throw error when D1_DB binding is missing', async () => {
+      // Arrange
+      const invalidEnv = {};
+
+      // Act & Assert
+      await expect(DatabaseService.query(invalidEnv, 'SELECT * FROM test'))
+        .rejects
+        .toThrow(/Database query failed/);
     });
   });
 
   describe('execute', () => {
-    test('should execute a statement and return result', async () => {
-      // Mock result
-      const mockResult = { meta: { last_row_id: 123 } };
-      const mockRun = jest.fn().mockResolvedValue(mockResult);
-      const mockBind = jest.fn().mockReturnValue({ run: mockRun });
-      const mockPrepare = jest.fn().mockReturnValue({ bind: mockBind });
-      
-      const mockEnv = {
-        D1_DB: {
-          prepare: mockPrepare
+    test('should execute statement and return result', async () => {
+      // Arrange
+      const expectedResult = { 
+        success: true, 
+        meta: { 
+          changes: 1, 
+          duration: 10, 
+          last_row_id: 42 
         }
       };
+      mockRun.mockResolvedValue(expectedResult);
 
-      const sql = 'INSERT INTO table (name) VALUES (?)';
-      const params = ['Test'];
-      
-      const result = await DatabaseService.execute(mockEnv, sql, params);
-      
-      expect(mockPrepare).toHaveBeenCalledWith(sql);
-      expect(mockBind).toHaveBeenCalled();
+      // Act
+      const result = await DatabaseService.execute(
+        env, 
+        'INSERT INTO test (name) VALUES (?)',
+        ['New Test']
+      );
+
+      // Assert
+      expect(mockPrepare).toHaveBeenCalledWith('INSERT INTO test (name) VALUES (?)');
+      expect(mockBind).toHaveBeenCalledWith('New Test');
       expect(mockRun).toHaveBeenCalled();
-      expect(result).toEqual(mockResult);
+      expect(result).toEqual(expectedResult);
     });
 
-    test('should handle execution errors', async () => {
-      // Mock D1 environment with error
-      const mockBind = jest.fn().mockImplementation(() => {
-        throw new Error('Execution error');
-      });
-      
-      const mockPrepare = jest.fn().mockReturnValue({ bind: mockBind });
-      
-      const mockEnv = {
-        D1_DB: {
-          prepare: mockPrepare
-        }
-      };
+    test('should execute update statement', async () => {
+      // Arrange
+      const expectedResult = { success: true, meta: { changes: 1 } };
+      mockRun.mockResolvedValue(expectedResult);
 
-      const sql = 'INVALID SQL';
-      
-      await expect(DatabaseService.execute(mockEnv, sql)).rejects.toThrow('Database execution failed: Execution error');
+      // Act
+      const result = await DatabaseService.execute(
+        env, 
+        'UPDATE test SET name = ? WHERE id = ?',
+        ['Updated Name', 1]
+      );
+
+      // Assert
+      expect(mockPrepare).toHaveBeenCalledWith('UPDATE test SET name = ? WHERE id = ?');
+      expect(mockBind).toHaveBeenCalledWith('Updated Name', 1);
+      expect(result).toEqual(expectedResult);
+    });
+
+    test('should execute delete statement', async () => {
+      // Arrange
+      const expectedResult = { success: true, meta: { changes: 1 } };
+      mockRun.mockResolvedValue(expectedResult);
+
+      // Act
+      const result = await DatabaseService.execute(
+        env, 
+        'DELETE FROM test WHERE id = ?',
+        [1]
+      );
+
+      // Assert
+      expect(mockPrepare).toHaveBeenCalledWith('DELETE FROM test WHERE id = ?');
+      expect(mockBind).toHaveBeenCalledWith(1);
+      expect(result).toEqual(expectedResult);
+    });
+
+    test('should throw error when execution fails', async () => {
+      // Arrange
+      mockRun.mockRejectedValue(new Error('Constraint violation'));
+
+      // Act & Assert
+      await expect(DatabaseService.execute(
+        env, 
+        'INSERT INTO test (id, name) VALUES (?, ?)',
+        [1, 'Duplicate Key']
+      ))
+        .rejects
+        .toThrow('Database execution failed: Constraint violation');
+    });
+
+    test('should throw error when D1_DB binding is missing', async () => {
+      // Arrange
+      const invalidEnv = {};
+
+      // Act & Assert
+      await expect(DatabaseService.execute(
+        invalidEnv, 
+        'INSERT INTO test (name) VALUES (?)',
+        ['Test']
+      ))
+        .rejects
+        .toThrow(/Database execution failed/);
     });
   });
 });

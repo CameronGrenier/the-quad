@@ -2,12 +2,14 @@
  -------------------------------------------------------
  File:     OrganizationController.js
  About:    Organization controller for the client side
- Author:   Humayoyun Khan
+ Author:   Humayoyun Khan, Cameron Grenier
  Version:  2025-03-02
  -------------------------------------------------------
  */
 
-import { Utils, DatabaseService, BackendService } from './utils.js';
+ import * as Utils from '../utils/auth.js';
+ import * as DatabaseService from '../services/DatabaseService.js';
+ import * as BackendService from '../services/BackendService.js';
 
 /**
  * OrganizationController class handles organization-related API endpoints.

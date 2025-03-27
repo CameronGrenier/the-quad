@@ -1,4 +1,5 @@
 //Imports
+import * as Utils from '../utils/auth.js';
 import * as BackendService from '../services/BackendService.js';
 import * as DatabaseService from '../services/DatabaseService.js';
 
