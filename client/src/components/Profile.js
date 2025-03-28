@@ -3,8 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+
 function Profile() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, updateCurrentUser } = useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,41 +14,37 @@ function Profile() {
   const [events, setEvents] = useState([]);
   const navigate = useNavigate();
   
-  // Add API URL constant
-  const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    f_name: '',
+    l_name: '',
+    email: '',
+    phone: '',
+    profile_picture: null
+  });
+  const [previewImage, setPreviewImage] = useState(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Add formatImageUrl function to handle image paths correctly
+  // Format image URL for profile pictures
   const formatImageUrl = (url) => {
     if (!url) return null;
-    
-    // Return null for empty strings
     if (url === '') return null;
     
-    // If URL is already absolute (starts with http or https)
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      // For direct R2 URLs, extract the proper path
-      if (url.includes('r2.cloudflarestorage.com')) {
-        // Extract everything after "/images/" including subdirectories
-        const pathMatch = url.match(/\/images\/(.+)$/);
-        if (pathMatch && pathMatch[1]) {
-          return `${API_URL}/images/${pathMatch[1]}`;
-        }
-      }
       return url;
     }
     
-    // Check if path already has /images/ prefix to avoid duplication
     if (url.startsWith('/images/')) {
-      // URL already has correct prefix, just add API base URL
       return `${API_URL}${url}`;
     }
     
-    // Otherwise, route through our API
     return `${API_URL}/images/${url}`;
   };
 
   useEffect(() => {
-    // Redirect if not logged in
     if (!currentUser) {
       navigate('/login');
       return;
@@ -54,25 +52,40 @@ function Profile() {
 
     async function fetchUserData() {
       try {
-        // For now, just use the currentUser data we already have
-        setUserData(currentUser);
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/user-profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         
-        // Fetch organizations where user is admin
-        const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
-        const orgResponse = await fetch(`${API_URL}/api/user-organizations?userID=${currentUser.id}`);
+        if (!response.ok) throw new Error('Failed to fetch profile data');
         
-        if (!orgResponse.ok) {
-          throw new Error(`Error fetching organizations: ${orgResponse.status}`);
+        const data = await response.json();
+        if (data.success) {
+          setUserData(data.user);
+          setFormData({
+            f_name: data.user.f_name || '',
+            l_name: data.user.l_name || '',
+            email: data.user.email || '',
+            phone: data.user.phone || '',
+            profile_picture: null
+          });
         }
         
-        const orgData = await orgResponse.json();
-        if (orgData.success) {
-          setOrganizations(orgData.organizations || []);
+        // Fetch organizations
+        const orgsResponse = await fetch(`${API_URL}/api/user-organizations?userID=${currentUser.id || currentUser.userID}`);
+        if (orgsResponse.ok) {
+          const orgsData = await orgsResponse.json();
+          if (orgsData.success) setOrganizations(orgsData.organizations || []);
         }
         
-        // You could also fetch events the user has created or is attending
-        // For now, we'll leave this empty
-        setEvents([]);
+        // Fetch user's events
+        const eventsResponse = await fetch(`${API_URL}/api/user/events`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (eventsResponse.ok) {
+          const eventsData = await eventsResponse.json();
+          setEvents(eventsData.events || []);
+        }
         
       } catch (err) {
         console.error("Error fetching profile data:", err);
@@ -85,129 +98,350 @@ function Profile() {
     fetchUserData();
   }, [currentUser, navigate]);
 
-  const handleLogout = async () => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, profile_picture: file }));
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setUpdateError(null);
+    
     try {
-      await logout();
-      navigate('/login');
+      const token = localStorage.getItem('token');
+      
+      const formDataToSend = new FormData();
+      formDataToSend.append('userID', userData.userID || currentUser.id || currentUser.userID);
+      formDataToSend.append('f_name', formData.f_name);
+      formDataToSend.append('l_name', formData.l_name);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone || '');
+      
+      if (formData.profile_picture) {
+        formDataToSend.append('profile_picture', formData.profile_picture);
+      }
+      
+      const response = await fetch(`${API_URL}/api/update-profile`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataToSend
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local state
+        setUserData(result.user);
+        updateCurrentUser({
+          ...currentUser,
+          ...result.user
+        });
+        
+        setUpdateSuccess(true);
+        setIsEditing(false);
+        
+        setTimeout(() => {
+          setUpdateSuccess(false);
+        }, 3000);
+      } else {
+        setUpdateError(result.error || 'Failed to update profile');
+      }
     } catch (err) {
-      console.error("Failed to log out", err);
+      console.error('Error updating profile:', err);
+      setUpdateError('An error occurred while updating your profile');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="profile-page-container">
-        <div className="profile-container">
-          <div className="loading">Loading profile data...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !userData) {
-    return (
-      <div className="profile-page-container">
-        <div className="profile-container">
-          <div className="error-message">{error || "Profile data could not be loaded"}</div>
-          <button className="profile-button" onClick={() => navigate('/')}>Return Home</button>
-        </div>
-      </div>
-    );
+    return <div className="profile-page loading">Loading profile data...</div>;
   }
 
   return (
-    <>
-      <div className="profile-page-container"></div>
+    <div className="profile-page">
+      <div className="profile-page-background"></div>
+      
       <div className="profile-container">
-        <h2>Your Profile</h2>
+        <h1>Your Profile</h1>
         
-        <div className="profile-section">
-          <div className="profile-avatar">
-            {userData.profile_picture ? (
-              <img 
-                src={userData.profile_picture} 
-                alt={`${userData.f_name}'s profile`} 
-              />
-            ) : (
-              <div className="profile-avatar-placeholder">
-                {userData.f_name ? userData.f_name[0] : ''}
-                {userData.l_name ? userData.l_name[0] : ''}
+        {updateSuccess && (
+          <div className="success-message">
+            <i className="fas fa-check-circle"></i> Profile updated successfully!
+          </div>
+        )}
+        
+        {updateError && (
+          <div className="error-message">
+            <i className="fas fa-exclamation-circle"></i> {updateError}
+          </div>
+        )}
+        
+        {/* Main Profile Card */}
+        <div className="profile-card">
+          {!isEditing ? (
+            // VIEW MODE
+            <div className="profile-view">
+              {/* User Avatar and Edit Button */}
+              <div className="profile-header">
+                <div className="profile-avatar">
+                  {userData?.profile_picture ? (
+                    <img 
+                      src={formatImageUrl(userData.profile_picture)} 
+                      alt="Profile" 
+                      className="avatar-image"
+                    />
+                  ) : (
+                    <div className="avatar-placeholder">
+                      {userData?.f_name?.charAt(0) || ''}{userData?.l_name?.charAt(0) || ''}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Prominent Edit Button */}
+                <button 
+                  className="edit-profile-button"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <i className="fas fa-pencil-alt"></i> Edit Profile
+                </button>
               </div>
-            )}
-          </div>
-          
-          <div className="profile-info">
-            <h3>{userData.f_name} {userData.l_name}</h3>
-            <p><strong>Email:</strong> {userData.email}</p>
-            {userData.phone && <p><strong>Phone:</strong> {userData.phone}</p>}
-          </div>
+              
+              {/* User Info */}
+              <div className="profile-details">
+                <h2>{userData?.f_name} {userData?.l_name}</h2>
+                
+                <div className="info-grid">
+                  <div className="info-item">
+                    <label>Email</label>
+                    <p>{userData?.email}</p>
+                  </div>
+                  
+                  <div className="info-item">
+                    <label>Phone</label>
+                    <p>{userData?.phone || 'Not provided'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // EDIT MODE
+            <form className="profile-edit-form" onSubmit={handleSubmit}>
+              <h2>Edit Your Information</h2>
+              
+              {/* Profile Picture Upload */}
+              <div className="profile-picture-upload">
+                <div className="profile-avatar large">
+                  {previewImage ? (
+                    <img src={previewImage} alt="Profile Preview" className="avatar-image" />
+                  ) : userData?.profile_picture ? (
+                    <img src={formatImageUrl(userData.profile_picture)} alt="Profile" className="avatar-image" />
+                  ) : (
+                    <div className="avatar-placeholder">
+                      {userData?.f_name?.charAt(0) || ''}{userData?.l_name?.charAt(0) || ''}
+                    </div>
+                  )}
+                  
+                  <div className="avatar-overlay">
+                    <label htmlFor="profile-picture" className="avatar-change-label">
+                      <i className="fas fa-camera"></i>
+                      <span>Change Photo</span>
+                    </label>
+                    <input
+                      id="profile-picture"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="file-input"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Form Fields */}
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="f_name">First Name</label>
+                  <input
+                    type="text"
+                    id="f_name"
+                    name="f_name"
+                    value={formData.f_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="l_name">Last Name</label>
+                  <input
+                    type="text"
+                    id="l_name"
+                    name="l_name"
+                    value={formData.l_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group full-width">
+                  <label htmlFor="email">Email Address</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group full-width">
+                  <label htmlFor="phone">Phone Number (optional)</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+              
+              {/* Form Buttons */}
+              <div className="form-buttons">
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setPreviewImage(null);
+                    setFormData({
+                      f_name: userData?.f_name || '',
+                      l_name: userData?.l_name || '',
+                      email: userData?.email || '',
+                      phone: userData?.phone || '',
+                      profile_picture: null
+                    });
+                  }}
+                >
+                  Cancel
+                </button>
+                
+                <button
+                  type="submit"
+                  className="save-button"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
         
+        {/* Your Organizations */}
         <div className="profile-section">
-          <h3>Your Organizations</h3>
+          <div className="section-header">
+            <h2>Your Organizations</h2>
+            <button 
+              onClick={() => navigate('/register-organization')}
+              className="action-button"
+            >
+              <i className="fas fa-plus"></i> Create Organization
+            </button>
+          </div>
+          
           {organizations.length > 0 ? (
-            <div className="card-grid">
+            <div className="cards-grid">
               {organizations.map(org => (
-                <div key={org.orgID} className="card" onClick={() => navigate(`/organizations/${org.orgID}`)}>
-                  <div className="card-header">
-                    {org.thumbnail && (
+                <div key={org.orgID} className="org-card" onClick={() => navigate(`/organizations/${org.orgID}`)}>
+                  <div className="org-card-header">
+                    {org.thumbnail ? (
                       <img src={formatImageUrl(org.thumbnail)} alt={org.name} />
+                    ) : (
+                      <div className="org-placeholder">{org.name.charAt(0)}</div>
                     )}
                   </div>
-                  <div className="card-body">
-                    <h4>{org.name}</h4>
-                    <p>{org.description}</p>
+                  <div className="org-card-content">
+                    <h3>{org.name}</h3>
+                    <p className="org-privacy">{org.privacy === 'public' ? 'Public' : 'Private'}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="empty-state">You haven't created any organizations yet</p>
+            <div className="empty-state">
+              <i className="fas fa-users"></i>
+              <p>You haven't created any organizations yet</p>
+              <button onClick={() => navigate('/register-organization')}>Create Your First Organization</button>
+            </div>
           )}
-          
-          <button 
-            className="profile-button" 
-            onClick={() => navigate('/register-organization')}
-          >
-            Create Organization
-          </button>
         </div>
         
+        {/* Your Events */}
         <div className="profile-section">
-          <h3>Your Events</h3>
+          <div className="section-header">
+            <h2>Your Events</h2>
+            <button 
+              onClick={() => navigate('/register-event')}
+              className="action-button"
+            >
+              <i className="fas fa-plus"></i> Create Event
+            </button>
+          </div>
+          
           {events.length > 0 ? (
-            <div className="card-grid">
+            <div className="cards-grid">
               {events.map(event => (
-                <div key={event.eventID} className="card">
-                  <div className="card-header">
-                    {event.thumbnail && (
+                <div key={event.eventID} className="event-card" onClick={() => navigate(`/events/${event.eventID}`)}>
+                  <div className="event-card-header">
+                    {event.thumbnail ? (
                       <img src={formatImageUrl(event.thumbnail)} alt={event.title} />
+                    ) : (
+                      <div className="event-placeholder">{event.title.charAt(0)}</div>
                     )}
                   </div>
-                  <div className="card-body">
-                    <h4>{event.title}</h4>
-                    <p>{event.description}</p>
+                  <div className="event-card-content">
+                    <h3>{event.title}</h3>
+                    <p className="event-date">
+                      {new Date(event.startDate).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="empty-state">You haven't created any events yet</p>
+            <div className="empty-state">
+              <i className="fas fa-calendar-alt"></i>
+              <p>You haven't created any events yet</p>
+              <button onClick={() => navigate('/register-event')}>Create Your First Event</button>
+            </div>
           )}
-          
-          <button 
-            className="profile-button" 
-            onClick={() => navigate('/register-event')}
-          >
-            Create Event
-          </button>
         </div>
         
-        <button className="logout-button" onClick={handleLogout}>
-          Log Out
+        <button className="logout-button" onClick={logout}>
+          <i className="fas fa-sign-out-alt"></i> Log Out
         </button>
       </div>
-    </>
+    </div>
   );
 }
 

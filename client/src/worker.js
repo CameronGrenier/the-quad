@@ -6,6 +6,7 @@
  */
 
 
+
 import { 
   AccountController,
   OrganizationController,
@@ -37,7 +38,10 @@ export default {
         status: 204,
         headers: corsHeaders
       });
+
     }
+  });
+}
 
     // Instantiate controllers with environment
     const accountCtrl = new AccountController(env, corsHeaders);
@@ -162,6 +166,10 @@ export default {
           "Access-Control-Allow-Origin": "*" 
         } 
       });
+
     }
   }
-}
+};
+
+/* ==================== UTILITY FUNCTIONS: Database Schema Management ==================== */
+// place utility functions here !

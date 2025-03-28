@@ -15,6 +15,11 @@ import OrganizationPage from './components/OrganizationPage';
 import OrganizationList from './components/OrganizationList';
 import MyOrganizations from './components/MyOrganizations';
 import ExploreEvents from './components/ExploreEvents';
+
+import EventPage from './components/EventPage';
+import EventList from './components/EventList'; // Note the 's' in EventsList
+import MyEvents from './components/MyEvents';
+
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
@@ -36,25 +41,29 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        {!isMobile && <Header />}
-        <main className={isMobile ? 'has-mobile-nav' : ''}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/event/:id" element={<EventDetails />} />
-            <Route path="/register-event" element={<EventRegistration />} />
-            <Route path="/register-organization" element={<OrganizationRegistration />} /> 
-            <Route path="/questionnaire" element={<Questionnaire />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/organizations" element={<OrganizationList />} />
-            <Route path="/organizations/:orgId" element={<OrganizationPage />} />
-            <Route path="/my-organizations" element={<MyOrganizations />} />
-            <Route path="/events" element={<ExploreEvents />} />
-          </Routes>
-        </main>
-        {isMobile && <MobileNavbar />}
+
+        <div className="app-container"> {/* Add this wrapper */}
+          {!isMobile && <Header />}
+          <main className={`main-content ${isMobile ? 'has-mobile-nav' : ''}`}> {/* Add this wrapper */}
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/events/:id" element={<EventPage />} />
+              <Route path="/register-event" element={<EventRegistration />} />
+              <Route path="/register-organization" element={<OrganizationRegistration />} /> 
+              <Route path="/questionnaire" element={<Questionnaire />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/organizations" element={<OrganizationList />} />
+              <Route path="/organizations/:orgId" element={<OrganizationPage />} />
+              <Route path="/my-organizations" element={<MyOrganizations />} />
+              <Route path="/events" element={<ExploreEvents />} />
+              <Route path="/my-events" element={<MyEvents />} /> {/* New route */}
+            </Routes>
+          </main>
+          {isMobile && <MobileNavbar />}
+        </div>
       </Router>
     </AuthProvider>
   );

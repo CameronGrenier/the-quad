@@ -1,8 +1,12 @@
-/* Add a dark gradient background with subtle animation */
+/* Modify the org-list-page class to remove nested scrolling */
 .org-list-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 2rem 2rem 4rem 2rem; /* Added bottom padding */
+  min-height: calc(100vh - 80px); /* Adjust based on your header height */
+  color: white;
+  box-sizing: border-box;
   position: relative;
 }
 
@@ -15,7 +19,7 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg, #1c1033 0%, #2d1537 50%, #1c1033 100%);
-  z-index: -10;
+  z-index: -1;
 }
 
 /* Add subtle animated particles/stars in the background */
@@ -66,22 +70,24 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Search and Filter Controls */
+/* Update the org-list-controls to use flexbox for better alignment */
 .org-list-controls {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
   gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-/* Simplified search container and input styling */
+/* Update search container to have appropriate width */
 .search-container {
   position: relative;
+  width: auto;
   flex: 1;
-  min-width: 250px;
   max-width: 500px;
+  min-width: 200px;
+  margin-right: 10px;
 }
 
 /* Updated search input with white text and cursor */
@@ -154,21 +160,23 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* Update filter container to be inline with search */
 .filter-container {
   display: flex;
-  gap: 10px;
+  gap: 5px;
+  margin: 0;
 }
 
+/* Make filter buttons more compact */
 .filter-btn {
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  background-color: rgba(48, 30, 103, 0.7);
   color: white;
-  font-size: 14px;
-  font-weight: 500;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 30px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.3s;
+  font-size: 0.9rem;
 }
 
 .filter-btn:hover {
@@ -187,8 +195,11 @@
 .org-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 30px;
-  margin-bottom: 40px;
+  gap: 25px;
+  width: 100%;
+  margin: 0 auto;
+  /* Remove any max-height property */
+  /* Remove any overflow property */
 }
 
 .org-card-link {
@@ -204,7 +215,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
-  height: 100%;
+  height: auto;
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(12px);
@@ -314,6 +325,7 @@
   align-items: center;
   min-height: 300px;
   text-align: center;
+  /* Remove height/max-height restrictions */
 }
 
 .org-loading-spinner {
@@ -360,11 +372,24 @@
   margin-top: 20px;
 }
 
+/* Ensure the content area takes the full page width */
+.org-content-wrapper {
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .org-list-controls {
     flex-direction: column;
     align-items: stretch;
+  }
+  
+  .search-container {
+    margin-right: 0;
+    margin-bottom: 15px;
+    max-width: none;
   }
   
   .filter-container {

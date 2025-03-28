@@ -16,6 +16,7 @@
     "test:all": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests --no-cache"
   },
   "dependencies": {
+    "react-markdown": "^10.1.0",
     "wrangler": "^3.0.0"
   },
   "devDependencies": {

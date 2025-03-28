@@ -39,7 +39,11 @@ function MyOrganizations() {
 
   useEffect(() => {
     async function fetchMyOrganizations() {
-      if (!currentUser?.id) {
+      // Fix: Check for both ID formats
+      const userId = currentUser?.id || currentUser?.userID;
+      
+      if (!userId) {
+        console.log("No user ID found in:", currentUser);
         setError('Please log in to view your organizations');
         setLoading(false);
         return;
@@ -49,8 +53,8 @@ function MyOrganizations() {
         setLoading(true);
         // Fetch both admin and member organizations
         const [adminResponse, memberResponse] = await Promise.all([
-          fetch(`${API_URL}/api/user-organizations?userID=${currentUser.id}`),
-          fetch(`${API_URL}/api/user-member-organizations?userID=${currentUser.id}`)
+          fetch(`${API_URL}/api/user-organizations?userID=${userId}`),
+          fetch(`${API_URL}/api/user-member-organizations?userID=${userId}`)
         ]);
         
         if (!adminResponse.ok) {

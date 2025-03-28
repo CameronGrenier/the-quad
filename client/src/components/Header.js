@@ -10,14 +10,36 @@ import { ReactComponent as Organization } from '../icons/people-group-solid.svg'
 import { ReactComponent as MyOrganization } from '../icons/user-group-solid.svg';
 import { useAuth } from '../context/AuthContext';
 
+// Add this utility function for profile image
+const formatImageUrl = (url) => {
+  if (!url) return null;
+  if (url === '') return null;
+  
+  const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+  
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  if (url.startsWith('/images/')) {
+    return `${API_URL}${url}`;
+  }
+  
+  return `${API_URL}/images/${url}`;
+};
+
 function Header() {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUserData } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   // Check if current page should have fixed header
   const isFixedHeaderPage = location.pathname === '/' || 
                            location.pathname.match(/^\/organizations\/\d+/);
+                           
+  // Check if current page is EventPage
+  const isEventPage = location.pathname.match(/^\/events\/\d+/);
+  
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef(null);
 
@@ -35,8 +57,15 @@ function Header() {
     };
   }, []);
 
+  // Add this effect to refresh user data when header mounts
+  useEffect(() => {
+    if (currentUser) {
+      refreshUserData();
+    }
+  }, []); // Run once when component mounts
+
   return (
-    <div className={isFixedHeaderPage ? "header-container fixed" : "header-container"}>
+    <div className={`header-container ${isFixedHeaderPage ? 'fixed' : 'static'} ${isEventPage ? 'event-page-header' : ''}`}>
       <header>
         <div className="logo">
           <Link to="/">
@@ -90,9 +119,7 @@ function Header() {
             <div className="account">
               {currentUser.profile_picture ? (
                 <img 
-                  src={currentUser.profile_picture.startsWith('/images/') 
-                    ? `${process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev'}${currentUser.profile_picture}` 
-                    : currentUser.profile_picture} 
+                  src={formatImageUrl(currentUser.profile_picture)} 
                   alt={`${currentUser.f_name}'s profile`} 
                 />
               ) : (

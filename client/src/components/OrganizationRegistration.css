@@ -15,8 +15,17 @@
     bottom: 0;
     background: linear-gradient(to bottom, #4c2889, #c05621);
     background-attachment: fixed;
-    overflow-y: auto;
+    overflow: hidden;  /* Prevent internal scrolling */
     z-index: -1;
+}
+
+/* Ensure the wrapper expands naturally */
+.org-registration-wrapper {
+    width: 100%;
+    padding: 30px 0 60px;  /* Adjust as needed */
+    position: relative;
+    overflow: visible;  /* Allow content to expand */
+    /* Remove any height or min-height properties if present */
 }
 
 .registration-container {
@@ -417,4 +426,86 @@
 .custom-select-option:hover {
   color: white;
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+/* Custom Radio Buttons for Privacy Options */
+.privacy-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.privacy-option {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.privacy-option:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.privacy-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.privacy-option input[type="radio"]:checked + label {
+  color: #7d4cdb;
+}
+
+.privacy-option input[type="radio"]:checked + label .radio-circle {
+  border-color: #7d4cdb;
+}
+
+.privacy-option input[type="radio"]:checked + label .radio-circle::after {
+  transform: scale(1);
+}
+
+.privacy-option label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: 100%;
+  color: white;
+  font-weight: 500;
+}
+
+.radio-circle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  margin-right: 1rem;
+  position: relative;
+}
+
+.radio-circle::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #7d4cdb;
+  transform: scale(0);
+  transition: transform 0.2s ease;
+}
+
+.option-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.option-description {
+  display: block;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
 }

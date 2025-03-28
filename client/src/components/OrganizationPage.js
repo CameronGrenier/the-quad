@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import EventPost from './EventPost';
 import './OrganizationPage.css';
 import ImageLoader from './ImageLoader';
+import MarkdownRenderer from './MarkdownRenderer';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -20,12 +21,20 @@ const formatImageUrl = (url) => {
   
   // Check if path already has /images/ prefix to avoid duplication
   if (url.startsWith('/images/')) {
-    // URL already has correct prefix, just add API base URL
-    return `${API_URL}${url}`;
+    // Preserve the directory structure by not encoding the slashes
+    // First, remove the leading /images/ prefix
+    let imagePath = url.substring('/images/'.length);
+    
+    // Split the path by '/' to encode each segment separately
+    const segments = imagePath.split('/');
+    const encodedSegments = segments.map(segment => encodeURIComponent(segment));
+    
+    // Join the segments back together with '/'
+    return `${API_URL}/images/${encodedSegments.join('/')}`;
   }
   
-  // Otherwise, route through our API
-  return `${API_URL}/images/${url}`;
+  // For paths without /images/ prefix, just encode the entire string
+  return `${API_URL}/images/${encodeURIComponent(url)}`;
 };
 
 function OrganizationPage() {
@@ -42,6 +51,13 @@ function OrganizationPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  
+  // Add new state for membership
+  const [isMember, setIsMember] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [memberCount, setMemberCount] = useState(0);
+
+
   useEffect(() => {
     async function fetchOrganizationData() {
       try {
@@ -54,17 +70,41 @@ function OrganizationPage() {
         
         if (orgData.success) {
           setOrganization(orgData.organization);
+          setMemberCount(orgData.organization.memberCount || 0);
           
           // Check if current user is an admin of this organization
           if (currentUser) {
+            // Get current user ID (checking both property names)
+            const currentUserId = currentUser.id || currentUser.userID;
+            
+            // Debug the admin check
+            console.log("Admin check - Current user ID:", currentUserId);
+            console.log("Admins:", orgData.organization.admins);
+            
+            // Check against both possible ID properties in the admin objects
             const isUserAdmin = orgData.organization.admins?.some(
-              admin => admin.id === currentUser.id
+              admin => (admin.id === currentUserId || admin.userID === currentUserId)
             );
+            
+            console.log("Is admin result:", isUserAdmin);
             setIsAdmin(isUserAdmin);
+            
+            // Also check if the user is already a member
+            if (currentUser.id || currentUser.userID) {
+              const membershipResponse = await fetch(
+                `${API_URL}/api/check-membership?orgID=${orgId}&userID=${currentUser.id || currentUser.userID}`
+              );
+              const membershipData = await membershipResponse.json();
+              setIsMember(membershipData.isMember);
+            }
           }
         } else {
           throw new Error(orgData.error || 'Organization not found');
         }
+        
+        // Add inside useEffect after fetching organization data
+        console.log("Organization data:", orgData.organization);
+        console.log("Banner URL:", orgData.organization.banner);
         
         // Fetch organization events
         const eventsResponse = await fetch(`${API_URL}/api/organizations/${orgId}/events`);
@@ -89,17 +129,23 @@ function OrganizationPage() {
     fetchOrganizationData();
   }, [orgId, currentUser]);
 
-  // Add function to handle organization deletion
+
+  // Update the handleDeleteOrganization function
+
   const handleDeleteOrganization = async () => {
     if (!isAdmin || !currentUser) return;
     
     try {
       setIsDeleting(true);
       console.log("Deleting organization:", orgId);
-      console.log("Current user:", currentUser);
+
+      
+      // Get the user ID (checking both property names)
+      const userId = currentUser.id || currentUser.userID;
+      console.log("Using user ID for deletion:", userId);
       
       const token = localStorage.getItem('token');
-      console.log("Using token:", token ? "Token exists" : "No token found");
+
       
       const response = await fetch(`${API_URL}/api/organizations/${orgId}`, {
         method: 'DELETE',
@@ -107,7 +153,9 @@ function OrganizationPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ userID: currentUser.id })
+
+        body: JSON.stringify({ userID: userId })
+
       });
       
       console.log("Delete response status:", response.status);
@@ -130,6 +178,49 @@ function OrganizationPage() {
       setIsDeleting(false);
     }
   };
+
+
+  // Add join/leave organization handler
+  const handleMembershipToggle = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      setJoinLoading(true);
+      const userId = currentUser.id || currentUser.userID;
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/organization-membership`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orgID: orgId,
+          userID: userId,
+          action: isMember ? 'leave' : 'join'
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsMember(!isMember);
+        setMemberCount(prevCount => isMember ? prevCount - 1 : prevCount + 1);
+      } else {
+        throw new Error(data.error || 'Failed to update membership');
+      }
+    } catch (error) {
+      console.error('Error updating membership:', error);
+      setError(`Membership update failed: ${error.message}`);
+    } finally {
+      setJoinLoading(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -192,6 +283,7 @@ function OrganizationPage() {
         >
           <div className="org-banner-overlay"></div>
         </div>
+        {console.log("Formatted banner URL:", organization.banner ? formatImageUrl(organization.banner) : "No banner")}
       </div>
       
       <div className="org-header">
@@ -234,22 +326,40 @@ function OrganizationPage() {
         <div className="org-sidebar">
           <div className="org-info-card">
             <h3>About</h3>
-            <p className="org-description">{organization.description || 'No description provided.'}</p>
+            <div className="org-description-section">
+              <h2>About This Organization</h2>
+              <div className="org-description">
+                {organization.description ? (
+                  <MarkdownRenderer content={organization.description} />
+                ) : (
+                  <p className="no-description">No description provided.</p>
+                )}
+              </div>
+            </div>
             <div className="org-stats">
               <div className="stat">
                 <span className="stat-value">{events.length}</span>
                 <span className="stat-label">Events</span>
               </div>
               <div className="stat">
-                <span className="stat-value">{organization.memberCount || 0}</span>
+                <span className="stat-value">{memberCount}</span>
                 <span className="stat-label">Members</span>
               </div>
             </div>
           </div>
           
           {!isAdmin && currentUser && (
-            <button className="join-org-btn">
-              Join Organization
+            <button 
+              className={`${isMember ? 'leave-org-btn' : 'join-org-btn'}`}
+              onClick={handleMembershipToggle}
+              disabled={joinLoading}
+            >
+              {joinLoading 
+                ? 'Processing...' 
+                : isMember 
+                  ? 'Leave Organization' 
+                  : 'Join Organization'
+              }
             </button>
           )}
         </div>

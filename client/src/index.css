@@ -1,0 +1,80 @@
+/* At the top of your index.css file */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: #1c1033;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Global scrollbar styling - add near the top of the file */
+
+/* Base scrollbar settings for all browsers (thin and hidden by default) */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #7d4cdb rgba(28, 16, 51, 0.5); /* Firefox: thumb and track colors */
+}
+
+/* Custom scrollbar for WebKit/Blink browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px; /* Width of vertical scrollbar */
+  height: 8px; /* Height of horizontal scrollbar */
+}
+
+/* Scrollbar track */
+::-webkit-scrollbar-track {
+  background: rgba(28, 16, 51, 0.5); /* Dark purple that blends with background */
+  border-radius: 10px;
+}
+
+/* Scrollbar handle */
+::-webkit-scrollbar-thumb {
+  background: #7d4cdb; /* Purple accent color matching site theme */
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #9e74f5; /* Lighter purple on hover */
+}
+
+/* Handle on active */
+::-webkit-scrollbar-thumb:active {
+  background: #6535c9; /* Darker purple when clicking */
+}
+
+/* Corner where scrollbars meet */
+::-webkit-scrollbar-corner {
+  background: rgba(28, 16, 51, 0.5);
+}
+
+/* For browsers that don't support custom scrollbars but support hiding them */
+@supports not (scrollbar-width: thin) {
+  /* Hide scrollbar but keep functionality */
+  html, body {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  /* Hide WebKit scrollbar */
+  html::-webkit-scrollbar, body::-webkit-scrollbar {
+    display: none;
+  }
+}

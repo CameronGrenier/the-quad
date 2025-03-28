@@ -1,0 +1,447 @@
+.event-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1c1033 0%, #2d1537 50%, #1c1033 100%);
+  color: white;
+  margin-top: 0; /* Remove negative margin */
+  padding-top: 0; /* Remove padding as header is now absolute */
+  position: relative;
+  z-index: 0; /* Ensure this is below the header z-index */
+}
+
+/* Add this rule to ensure all paragraphs are white */
+.event-page p {
+  color: white !important; /* Using important to override any other styles */
+}
+
+/* Also ensure other text elements are properly colored */
+.event-page h2, 
+.event-page h3, 
+.event-page h4,
+.event-page span,
+.event-page div {
+  color: white;
+}
+
+.event-banner {
+  height: 600px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  background-color: rgba(48, 30, 103, 0.8); /* Fallback background color */
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.event-banner-overlay {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.7) 100%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.event-banner h1 {
+  color: white;
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.event-organization-link {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  margin-top: 10px;
+  display: inline-block;
+  transition: color 0.2s ease;
+}
+
+.event-organization-link:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+.event-content-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  gap: 30px;
+}
+
+.event-main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-sidebar {
+  width: 350px;
+}
+
+.event-details-section,
+.event-description-section {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 30px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.event-details-section h2,
+.event-description-section h2 {
+  margin-top: 0;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: #f9a826;
+}
+
+.event-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.event-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.event-meta-item i {
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(124, 77, 255, 0.2);
+  color: #b794f4;
+  border-radius: 50%;
+}
+
+.event-meta-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6) !important;
+  margin-bottom: 4px;
+}
+
+.meta-value {
+  font-size: 16px;
+}
+
+.event-description {
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.no-description {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.event-actions {
+  margin-top: 30px;
+  margin-bottom: 50px;
+}
+
+.rsvp-button {
+  background: linear-gradient(to right, #7c4dff, #b794f4);
+  border: none;
+  padding: 15px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 10px rgba(124, 77, 255, 0.3);
+}
+
+.rsvp-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(124, 77, 255, 0.4);
+}
+
+.rsvp-button:disabled {
+  background: rgba(124, 77, 255, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.rsvp-status-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.rsvp-status {
+  background: rgba(124, 77, 255, 0.2);
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.rsvp-status i {
+  color: #7bed9f;
+  font-size: 20px;
+}
+
+.cancel-rsvp-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 15px;
+  font-size: 14px;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  align-self: flex-start;
+}
+
+.cancel-rsvp-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.event-past-notice {
+  background: rgba(255, 121, 97, 0.2);
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  color: #ffa5a5;
+}
+
+.organization-card,
+.share-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 30px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.organization-card h3,
+.share-card h3 {
+  margin-top: 0;
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+  color: #f9a826;
+}
+
+.org-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(to bottom right, #4c2889, #c05621);
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.org-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.org-logo-placeholder {
+  font-size: 36px;
+  color: white;
+  font-weight: bold;
+}
+
+.organization-card h4 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+}
+
+.org-description-preview {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.view-org-button {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 15px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: white;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.view-org-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.share-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.share-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.share-button:hover {
+  transform: translateY(-3px);
+}
+
+.facebook {
+  background: #3b5998;
+}
+
+.twitter {
+  background: #1da1f2;
+}
+
+.email {
+  background: #7c4dff;
+}
+
+.link {
+  background: #4c2889;
+}
+
+.success-message {
+  background: rgba(16, 172, 132, 0.2);
+  color: #83f3d4;
+  padding: 15px;
+  border-radius: 8px;
+  margin: -20px auto 20px;
+  max-width: 600px;
+  text-align: center;
+}
+
+.event-page-loading,
+.event-page-error {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.event-loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #7c4dff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.event-page-error h2 {
+  color: #ff7979;
+  margin-bottom: 10px;
+}
+
+.event-page-error button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.event-page-error button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 900px) {
+  .event-content-container {
+    flex-direction: column;
+  }
+  
+  .event-sidebar {
+    width: 100%;
+  }
+  
+  .event-banner {
+    height: 300px;
+  }
+  
+  .event-banner h1 {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .event-banner {
+    height: 200px;
+  }
+  
+  .event-banner h1 {
+    font-size: 1.8rem;
+  }
+  
+  .event-banner-overlay {
+    padding: 60px 20px 20px;
+  }
+  
+  .event-content-container {
+    padding: 0 15px;
+  }
+  
+  .event-details-section,
+  .event-description-section,
+  .organization-card,
+  .share-card {
+    padding: 20px;
+  }
+}
