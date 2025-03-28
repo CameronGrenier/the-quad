@@ -1,41 +1,52 @@
 /**
- * Database service to handle common database operations.
+ * Executes a query that returns rows
+ * @param {Object} env - The environment object containing DB bindings
+ * @param {string} sql - The SQL query to execute
+ * @param {Array} params - The parameters for the query
+ * @returns {Promise<Array>} - The results of the query
  */
-export class DatabaseService {
-  /**
-   * Execute a query and return multiple results.
-   * 
-   * @param {Object} env - Environment with D1 database binding
-   * @param {string} query - SQL query string
-   * @param {Array} params - Array of parameters to bind to the query
-   * @returns {Promise<Array>} - Array of query results
-   */
-  static async query(env, query, params = []) {
+export async function query(env, sql, params = []) {
     try {
-      const statement = env.D1_DB.prepare(query);
-      const boundStatement = statement.bind(...params);
-      const result = await boundStatement.all();
-      return result.results || [];
+        // Add debugging to see what's available in env
+        console.log("Environment keys:", Object.keys(env));
+        console.log("D1_DB exists:", env.D1_DB !== undefined);
+        
+        // Safely access the database
+        const db = env.D1_DB;
+        if (!db) {
+            throw new Error("Database binding 'D1_DB' is not available in the environment");
+        }
+        
+        const { results } = await db.prepare(sql).bind(...params).all();
+        return results || [];
     } catch (error) {
-      throw new Error(`Database query failed: ${error.message}`);
+        console.error("Database query error:", error);
+        throw new Error(`Database error: ${error.message}`);
     }
-  }
-  
-  /**
-   * Execute a statement that modifies the database.
-   * 
-   * @param {Object} env - Environment with D1 database binding
-   * @param {string} query - SQL statement string
-   * @param {Array} params - Array of parameters to bind to the statement
-   * @returns {Promise<Object>} - Result object from D1
-   */
-  static async execute(env, query, params = []) {
+}
+
+/**
+ * Executes a query that doesn't return rows (INSERT, UPDATE, DELETE)
+ * @param {Object} env - The environment object containing DB bindings
+ * @param {string} sql - The SQL query to execute
+ * @param {Array} params - The parameters for the query
+ * @returns {Promise<Object>} - The results with metadata
+ */
+export async function execute(env, sql, params = []) {
     try {
-      const statement = env.D1_DB.prepare(query);
-      const boundStatement = statement.bind(...params);
-      return await boundStatement.run();
+        // Add debugging
+        console.log("Environment keys in execute:", Object.keys(env));
+        console.log("D1_DB exists in execute:", env.D1_DB !== undefined);
+        
+        const db = env.D1_DB;
+        if (!db) {
+            throw new Error("Database binding 'D1_DB' is not available in the environment");
+        }
+        
+        const result = await db.prepare(sql).bind(...params).run();
+        return result;
     } catch (error) {
-      throw new Error(`Database execution failed: ${error.message}`);
+        console.error("Database execution error:", error);
+        throw new Error(`Database error: ${error.message}`);
     }
-  }
 }

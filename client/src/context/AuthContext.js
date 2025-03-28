@@ -106,47 +106,47 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       setLoading(true);
-      
-      // Log the email and password being sent
       console.log("Sending login request with:", { email, password });
-      
+
       const response = await fetch(`${API_URL}/api/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
+      console.log("Login response data:", data);
 
-      if (data.success && data.token && data.user) {
-        // Make sure we standardize the user object structure
-        const user = {
-          id: data.user.userID || data.user.id, // Handle both formats
-          userID: data.user.userID || data.user.id, // Store ID in both formats for safety
-          email: data.user.email,
-          f_name: data.user.f_name,
-          l_name: data.user.l_name,
-          // Include any other user properties
-        };
-        
-        console.log("Login successful, user data:", {
-          email: user.email,
-          id: user.id,
-          userID: user.userID
-        });
-        
-        // Make sure we have an ID before storing
-        if (!user.id) {
-          console.error("API returned user without ID");
-          return { success: false, error: "Invalid user data returned from server" };
+      if (data.success) {
+        if (data.token && data.user) {
+          // Standardize the user object to ensure both id and userID are set
+          const user = {
+            id: data.user.userID || data.user.id,
+            userID: data.user.userID || data.user.id,
+            email: data.user.email,
+            f_name: data.user.f_name,
+            l_name: data.user.l_name,
+            // Add additional fields as needed
+          };
+
+          if (!user.id) {
+            console.error("API returned user without ID:", data);
+            return {
+              success: false,
+              error: "Invalid user data returned from server",
+            };
+          }
+
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(user));
+          setCurrentUser(user);
+          return { success: true };
+        } else {
+          console.error("Incomplete login data returned:", data);
+          return { success: false, error: "Incomplete login data returned" };
         }
-        
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(user));
-        setCurrentUser(user);
-        return { success: true };
       } else {
         console.error("Login API error:", data.error);
         return { success: false, error: data.error || "Login failed" };
@@ -159,7 +159,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Update the signup function with better error handling
   const signup = async (userData) => {
     try {
       setLoading(true);
