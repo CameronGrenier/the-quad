@@ -15,9 +15,11 @@ import OrganizationPage from './components/OrganizationPage';
 import OrganizationList from './components/OrganizationList';
 import MyOrganizations from './components/MyOrganizations';
 import ExploreEvents from './components/ExploreEvents';
+
 import EventPage from './components/EventPage';
 import EventList from './components/EventList'; // Note the 's' in EventsList
 import MyEvents from './components/MyEvents';
+
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
@@ -39,6 +41,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+
         <div className="app-container"> {/* Add this wrapper */}
           {!isMobile && <Header />}
           <main className={`main-content ${isMobile ? 'has-mobile-nav' : ''}`}> {/* Add this wrapper */}

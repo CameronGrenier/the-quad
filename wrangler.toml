@@ -1,25 +1,31 @@
 name = "the-quad-worker"
-type = "javascript"
-workers_dev = true
-compatibility_date = "2025-03-07"
 main = "./client/src/worker.js"
+compatibility_date = "2025-03-07"
+
+# Add environment variables
+[vars]
+JWT_SECRET = "4ce3238e21b48e1c8b056561365ff037dbdcf0664587d3408a7196d772e29475"
 
 # Add D1 binding for default environment
-d1_databases = [
-  { binding = "D1_DB", database_name = "the-quad-db", database_id = "e4c6f5c9-b43e-438a-b7b0-07d8a4db1fb2" }
-]
+[[d1_databases]]
+binding = "D1_DB"
+database_name = "the-quad-db"
+database_id = "e4c6f5c9-b43e-438a-b7b0-07d8a4db1fb2"
 
 # Add R2 binding for default environment
-r2_buckets = [
-  { binding = "R2_BUCKET", bucket_name = "images" }
-]
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "images"
 
 [env.production]
 workers_dev = true
 route = "https://the-quad.pages.dev/*"
-d1_databases = [
-  { binding = "D1_DB", database_name = "the-quad-db", database_id = "e4c6f5c9-b43e-438a-b7b0-07d8a4db1fb2" }
-]
-r2_buckets = [
-  { binding = "R2_BUCKET", bucket_name = "images" }
-]
+
+[[env.production.d1_databases]]
+binding = "D1_DB"
+database_name = "the-quad-db"
+database_id = "e4c6f5c9-b43e-438a-b7b0-07d8a4db1fb2"
+
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "images"

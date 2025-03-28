@@ -84,14 +84,17 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       setLoading(true);
+
       
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
+
       });
       
       const data = await response.json();
+
       
       if (data.success && data.token) {
         localStorage.setItem('token', data.token);
@@ -114,6 +117,7 @@ export function AuthProvider({ children }) {
         }
         
         return { success: true };
+
       } else {
         return { success: false, error: data.error || 'Login failed' };
       }
@@ -125,7 +129,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Update the signup function with better error handling
   const signup = async (userData) => {
     try {
       setLoading(true);
