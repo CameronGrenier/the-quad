@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { DatabaseService } from '../../client/src/services/DatabaseService.js';
+import * as DatabaseService from '../../client/src/services/DatabaseService.js';
 
 describe('DatabaseService', () => {
   // Common mock setup
@@ -25,6 +25,15 @@ describe('DatabaseService', () => {
       prepare: mockPrepare
     };
     env = { D1_DB: mockD1Binding };
+
+    // Clear console logs to keep test output clean
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    // Restore console functions
+    jest.restoreAllMocks();
   });
 
   describe('query', () => {
@@ -74,7 +83,7 @@ describe('DatabaseService', () => {
       // Act & Assert
       await expect(DatabaseService.query(env, 'INVALID SQL'))
         .rejects
-        .toThrow('Database query failed: SQL syntax error');
+        .toThrow('Database error: SQL syntax error');
     });
 
     test('should throw error when D1_DB binding is missing', async () => {
@@ -84,7 +93,7 @@ describe('DatabaseService', () => {
       // Act & Assert
       await expect(DatabaseService.query(invalidEnv, 'SELECT * FROM test'))
         .rejects
-        .toThrow(/Database query failed/);
+        .toThrow("Database error: Database binding 'D1_DB' is not available in the environment");
     });
   });
 
@@ -162,7 +171,7 @@ describe('DatabaseService', () => {
         [1, 'Duplicate Key']
       ))
         .rejects
-        .toThrow('Database execution failed: Constraint violation');
+        .toThrow('Database error: Constraint violation');
     });
 
     test('should throw error when D1_DB binding is missing', async () => {
@@ -176,7 +185,7 @@ describe('DatabaseService', () => {
         ['Test']
       ))
         .rejects
-        .toThrow(/Database execution failed/);
+        .toThrow("Database error: Database binding 'D1_DB' is not available in the environment");
     });
   });
 });
