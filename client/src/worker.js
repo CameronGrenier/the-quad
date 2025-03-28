@@ -14,6 +14,10 @@ import {
   AdminDashboardController 
 } from './controllers/index.js';
 
+import * as DatabaseService from './services/DatabaseService.js';
+import * as BackendService from './services/BackendService.js';
+
+
 /* ==================== MAIN WORKER FUNCTION ==================== */
 export default {
   async fetch(request, env) {
