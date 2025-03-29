@@ -11,30 +11,29 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     
-    // Log the email and password being sent
     console.log("Submitting login data:", { email, password });
     
     try {
-      setError('');
-      setLoading(true);
       const result = await login(email, password);
       
       if (result.success) {
-        // Redirect to homepage after successful login
-        navigate('/');
+        navigate('/events'); 
       } else {
-        setError(result.error || 'Failed to log in');
+        // Display error message
+        setError(result.error || 'Login failed');
       }
-    } catch (error) {
-      setError('Failed to log in. Please check your credentials.');
-      console.error(error);
+    } catch (err) {
+      setError('An unexpected error occurred');
+      console.error(err);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <>

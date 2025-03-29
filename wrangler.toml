@@ -17,6 +17,10 @@ database_id = "e4c6f5c9-b43e-438a-b7b0-07d8a4db1fb2"
 binding = "R2_BUCKET"
 bucket_name = "images"
 
+[build.upload]
+dir = "client/src"
+main = "./worker.js"
+
 [env.production]
 workers_dev = true
 route = "https://the-quad.pages.dev/*"

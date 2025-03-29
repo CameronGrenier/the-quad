@@ -13,14 +13,16 @@ export class BackendService {
 
     try {
       const handlerResponse = await handler(request);
-      // Log the type and full content of the response
-      console.log("Handler response type:", typeof handlerResponse);
-      console.log("Handler response (raw):", handlerResponse);
-      // If handlerResponse is a Response, it won’t spread correctly.
-      const finalResponse = { success: true, ...handlerResponse };
-      console.log("Final response sent:", finalResponse);
-      return new Response(JSON.stringify(finalResponse), { headers });
+      
+      // If handlerResponse is already a Response object, return it directly
+      if (handlerResponse instanceof Response) {
+        return handlerResponse;
+      }
+      
+      // Otherwise, convert to standard response format
+      return new Response(JSON.stringify(handlerResponse), { headers });
     } catch (error) {
+      console.error("Request handler error:", error);
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
         { status: 500, headers }

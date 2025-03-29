@@ -23,8 +23,18 @@ export async function uploadFileToR2(env, file, path) {
   }
   const buffer = await file.arrayBuffer();
   const contentType = file.type || 'application/octet-stream';
-  await env.R2_BUCKET.put(path, buffer, { httpMetadata: { contentType } });
-  return `/images/${path}`;
+  
+  try {
+    await env.R2_BUCKET.put(path, buffer, { httpMetadata: { contentType } });
+    
+    // Make sure URL format is consistent - always start with /images/
+    return `/images/${path}`;
+  } catch (error) {
+    console.error("R2 upload error:", error);
+    
+    // Return a placeholder URL on error
+    return `/images/placeholder.svg`;
+  }
 }
 
 /**

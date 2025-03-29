@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import MobileNavbar from './components/MobileNavbar';
 import Home from './components/Home';
@@ -15,13 +15,29 @@ import OrganizationPage from './components/OrganizationPage';
 import OrganizationList from './components/OrganizationList';
 import MyOrganizations from './components/MyOrganizations';
 import ExploreEvents from './components/ExploreEvents';
+// import Dashboard from './components/Dashboard';
+// import ForgotPassword from './components/ForgotPassword';
 
 import EventPage from './components/EventPage';
 import EventList from './components/EventList'; // Note the 's' in EventsList
 import MyEvents from './components/MyEvents';
 
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import './App.css';
+
+// Protected Route component
+const ProtectedRoute = ({ children }) => {
+  const { currentUser, loading } = useAuth();
+  
+  if (loading) return <div>Loading...</div>;
+  
+  if (!currentUser) {
+    return <Navigate to="/login" />;
+  }
+  
+  return children;
+};
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1370);
@@ -38,17 +54,18 @@ function App() {
     };
   }, []);
 
-  return (
-    <AuthProvider>
-      <Router>
+  // Key part to change:
 
-        <div className="app-container"> {/* Add this wrapper */}
+  return (
+    <Router>
+      <AuthProvider>
+        <div className="app-container">
           {!isMobile && <Header />}
-          <main className={`main-content ${isMobile ? 'has-mobile-nav' : ''}`}> {/* Add this wrapper */}
+          <main className={`main-content ${isMobile ? 'has-mobile-nav' : ''}`}>
             <Routes>
-              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/events/:id" element={<EventPage />} />
               <Route path="/register-event" element={<EventRegistration />} />
@@ -59,13 +76,16 @@ function App() {
               <Route path="/organizations/:orgId" element={<OrganizationPage />} />
               <Route path="/my-organizations" element={<MyOrganizations />} />
               <Route path="/events" element={<ExploreEvents />} />
-              <Route path="/my-events" element={<MyEvents />} /> {/* New route */}
+              <Route path="/my-events" element={<MyEvents />} />
+              
+              {/* Default route */}
+              <Route path="/" element={<Navigate to="/login" />} />
             </Routes>
           </main>
           {isMobile && <MobileNavbar />}
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

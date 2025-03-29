@@ -144,23 +144,86 @@ export class AccountController {
    * @returns {Promise<Response>} - The response object
    */
   async getUserProfile(request) {
-    return handleRequest(request, async (req) => {
-      const authHeader = req.headers.get("Authorization") || "";
-      const token = authHeader.replace("Bearer ", "");
+    try {
+      // Get the user ID from the JWT token
+      const token = request.headers.get('Authorization')?.split(' ')[1];
       if (!token) {
-        throw new Error("Authentication token required");
+        return new Response(JSON.stringify({ success: false, error: 'Authentication required' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
       }
-
-      const payload = await verifyJWT(token, this.env.JWT_SECRET);
-      const userId = payload.userId;
-      if (!userId) throw new Error("Invalid token: missing user ID");
-
-      const userQuery = await DatabaseService.query(this.env, "SELECT userID, f_name, l_name, email, phone, profile_picture FROM USERS WHERE userID = ?", [userId]);
-      if (userQuery.length === 0) {
-        throw new Error("User not found");
+      
+      // Verify token and get user data
+      const jwtSecret = this.env.JWT_SECRET || "4ce3238e21b48e1c8b056561365ff037dbdcf0664587d3408a7196d772e29475";
+      const payload = await verifyJWT(token, jwtSecret);
+      
+      console.log("Decoded JWT payload:", payload); // Add this debug line
+      
+      // Query the user from the database - notice we need to check both userId and userID
+      const userId = payload.userId || payload.userID;
+      if (!userId) {
+        console.error("No userId found in token payload:", payload);
+        return new Response(JSON.stringify({ success: false, error: 'Invalid token: no user ID' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
       }
-
-      return { user: userQuery[0] };
-    });
+      
+      console.log("Querying user with ID:", userId);
+      
+      const users = await DatabaseService.query(
+        this.env,
+        "SELECT userID, username, f_name, l_name, email, phone, profile_picture, created_at, updated_at FROM USERS WHERE userID = ?",
+        [userId]
+      );
+      
+      console.log("Database query result:", users);
+      
+      if (users.length === 0) {
+        return new Response(JSON.stringify({ success: false, error: 'User not found' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
+      
+      const user = users[0];
+      
+      // Return the user profile
+      return new Response(JSON.stringify({
+        success: true,
+        user: {
+          userID: user.userID,
+          id: user.userID, // Add this for compatibility
+          username: user.username,
+          f_name: user.f_name,
+          l_name: user.l_name,
+          email: user.email,
+          phone: user.phone,
+          profile_picture: user.profile_picture,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        }
+      }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+      });
+    } catch (error) {
+      console.error("Error getting user profile:", error);
+      return new Response(JSON.stringify({ success: false, error: error.message }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+      });
+    }
   }
 }
