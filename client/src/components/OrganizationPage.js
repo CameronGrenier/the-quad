@@ -50,11 +50,13 @@ function OrganizationPage() {
   // Add state for delete confirmation dialog
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
   
   // Add new state for membership
   const [isMember, setIsMember] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
   const [memberCount, setMemberCount] = useState(0);
+
 
   useEffect(() => {
     async function fetchOrganizationData() {
@@ -127,19 +129,23 @@ function OrganizationPage() {
     fetchOrganizationData();
   }, [orgId, currentUser]);
 
+
   // Update the handleDeleteOrganization function
+
   const handleDeleteOrganization = async () => {
     if (!isAdmin || !currentUser) return;
     
     try {
       setIsDeleting(true);
       console.log("Deleting organization:", orgId);
+
       
       // Get the user ID (checking both property names)
       const userId = currentUser.id || currentUser.userID;
       console.log("Using user ID for deletion:", userId);
       
       const token = localStorage.getItem('token');
+
       
       const response = await fetch(`${API_URL}/api/organizations/${orgId}`, {
         method: 'DELETE',
@@ -147,7 +153,9 @@ function OrganizationPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
+
         body: JSON.stringify({ userID: userId })
+
       });
       
       console.log("Delete response status:", response.status);
@@ -170,6 +178,7 @@ function OrganizationPage() {
       setIsDeleting(false);
     }
   };
+
 
   // Add join/leave organization handler
   const handleMembershipToggle = async () => {
@@ -211,6 +220,7 @@ function OrganizationPage() {
       setJoinLoading(false);
     }
   };
+
 
   if (loading) {
     return (

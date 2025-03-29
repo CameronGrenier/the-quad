@@ -28,13 +28,21 @@ function Profile() {
   const [updateError, setUpdateError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Format image URL for profile pictures
+  // Update the formatImageUrl function
   const formatImageUrl = (url) => {
     if (!url) return null;
     if (url === '') return null;
     
+    console.log("Formatting image URL:", url);
+    
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
+    }
+    
+    // The issue is here - for profile pictures, we need the full path
+    if (url.includes('profile_pictures/')) {
+      // Use the complete URL without splitting it
+      return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
     }
     
     if (url.startsWith('/images/')) {
@@ -53,14 +61,34 @@ function Profile() {
     async function fetchUserData() {
       try {
         const token = localStorage.getItem('token');
+        if (!token) {
+          setError("Authentication token missing, please log in again");
+          navigate('/login');
+          return;
+        }
+        
+        console.log("Using token for profile fetch:", token.substring(0, 15) + "...");
+        
         const response = await fetch(`${API_URL}/api/user-profile`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
         
-        if (!response.ok) throw new Error('Failed to fetch profile data');
+        console.log("Profile API response status:", response.status);
+        
+        // Add more visible error reporting
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Profile API error:", response.status, errorText);
+          throw new Error(`Failed to fetch profile data: ${response.status} ${errorText}`);
+        }
         
         const data = await response.json();
-        if (data.success) {
+        console.log("Profile API response data:", data);
+        
+        if (data.success && data.user) {
           setUserData(data.user);
           setFormData({
             f_name: data.user.f_name || '',
@@ -69,6 +97,22 @@ function Profile() {
             phone: data.user.phone || '',
             profile_picture: null
           });
+        } else {
+          console.error("User data missing in response:", data);
+          
+          // Try to recover by using currentUser data
+          if (currentUser) {
+            setUserData(currentUser);
+            setFormData({
+              f_name: currentUser.f_name || '',
+              l_name: currentUser.l_name || '',
+              email: currentUser.email || '',
+              phone: currentUser.phone || '',
+              profile_picture: null
+            });
+          } else {
+            setError("Failed to load profile data - missing user information");
+          }
         }
         
         // Fetch organizations
@@ -89,7 +133,8 @@ function Profile() {
         
       } catch (err) {
         console.error("Error fetching profile data:", err);
-        setError("Failed to load profile data. Please try again.");
+        // More helpful error message including the error details
+        setError(`Failed to load profile data: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -182,6 +227,13 @@ function Profile() {
       <div className="profile-container">
         <h1>Your Profile</h1>
         
+        {/* Display errors prominently */}
+        {error && (
+          <div className="error-message alert">
+            <i className="fas fa-exclamation-circle"></i> {error}
+          </div>
+        )}
+        
         {updateSuccess && (
           <div className="success-message">
             <i className="fas fa-check-circle"></i> Profile updated successfully!
@@ -207,6 +259,11 @@ function Profile() {
                       src={formatImageUrl(userData.profile_picture)} 
                       alt="Profile" 
                       className="avatar-image"
+                      onError={(e) => {
+                        console.log("Image failed to load, using placeholder");
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/150?text=Profile';
+                      }}
                     />
                   ) : (
                     <div className="avatar-placeholder">

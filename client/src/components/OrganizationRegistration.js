@@ -154,12 +154,15 @@ function OrganizationRegistration() {
             <div className="form-group">
               <label>Organization Name:</label>
               <input
+
                 type="text"
                 name="name"
                 value={formData.name}
+
                 onChange={handleChange}
                 required
               />
+
               {errors.name && <p className="error">{errors.name}</p>}
             </div>
             
@@ -168,6 +171,7 @@ function OrganizationRegistration() {
               <textarea
                 name="description"
                 value={formData.description}
+
                 onChange={handleChange}
                 rows="4"
               />
@@ -265,6 +269,7 @@ function OrganizationRegistration() {
                 </div>
               </div>
             </div>
+
             
             <button 
               type="submit" 
@@ -275,6 +280,7 @@ function OrganizationRegistration() {
             </button>
           </form>
         </div>
+
       </div>
     </>
   );
