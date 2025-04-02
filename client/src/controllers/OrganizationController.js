@@ -1,0 +1,181 @@
+/**
+ * Organization Controller for The Quad
+ * 
+ * Handles organization operations like creation, retrieval, and management
+ */
+
+import formDataUtil from '../utils/formData.js';
+
+class OrganizationController {
+  constructor(env, corsHeaders, backendService, auth) {
+    this.env = env;
+    this.corsHeaders = corsHeaders;
+    this.backendService = backendService;
+    this.auth = auth;
+  }
+  
+  async registerOrganization(request) {
+    try {
+      const formData = await formDataUtil.parseFormData(request);
+      const name = formData.get('name');
+      const description = formData.get('description') || '';
+      const userID = formData.get('userID');
+      const privacy = formData.get('privacy') || 'public';
+      
+      if (!name || !userID) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Missing required fields: name and userID"
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      const existingOrg = await this.backendService.queryFirst(
+        "SELECT * FROM ORGANIZATION WHERE name = ?",
+        [name]
+      );
+      
+      if (existingOrg) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Organization name already exists"
+        }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      let thumbnailURL = '', bannerURL = '';
+      const thumbnail = formData.get('thumbnail');
+      if (thumbnail && thumbnail.size > 0) {
+        const cleanName = name.replace(/\s+/g, '_');
+        thumbnailURL = await this.backendService.uploadFile(thumbnail, `thumbnails/Thumb_${cleanName}`);
+      }
+      
+      const banner = formData.get('banner');
+      if (banner && banner.size > 0) {
+        const cleanName = name.replace(/\s+/g, '_');
+        bannerURL = await this.backendService.uploadFile(banner, `banners/Banner_${cleanName}`);
+      }
+      
+      const insertResult = await this.backendService.query(
+        `INSERT INTO ORGANIZATION (name, description, thumbnail, banner, privacy)
+         VALUES (?, ?, ?, ?, ?)`,
+        [name, description, thumbnailURL, bannerURL, privacy]
+      );
+      
+      const newOrgID = insertResult.meta.last_row_id;
+      await this.backendService.query(
+        `INSERT INTO ORG_ADMIN (orgID, userID) VALUES (?, ?)`,
+        [newOrgID, userID]
+      );
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Organization created successfully",
+        orgID: newOrgID
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: this.corsHeaders });
+    }
+  }
+  
+  async getUserOrganizations(request) {
+    try {
+      const url = new URL(request.url);
+      const userID = url.searchParams.get('userID');
+      if (!userID) {
+        return new Response(JSON.stringify({ success: false, error: "User ID is required" }),
+          { status: 400, headers: this.corsHeaders });
+      }
+      
+      const organizations = await this.backendService.queryAll(
+        `SELECT o.* FROM ORGANIZATION o
+         JOIN ORG_ADMIN oa ON o.orgID = oa.orgID
+         WHERE oa.userID = ?`,
+        [userID]
+      );
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        organizations: organizations.results || [] 
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: this.corsHeaders });
+    }
+  }
+  
+  async getAllOrganizations(request) {
+    try {
+      const organizations = await this.backendService.queryAll(
+        `SELECT o.*, COUNT(om.userID) as memberCount
+         FROM ORGANIZATION o
+         LEFT JOIN ORG_MEMBER om ON o.orgID = om.orgID
+         GROUP BY o.orgID
+         ORDER BY o.name ASC`
+      );
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        organizations: organizations.results || [] 
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: this.corsHeaders });
+    }
+  }
+  
+  async getOrganization(orgId) {
+    try {
+      const organization = await this.backendService.queryFirst(
+        `SELECT o.*, COUNT(om.userID) as memberCount
+         FROM ORGANIZATION o
+         LEFT JOIN ORG_MEMBER om ON o.orgID = om.orgID
+         WHERE o.orgID = ?
+         GROUP BY o.orgID`,
+        [orgId]
+      );
+      
+      if (!organization) {
+        return new Response(JSON.stringify({ success: false, error: "Organization not found" }),
+          { status: 404, headers: this.corsHeaders });
+      }
+      
+      const admins = await this.backendService.queryAll(
+        `SELECT u.userID as id, u.email, u.f_name as firstName, u.l_name as lastName, 
+         u.profile_picture as profileImage
+         FROM ORG_ADMIN oa
+         JOIN USERS u ON oa.userID = u.userID
+         WHERE oa.orgID = ?`,
+        [orgId]
+      );
+      
+      organization.admins = admins.results || [];
+      
+      return new Response(JSON.stringify({ success: true, organization }),
+        { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: this.corsHeaders });
+    }
+  }
+  
+  async getOrganizationEvents(orgId) {
+    try {
+      const events = await this.backendService.queryAll(
+        `SELECT e.* FROM EVENT e
+         WHERE e.organizationID = ?
+         ORDER BY e.startDate ASC`,
+        [orgId]
+      );
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        events: events.results || [] 
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: this.corsHeaders });
+    }
+  }
+}
+
+export default OrganizationController;
