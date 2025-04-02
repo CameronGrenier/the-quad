@@ -1,7 +1,8 @@
 import * as Utils from '../utils/auth.js';
 import * as DatabaseService from '../services/DatabaseService.js';
 import * as BackendService from '../services/BackendService.js';
-
+import { parseFormData } from '../utils/formData.js';
+import { uploadFileToR2 } from '../utils/storage.js';
 /**
  * EventController class handles event-related endpoints
  */
@@ -18,7 +19,7 @@ export class EventController {
    */
   async registerEvent(request) {
     return BackendService.handleRequest(request, async (req) => {
-      const formData = await Utils.parseFormData(req);
+      const formData = await parseFormData(req);
       const organizationID = formData.get('organizationID');
       const title = formData.get('title');
       const description = formData.get('description') || '';
@@ -43,11 +44,11 @@ export class EventController {
       let thumbnailURL = '', bannerURL = '';
       const thumbnail = formData.get('thumbnail');
       if (thumbnail && thumbnail.size > 0) {
-        thumbnailURL = await Utils.uploadFileToR2(this.env, thumbnail, `events/thumbnails/${title}-${Date.now()}`);
+        thumbnailURL = await uploadFileToR2(this.env, thumbnail, `events/thumbnails/${title}-${Date.now()}`);
       }
       const banner = formData.get('banner');
       if (banner && banner.size > 0) {
-        bannerURL = await Utils.uploadFileToR2(this.env, banner, `events/banners/${title}-${Date.now()}`);
+        bannerURL = await uploadFileToR2(this.env, banner, `events/banners/${title}-${Date.now()}`);
       }
       const insertResult = await DatabaseService.execute(this.env, `
         INSERT INTO EVENT (

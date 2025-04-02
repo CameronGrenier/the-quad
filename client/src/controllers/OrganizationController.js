@@ -10,6 +10,8 @@
  import * as Utils from '../utils/auth.js';
  import * as DatabaseService from '../services/DatabaseService.js';
  import * as BackendService from '../services/BackendService.js';
+ import { parseFormData } from '../utils/formData.js';
+ import { uploadFileToR2 } from '../utils/storage.js';
 
 /**
  * OrganizationController class handles organization-related API endpoints.
@@ -27,7 +29,7 @@ export class OrganizationController {
    */
   async registerOrganization(request) {
     return BackendService.handleRequest(request, async (req) => {
-      const formData = await Utils.parseFormData(req);
+      const formData = await parseFormData(req);
       const name = formData.get('name');
       const description = formData.get('description') || '';
       const userID = formData.get('userID');
@@ -47,12 +49,12 @@ export class OrganizationController {
       const thumbnail = formData.get('thumbnail');
       if (thumbnail && thumbnail.size > 0) {
         const cleanName = name.replace(/\s+/g, '_');
-        thumbnailURL = await Utils.uploadFileToR2(this.env, thumbnail, `thumbnails/Thumb_${cleanName}`);
+        thumbnailURL = await uploadFileToR2(this.env, thumbnail, `thumbnails/Thumb_${cleanName}`);
       }
       const banner = formData.get('banner');
       if (banner && banner.size > 0) {
         const cleanName = name.replace(/\s+/g, '_');
-        bannerURL = await Utils.uploadFileToR2(this.env, banner, `banners/Banner_${cleanName}`);
+        bannerURL = await uploadFileToR2(this.env, banner, `banners/Banner_${cleanName}`);
       }
 
       const insertResult = await DatabaseService.execute(this.env, `

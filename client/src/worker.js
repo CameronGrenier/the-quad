@@ -5,8 +5,6 @@
  * the API endpoint logic.
  */
 
-
-
 import { 
   AccountController,
   OrganizationController,
@@ -17,7 +15,6 @@ import {
 
 import * as DatabaseService from './services/DatabaseService.js';
 import * as BackendService from './services/BackendService.js';
-
 
 /* ==================== MAIN WORKER FUNCTION ==================== */
 export default {
@@ -38,10 +35,7 @@ export default {
         status: 204,
         headers: corsHeaders
       });
-
     }
-  });
-}
 
     // Instantiate controllers with environment
     const accountCtrl = new AccountController(env, corsHeaders);
@@ -49,6 +43,81 @@ export default {
     const eventCtrl = new EventController(env, corsHeaders);
     const officialStatusCtrl = new OfficialStatusController(env, corsHeaders);
     // const adminDashboard = new AdminDashboardController(env, corsHeaders);
+    
+    // Handle image requests
+    if (path.startsWith("/images/") || path.includes("profile_pictures")) {
+      try {
+        console.log(`Image requested: ${path}`);
+        
+        // Remove the leading "/images/" if present to get the storage key
+        const objectKey = path.startsWith("/images/") ? path.substring(8) : path;
+        console.log(`Looking for R2 object with key: ${objectKey}`);
+        
+        // Check if we have R2 bucket binding
+        if (!env.R2_BUCKET) {
+          console.error("R2_BUCKET binding is missing");
+          throw new Error("Storage configuration error");
+        }
+        
+        // Get the object from R2
+        const object = await env.R2_BUCKET.get(objectKey);
+        
+        if (object === null) {
+          console.log(`Object ${objectKey} not found in R2 bucket`);
+          
+          // Fall back to a placeholder
+          const filename = path.split('/').pop();
+          const svgPlaceholder = `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">
+            <rect width="150" height="150" fill="#e0e0e0"/>
+            <text x="75" y="65" font-size="16" text-anchor="middle" fill="#555">Image</text>
+            <text x="75" y="85" font-size="12" text-anchor="middle" fill="#777">${filename}</text>
+          </svg>`;
+          
+          return new Response(svgPlaceholder, { 
+            status: 404, // Use 404 to indicate the actual image wasn't found
+            headers: { 
+              "Content-Type": "image/svg+xml", 
+              "Access-Control-Allow-Origin": "*",
+              "Cache-Control": "max-age=60" // Short cache for placeholders
+            }
+          });
+        }
+        
+        // Determine content type based on file extension
+        const extension = objectKey.split('.').pop().toLowerCase();
+        let contentType = "application/octet-stream";
+        
+        // Set content type based on file extension
+        if (extension === "jpg" || extension === "jpeg") contentType = "image/jpeg";
+        else if (extension === "png") contentType = "image/png";
+        else if (extension === "gif") contentType = "image/gif";
+        else if (extension === "svg") contentType = "image/svg+xml";
+        
+        // Use the content type from R2 if available
+        if (object.httpMetadata?.contentType) {
+          contentType = object.httpMetadata.contentType;
+        }
+        
+        console.log(`Serving ${objectKey} as ${contentType}`);
+        
+        // Return the image with proper headers
+        return new Response(object.body, { 
+          status: 200,
+          headers: { 
+            "Content-Type": contentType, 
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=86400", // Cache for 24 hours
+            "Content-Length": object.size
+          }
+        });
+      } catch (error) {
+        console.error(`Error serving image: ${error.message}`);
+        return new Response(`Error serving image: ${error.message}`, { 
+          status: 500,
+          headers: { "Content-Type": "text/plain", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+    }
 
     try {
       // Authentication endpoints
@@ -96,60 +165,6 @@ export default {
         return BackendService.handleRequest(request, (req) => eventCtrl.getAllEvents(req));
       }
 
-      // Test DB connection endpoint
-      if (path === "/api/test-db") {
-        try {
-          console.log("Testing DB connection");
-          console.log("Environment keys:", Object.keys(env));
-          console.log("D1_DB exists:", env.D1_DB !== undefined);
-          
-          if (!env.D1_DB) {
-            return new Response(
-              JSON.stringify({ 
-                success: false, 
-                error: "D1_DB binding not found",
-                availableKeys: Object.keys(env)
-              }),
-              { 
-                status: 500, 
-                headers: { 
-                  "Content-Type": "application/json",
-                  "Access-Control-Allow-Origin": "*"
-                } 
-              }
-            );
-          }
-          
-          const { results } = await env.D1_DB.prepare("SELECT 1 as test").all();
-          return new Response(
-            JSON.stringify({ success: true, results }),
-            { 
-              status: 200, 
-              headers: { 
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-              } 
-            }
-          );
-        } catch (error) {
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: error.message, 
-              stack: error.stack,
-              type: error.constructor.name
-            }),
-            { 
-              status: 500, 
-              headers: { 
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-              } 
-            }
-          );
-        }
-      }
-
       // Default 404 Not Found
       return new Response(JSON.stringify({ error: "Not found" }), { 
         status: 404, 
@@ -166,10 +181,6 @@ export default {
           "Access-Control-Allow-Origin": "*" 
         } 
       });
-
     }
   }
 };
-
-/* ==================== UTILITY FUNCTIONS: Database Schema Management ==================== */
-// place utility functions here !
