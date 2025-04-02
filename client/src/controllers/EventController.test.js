@@ -268,4 +268,131 @@ describe('EventController', () => {
       expect(bodyJson.error).toContain('not found');
     });
   });
+
+  describe('handleEventRSVP', () => {
+    it('should create a new RSVP', async () => {
+      // Mock request with auth and body
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Bearer mock-token')
+        },
+        json: jest.fn().mockResolvedValue({ rsvpStatus: 'attending' })
+      };
+      
+      // Event exists
+      mockBackendService.queryFirst
+        .mockResolvedValueOnce({ eventID: 1 }) // Event lookup
+        .mockResolvedValueOnce(null);          // No existing RSVP
+      
+      // Execute
+      const result = await eventController.handleEventRSVP(1, mockRequest);
+      
+      // Assert
+      expect(mockBackendService.query).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO EVENT_RSVP"),
+        [1, 1, 'attending']
+      );
+      
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(true);
+      expect(bodyJson.rsvpStatus).toBe('attending');
+    });
+    
+    it('should update an existing RSVP', async () => {
+      // Mock request with auth and body
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Bearer mock-token')
+        },
+        json: jest.fn().mockResolvedValue({ rsvpStatus: 'maybe' })
+      };
+      
+      // Event and RSVP exist
+      mockBackendService.queryFirst
+        .mockResolvedValueOnce({ eventID: 1 })                    // Event lookup
+        .mockResolvedValueOnce({ eventID: 1, userID: 1 });  // Existing RSVP
+      
+      // Execute
+      const result = await eventController.handleEventRSVP(1, mockRequest);
+      
+      // Assert
+      expect(mockBackendService.query).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE EVENT_RSVP SET rsvpStatus"),
+        ['maybe', 1, 1]
+      );
+      
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(true);
+      expect(bodyJson.message).toContain('updated');
+    });
+    
+    it('should return 404 for non-existent event', async () => {
+      // Mock request with auth and body
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Bearer mock-token')
+        },
+        json: jest.fn().mockResolvedValue({ rsvpStatus: 'attending' })
+      };
+      
+      // Event doesn't exist
+      mockBackendService.queryFirst.mockResolvedValue(null);
+      
+      // Execute
+      const result = await eventController.handleEventRSVP(999, mockRequest);
+      
+      // Assert
+      expect(result.status).toBe(404);
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(false);
+      expect(bodyJson.error).toContain('not found');
+    });
+  });
+
+  describe('getRSVPStatus', () => {
+    it('should return the current RSVP status', async () => {
+      // Mock request with auth
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Bearer mock-token')
+        }
+      };
+      
+      // RSVP exists
+      mockBackendService.queryFirst.mockResolvedValue({ rsvpStatus: 'attending' });
+      
+      // Execute
+      const result = await eventController.getRSVPStatus(1, mockRequest);
+      
+      // Assert
+      expect(mockBackendService.queryFirst).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT rsvpStatus FROM EVENT_RSVP"),
+        [1, 1]
+      );
+      
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(true);
+      expect(bodyJson.rsvpStatus).toBe('attending');
+    });
+    
+    it('should return null status when no RSVP exists', async () => {
+      // Mock request with auth
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Bearer mock-token')
+        }
+      };
+      
+      // No RSVP exists
+      mockBackendService.queryFirst.mockResolvedValue(null);
+      
+      // Execute
+      const result = await eventController.getRSVPStatus(1, mockRequest);
+      
+      // Assert
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(true);
+      expect(bodyJson.rsvpStatus).toBe(null);
+    });
+  });
 });

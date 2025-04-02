@@ -79,6 +79,18 @@ export default {
         return await eventCtrl.getEventById(eventId);
       }
       
+      // RSVP route
+      if (path.match(/^\/api\/events\/\d+\/rsvp$/) && request.method === "POST") {
+        const eventId = parseInt(path.split('/')[3]);
+        return await eventCtrl.handleEventRSVP(eventId, request);
+      }
+      
+      // RSVP status route
+      if (path.match(/^\/api\/events\/\d+\/rsvp-status$/) && request.method === "GET") {
+        const eventId = parseInt(path.split('/')[3]);
+        return await eventCtrl.getRSVPStatus(eventId, request);
+      }
+      
       if (path === "/api/register-event" && request.method === "POST") {
         return await eventCtrl.registerEvent(request);
       }

@@ -197,6 +197,171 @@ class EventController {
       );
     }
   }
+  
+  /**
+   * Handle event RSVP (create or update)
+   * @param {number} eventId - Event ID to RSVP for
+   * @param {Request} request - The request containing RSVP data
+   * @returns {Response} JSON response
+   */
+  async handleEventRSVP(eventId, request) {
+    try {
+      // Verify authorization
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Authentication required" 
+          }), 
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      // Get user from token
+      const userData = this.auth.verifyJWT(token);
+      const userId = userData.userId;
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Invalid authentication token" 
+          }), 
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      // Verify event exists
+      const event = await this.backendService.queryFirst(
+        "SELECT * FROM EVENT WHERE eventID = ?", 
+        [eventId]
+      );
+      
+      if (!event) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Event not found" 
+          }), 
+          { status: 404, headers: this.corsHeaders }
+        );
+      }
+      
+      // Get RSVP data from request
+      const data = await request.json();
+      const rsvpStatus = data.rsvpStatus; // 'attending', 'maybe', or 'declined'
+      
+      if (!['attending', 'maybe', 'declined'].includes(rsvpStatus)) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Invalid RSVP status. Must be 'attending', 'maybe', or 'declined'." 
+          }), 
+          { status: 400, headers: this.corsHeaders }
+        );
+      }
+      
+      // Check if RSVP already exists
+      const existingRSVP = await this.backendService.queryFirst(
+        "SELECT * FROM EVENT_RSVP WHERE eventID = ? AND userID = ?",
+        [eventId, userId]
+      );
+      
+      if (existingRSVP) {
+        // Update existing RSVP - use rsvpStatus column name instead of status
+        await this.backendService.query(
+          "UPDATE EVENT_RSVP SET rsvpStatus = ? WHERE eventID = ? AND userID = ?",
+          [rsvpStatus, eventId, userId]
+        );
+      } else {
+        // Create new RSVP - use rsvpStatus column name instead of status
+        await this.backendService.query(
+          "INSERT INTO EVENT_RSVP (eventID, userID, rsvpStatus) VALUES (?, ?, ?)",
+          [eventId, userId, rsvpStatus]
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `RSVP ${existingRSVP ? 'updated' : 'created'} successfully`,
+          rsvpStatus
+        }), 
+        { headers: this.corsHeaders }
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }), 
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
+  
+  /**
+   * Get RSVP status for a user and event
+   * @param {number} eventId - Event ID to check
+   * @param {Request} request - The request object with auth headers
+   * @returns {Response} JSON response with RSVP status
+   */
+  async getRSVPStatus(eventId, request) {
+    try {
+      // Verify authorization
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Authentication required" 
+          }), 
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      // Get user from token
+      const userData = this.auth.verifyJWT(token);
+      const userId = userData.userId;
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Invalid authentication token" 
+          }), 
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      // Get RSVP status - use rsvpStatus column name instead of status
+      const rsvp = await this.backendService.queryFirst(
+        "SELECT rsvpStatus FROM EVENT_RSVP WHERE eventID = ? AND userID = ?",
+        [eventId, userId]
+      );
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          rsvpStatus: rsvp ? rsvp.rsvpStatus : null 
+        }), 
+        { headers: this.corsHeaders }
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }), 
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
 }
 
 export default EventController;
