@@ -68,13 +68,26 @@ export default {
         const orgId = parseInt(parts[3]);
         return await orgCtrl.getOrganizationEvents(orgId);
       }
+      
+      // Add these new routes for events
+      if (path === "/api/events" && request.method === "GET") {
+        return await eventCtrl.getAllEvents(request);
+      }
+      
+      if (path.match(/^\/api\/events\/\d+$/) && request.method === "GET") {
+        const eventId = parseInt(path.split('/').pop());
+        return await eventCtrl.getEventById(eventId);
+      }
+      
       if (path === "/api/register-event" && request.method === "POST") {
         return await eventCtrl.registerEvent(request);
       }
+      
       if (path.startsWith("/images/")) {
         const imagePath = path.substring(8);
         return await backendService.serveImage(imagePath, corsHeaders);
       }
+      
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });
     } catch (error) {
       return new Response(JSON.stringify({ error: "Server error", message: error.message }),

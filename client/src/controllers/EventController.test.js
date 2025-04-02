@@ -196,4 +196,76 @@ describe('EventController', () => {
       expect(bodyJson.eventID).toBe(1);
     });
   });
+
+  describe('getAllEvents', () => {
+    it('should return a list of events', async () => {
+      // Mock the database response
+      const mockEvents = {
+        results: [
+          { eventID: 1, title: 'Test Event 1', organizationName: 'Org 1' },
+          { eventID: 2, title: 'Test Event 2', organizationName: 'Org 2' }
+        ]
+      };
+      
+      mockBackendService.queryAll.mockResolvedValue(mockEvents);
+      
+      // Create mock request with URL
+      const mockRequest = {
+        url: 'https://example.com/api/events'
+      };
+      
+      // Execute
+      const result = await eventController.getAllEvents(mockRequest);
+      
+      // Assert
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(true);
+      expect(bodyJson.events).toEqual(mockEvents.results);
+      expect(mockBackendService.queryAll).toHaveBeenCalled();
+    });
+  });
+
+  describe('getEventById', () => {
+    it('should return a specific event by ID', async () => {
+      // Mock the database response
+      const mockEvent = { 
+        eventID: 1, 
+        title: 'Test Event', 
+        organizationName: 'Test Org',
+        landmarkID: 5
+      };
+      
+      const mockLandmark = {
+        name: 'Test Landmark'
+      };
+      
+      mockBackendService.queryFirst
+        .mockResolvedValueOnce(mockEvent)
+        .mockResolvedValueOnce(mockLandmark);
+      
+      // Execute
+      const result = await eventController.getEventById(1);
+      
+      // Assert
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(true);
+      expect(bodyJson.event.eventID).toBe(1);
+      expect(bodyJson.event.landmarkName).toBe('Test Landmark');
+      expect(mockBackendService.queryFirst).toHaveBeenCalledTimes(2);
+    });
+    
+    it('should return 404 when event is not found', async () => {
+      // Mock the database response for a non-existent event
+      mockBackendService.queryFirst.mockResolvedValue(null);
+      
+      // Execute
+      const result = await eventController.getEventById(999);
+      
+      // Assert
+      expect(result.status).toBe(404);
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(false);
+      expect(bodyJson.error).toContain('not found');
+    });
+  });
 });

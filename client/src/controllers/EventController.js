@@ -96,6 +96,107 @@ class EventController {
         { status: 500, headers: this.corsHeaders });
     }
   }
+  
+  /**
+   * Get all events with optional filtering
+   * @param {Request} request - The request object
+   * @returns {Response} JSON response with events
+   */
+  async getAllEvents(request) {
+    try {
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get('limit') || '100');
+      const organizationID = url.searchParams.get('organizationID');
+      
+      let query = `
+        SELECT e.*, o.name as organizationName 
+        FROM EVENT e
+        JOIN ORGANIZATION o ON e.organizationID = o.orgID
+      `;
+      
+      const params = [];
+      
+      if (organizationID) {
+        query += ` WHERE e.organizationID = ?`;
+        params.push(organizationID);
+      }
+      
+      query += ` ORDER BY e.startDate DESC LIMIT ?`;
+      params.push(limit);
+      
+      const eventsResult = await this.backendService.queryAll(query, params);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          events: eventsResult.results || [] 
+        }), 
+        { headers: this.corsHeaders }
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }), 
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
+  
+  /**
+   * Get a specific event by ID
+   * @param {number} eventId - The event ID to retrieve
+   * @returns {Response} JSON response with event details
+   */
+  async getEventById(eventId) {
+    try {
+      // Get the event details
+      const eventQuery = `
+        SELECT e.*, o.name as organizationName 
+        FROM EVENT e
+        JOIN ORGANIZATION o ON e.organizationID = o.orgID
+        WHERE e.eventID = ?
+      `;
+      
+      const event = await this.backendService.queryFirst(eventQuery, [eventId]);
+      
+      if (!event) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Event not found" 
+          }), 
+          { status: 404, headers: this.corsHeaders }
+        );
+      }
+      
+      // If there's a landmarkID, fetch the landmark name too
+      if (event.landmarkID) {
+        const landmarkQuery = `SELECT name FROM LANDMARK WHERE landmarkID = ?`;
+        const landmark = await this.backendService.queryFirst(landmarkQuery, [event.landmarkID]);
+        if (landmark) {
+          event.landmarkName = landmark.name;
+        }
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          event 
+        }), 
+        { headers: this.corsHeaders }
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }), 
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
 }
 
 export default EventController;
