@@ -8,6 +8,47 @@ import ImageLoader from './ImageLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
+// Add this function near the beginning of your component
+async function fetchAlternativeMembersList(orgId) {
+  try {
+    // Use the main organization endpoint which should be working
+    const response = await fetch(`${API_URL}/api/organizations/${orgId}`);
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    if (!data.success) {
+      return [];
+    }
+    
+    // Extract from the organization response
+    // If the organization response includes members directly
+    if (data.organization.members && Array.isArray(data.organization.members)) {
+      return data.organization.members;
+    }
+    
+    // Or if we need to combine admin data with member IDs
+    const admins = data.organization.admins || [];
+    const adminIds = admins.map(admin => admin.id || admin.userID);
+    
+    // If we can't get the full member list, at least use the admins we have
+    return admins.map(admin => ({
+      userID: admin.id || admin.userID,
+      firstName: admin.firstName || admin.f_name,
+      lastName: admin.lastName || admin.l_name,
+      email: admin.email,
+      profileImage: admin.profileImage || admin.profile_picture,
+      isAdmin: true
+    }));
+    
+  } catch (error) {
+    console.error("Error in fallback members fetch:", error);
+    return [];
+  }
+}
+
 function EditOrganization() {
   const { orgId } = useParams();
   const navigate = useNavigate();
@@ -45,6 +86,7 @@ function EditOrganization() {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [availableMembers, setAvailableMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [memberFetchError, setMemberFetchError] = useState(false);
   
   // Member management
   const [removingMemberId, setRemovingMemberId] = useState(null);
@@ -126,13 +168,34 @@ function EditOrganization() {
           setBannerPreview(formatImageUrl(data.organization.banner));
         }
         
-        // Fetch members
-        const membersResponse = await fetch(`${API_URL}/api/organizations/${orgId}/members`);
-        if (membersResponse.ok) {
-          const membersData = await membersResponse.json();
-          if (membersData.success) {
-            setMembers(membersData.members || []);
+        // Fetch members - try multiple approaches
+        try {
+          // First try the dedicated members endpoint
+          const membersResponse = await fetch(`${API_URL}/api/organizations/${orgId}/members`);
+          if (membersResponse.ok) {
+            const membersData = await membersResponse.json();
+            if (membersData.success) {
+              setMembers(membersData.members || []);
+              setMemberFetchError(false);
+              return; // Stop here if successful
+            }
           }
+          
+          // If that fails, try an alternative approach
+          console.log("Members API not available, trying alternative method");
+          const alternativeMembers = await fetchAlternativeMembersList(orgId);
+          if (alternativeMembers.length > 0) {
+            setMembers(alternativeMembers);
+            setMemberFetchError(false);
+            return; // Stop here if successful
+          }
+          
+          // If all attempts fail, use the fallback
+          setMemberFetchError(true);
+          console.log("All member fetch attempts failed, using email fallback");
+        } catch (memberError) {
+          setMemberFetchError(true);
+          console.log("Error fetching members:", memberError);
         }
       } catch (error) {
         console.error('Error loading organization:', error);
@@ -324,7 +387,13 @@ function EditOrganization() {
   const handleAddAdmin = async (e) => {
     e.preventDefault();
     
-    if (selectedMembers.length === 0) {
+    // Check if either email or selection is provided
+    if (memberFetchError && !newAdminEmail) {
+      setError('Please enter an email address');
+      return;
+    }
+    
+    if (!memberFetchError && selectedMembers.length === 0) {
       setError('Please select at least one member to add as admin');
       return;
     }
@@ -338,55 +407,89 @@ function EditOrganization() {
         throw new Error('Authentication token not found');
       }
       
-      const addedAdmins = [];
-      const errors = [];
-      
-      for (const memberId of selectedMembers) {
-        try {
-          const member = members.find(m => (m.userID || m.id) === memberId);
-          
-          const response = await fetch(`${API_URL}/api/organizations/${orgId}/admins`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-              email: member.email,
-              eventAdmin: eventAdminEnabled
-            })
-          });
-          
-          const data = await response.json();
-          if (data.success) {
-            if (data.admin) {
-              addedAdmins.push(data.admin);
+      if (memberFetchError) {
+        // Email-based addition
+        const response = await fetch(`${API_URL}/api/organizations/${orgId}/admins`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            email: newAdminEmail,
+            eventAdmin: eventAdminEnabled
+          })
+        });
+        
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to add admin');
+        }
+        
+        // Update admins list if new admin was returned
+        if (data.admin) {
+          setAdmins([...admins, data.admin]);
+        } else {
+          // Reload organization data to refresh admins
+          await fetchOrganizationData();
+        }
+        
+        setSuccessMessage('Admin added successfully');
+        setNewAdminEmail('');
+      } else {
+        // Selection-based addition (multiple members)
+        const addedAdmins = [];
+        const errors = [];
+        
+        for (const memberId of selectedMembers) {
+          try {
+            const member = members.find(m => (m.userID || m.id) === memberId);
+            
+            const response = await fetch(`${API_URL}/api/organizations/${orgId}/admins`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ 
+                email: member.email,
+                eventAdmin: eventAdminEnabled
+              })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+              if (data.admin) {
+                addedAdmins.push(data.admin);
+              }
+            } else {
+              errors.push(`Failed to add ${member.firstName} ${member.lastName}: ${data.error}`);
             }
-          } else {
-            errors.push(`Failed to add ${member.firstName} ${member.lastName}: ${data.error}`);
+          } catch (memberError) {
+            errors.push(`Error adding member: ${memberError.message}`);
           }
-        } catch (memberError) {
-          errors.push(`Error adding member: ${memberError.message}`);
+        }
+        
+        // Update UI
+        if (addedAdmins.length > 0) {
+          setAdmins([...admins, ...addedAdmins]);
+          updateAvailableMembers();
+          setSelectedMembers([]);
+          
+          setSuccessMessage(`${addedAdmins.length} administrator${addedAdmins.length !== 1 ? 's' : ''} added successfully`);
+        }
+        
+        if (errors.length > 0) {
+          setError(errors.join('\n'));
         }
       }
       
-      if (addedAdmins.length > 0) {
-        setAdmins([...admins, ...addedAdmins]);
-        updateAvailableMembers();
-        setSelectedMembers([]);
-      }
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
       
-      if (errors.length > 0) {
-        setError(errors.join('\n'));
-      } else {
-        setSuccessMessage(`${addedAdmins.length} administrator${addedAdmins.length !== 1 ? 's' : ''} added successfully`);
-        
-        setTimeout(() => {
-          setSuccessMessage('');
-        }, 3000);
-      }
     } catch (error) {
-      console.error('Error adding admins:', error);
+      console.error('Error adding admin:', error);
       setError(error.message);
     } finally {
       setAddingAdmin(false);
@@ -700,97 +803,37 @@ function EditOrganization() {
               )}
               
               <div className="add-admin-form">
-                <h3>Add New Administrators</h3>
+                <h3>Add New Administrator</h3>
                 
-                <div className="admin-selection-container">
-                  <div className="selection-header">
-                    <p>Select members to add as administrators:</p>
-                    
-                    <div className="search-container">
-                      <input 
-                        type="text"
-                        placeholder="Search members..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="member-search-input"
+                {memberFetchError ? (
+                  <form onSubmit={handleAddAdmin}>
+                    <div className="form-group">
+                      <label>Email Address:</label>
+                      <input
+                        type="email"
+                        value={newAdminEmail}
+                        onChange={(e) => setNewAdminEmail(e.target.value)}
+                        placeholder="Enter email address of the user to make admin"
+                        required
                       />
-                      <i className="fas fa-search search-icon"></i>
                     </div>
-                  </div>
-                  
-                  <div className="admin-privileges">
-                    <label className="checkbox-container">
+                    
+                    <div className="checkbox-group">
                       <input
                         type="checkbox"
+                        id="eventAdminCheck"
                         checked={eventAdminEnabled}
                         onChange={(e) => setEventAdminEnabled(e.target.checked)}
                       />
-                      <span className="checkmark"></span>
-                      <span className="privilege-label">
-                        Grant event admin privileges to selected members
-                        <i className="fas fa-info-circle info-icon" title="Event admins can manage all events created under this organization"></i>
-                      </span>
-                    </label>
-                  </div>
-                  
-                  {availableMembers.length === 0 ? (
-                    <div className="no-available-members">
-                      <p>All members are already administrators</p>
+                      <label htmlFor="eventAdminCheck">
+                        Grant admin privileges for all events
+                      </label>
                     </div>
-                  ) : (
-                    <div className="members-selection-list">
-                      {availableMembers
-                        .filter(member => {
-                          if (!searchTerm) return true;
-                          const fullName = `${member.firstName || ''} ${member.lastName || ''}`.toLowerCase();
-                          return fullName.includes(searchTerm.toLowerCase()) || 
-                                member.email.toLowerCase().includes(searchTerm.toLowerCase());
-                        })
-                        .map(member => (
-                          <div 
-                            key={member.userID || member.id} 
-                            className={`member-selection-item ${
-                              selectedMembers.includes(member.userID || member.id) ? 'selected' : ''
-                            }`}
-                            onClick={() => handleMemberSelection(member.userID || member.id)}
-                          >
-                            <div className="member-selection-checkbox">
-                              <input 
-                                type="checkbox"
-                                checked={selectedMembers.includes(member.userID || member.id)}
-                                onChange={() => {}} // Handled by the onClick on the parent div
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </div>
-                            
-                            <div className="member-selection-avatar">
-                              {member.profileImage ? (
-                                <ImageLoader 
-                                  src={member.profileImage} 
-                                  alt={`${member.firstName || ''} ${member.lastName || ''}`} 
-                                />
-                              ) : (
-                                <div className="avatar-placeholder">
-                                  {(member.firstName || '?').charAt(0)}
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="member-selection-details">
-                              <h4>{member.firstName || ''} {member.lastName || ''}</h4>
-                              <p>{member.email}</p>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                  
-                  <div className="admin-actions">
+                    
                     <button 
-                      type="button" 
+                      type="submit" 
                       className="add-admin-button"
-                      disabled={addingAdmin || selectedMembers.length === 0}
-                      onClick={handleAddAdmin}
+                      disabled={addingAdmin || !newAdminEmail}
                     >
                       {addingAdmin ? (
                         <>
@@ -800,12 +843,117 @@ function EditOrganization() {
                       ) : (
                         <>
                           <i className="fas fa-user-shield"></i>
-                          Add {selectedMembers.length} {selectedMembers.length === 1 ? 'Admin' : 'Admins'}
+                          Add Administrator
                         </>
                       )}
                     </button>
+                  </form>
+                ) : (
+                  <div className="admin-selection-container">
+                    <div className="selection-header">
+                      <p>Select members to add as administrators:</p>
+                      
+                      <div className="search-container">
+                        <input 
+                          type="text"
+                          placeholder="Search members..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="member-search-input"
+                        />
+                        <i className="fas fa-search search-icon"></i>
+                      </div>
+                    </div>
+                    
+                    <div className="admin-privileges">
+                      <label className="checkbox-container">
+                        <input
+                          type="checkbox"
+                          checked={eventAdminEnabled}
+                          onChange={(e) => setEventAdminEnabled(e.target.checked)}
+                        />
+                        <span className="checkmark"></span>
+                        <span className="privilege-label">
+                          Grant event admin privileges to selected members
+                          <i className="fas fa-info-circle info-icon" title="Event admins can manage all events created under this organization"></i>
+                        </span>
+                      </label>
+                    </div>
+                    
+                    {availableMembers.length === 0 ? (
+                      <div className="no-available-members">
+                        <p>All members are already administrators</p>
+                      </div>
+                    ) : (
+                      <div className="members-selection-list">
+                        {availableMembers
+                          .filter(member => {
+                            if (!searchTerm) return true;
+                            const fullName = `${member.firstName || ''} ${member.lastName || ''}`.toLowerCase();
+                            return fullName.includes(searchTerm.toLowerCase()) || 
+                                  member.email.toLowerCase().includes(searchTerm.toLowerCase());
+                          })
+                          .map(member => (
+                            <div 
+                              key={member.userID || member.id} 
+                              className={`member-selection-item ${
+                                selectedMembers.includes(member.userID || member.id) ? 'selected' : ''
+                              }`}
+                              onClick={() => handleMemberSelection(member.userID || member.id)}
+                            >
+                              <div className="member-selection-checkbox">
+                                <input 
+                                  type="checkbox"
+                                  checked={selectedMembers.includes(member.userID || member.id)}
+                                  onChange={() => {}}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                              
+                              <div className="member-selection-avatar">
+                                {member.profileImage ? (
+                                  <ImageLoader 
+                                    src={member.profileImage} 
+                                    alt={`${member.firstName || ''} ${member.lastName || ''}`} 
+                                  />
+                                ) : (
+                                  <div className="avatar-placeholder">
+                                    {(member.firstName || '?').charAt(0)}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="member-selection-details">
+                                <h4>{member.firstName || ''} {member.lastName || ''}</h4>
+                                <p>{member.email}</p>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                    
+                    <div className="admin-actions">
+                      <button 
+                        type="button" 
+                        className="add-admin-button"
+                        disabled={addingAdmin || selectedMembers.length === 0}
+                        onClick={handleAddAdmin}
+                      >
+                        {addingAdmin ? (
+                          <>
+                            <span className="spinner"></span>
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-user-shield"></i>
+                            Add {selectedMembers.length} {selectedMembers.length === 1 ? 'Admin' : 'Admins'}
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
