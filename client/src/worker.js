@@ -302,6 +302,35 @@ export default {
             }), { status: 403, headers: corsHeaders });
           }
           
+          // Check if the organization or event has thumbnail and banner
+          let item;
+          
+          if (orgID) {
+            item = await backendService.queryFirst(
+              "SELECT thumbnail, banner FROM ORGANIZATION WHERE orgID = ?",
+              [orgID]
+            );
+            
+            if (!item || !item.thumbnail || !item.banner) {
+              return new Response(JSON.stringify({ 
+                success: false, 
+                error: "Organizations must have both thumbnail and banner to be submitted for official status" 
+              }), { status: 400, headers: corsHeaders });
+            }
+          } else if (eventID) {
+            item = await backendService.queryFirst(
+              "SELECT thumbnail, banner FROM EVENT WHERE eventID = ?",
+              [eventID]
+            );
+            
+            if (!item || !item.thumbnail || !item.banner) {
+              return new Response(JSON.stringify({ 
+                success: false, 
+                error: "Events must have both thumbnail and banner to be submitted for official status" 
+              }), { status: 400, headers: corsHeaders });
+            }
+          }
+          
           // Check if already in OFFICIAL_PENDING
           let alreadyPending = false;
           

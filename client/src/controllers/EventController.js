@@ -35,6 +35,26 @@ class EventController {
         }), { status: 400, headers: this.corsHeaders });
       }
       
+      // Check if thumbnails and banners are provided when submitting for official status
+      if (submitForOfficialStatus) {
+        const thumbnail = formData.get('thumbnail');
+        const banner = formData.get('banner');
+        
+        if (!thumbnail || thumbnail.size === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Thumbnail is required when submitting for official status"
+          }), { status: 400, headers: this.corsHeaders });
+        }
+        
+        if (!banner || banner.size === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Banner is required when submitting for official status"
+          }), { status: 400, headers: this.corsHeaders });
+        }
+      }
+      
       const isAdmin = await this.backendService.queryFirst(
         `SELECT 1 FROM ORG_ADMIN
          WHERE orgID = ? AND userID = ?`,
@@ -48,6 +68,7 @@ class EventController {
         }), { status: 403, headers: this.corsHeaders });
       }
       
+      // Upload thumbnail and banner if provided
       let thumbnailURL = '', bannerURL = '';
       const thumbnail = formData.get('thumbnail');
       if (thumbnail && thumbnail.size > 0) {
@@ -85,7 +106,7 @@ class EventController {
         [newEventID, userID]
       );
       
-      // Add this block to handle official status submission
+      // Add to OFFICIAL_PENDING if requested
       if (submitForOfficialStatus) {
         await this.backendService.query(
           `INSERT INTO OFFICIAL_PENDING (orgID, eventID) VALUES (NULL, ?)`,

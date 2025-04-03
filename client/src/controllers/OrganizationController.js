@@ -21,7 +21,6 @@ class OrganizationController {
       const description = formData.get('description') || '';
       const userID = formData.get('userID');
       const privacy = formData.get('privacy') || 'public';
-      // Add this line to get the submitForOfficialStatus flag
       const submitForOfficialStatus = formData.get('submitForOfficialStatus') === 'true';
       
       if (!name || !userID) {
@@ -29,6 +28,26 @@ class OrganizationController {
           success: false,
           error: "Missing required fields: name and userID"
         }), { status: 400, headers: this.corsHeaders });
+      }
+      
+      // Check if thumbnails and banners are provided when submitting for official status
+      if (submitForOfficialStatus) {
+        const thumbnail = formData.get('thumbnail');
+        const banner = formData.get('banner');
+        
+        if (!thumbnail || thumbnail.size === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Thumbnail is required when submitting for official status"
+          }), { status: 400, headers: this.corsHeaders });
+        }
+        
+        if (!banner || banner.size === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Banner is required when submitting for official status"
+          }), { status: 400, headers: this.corsHeaders });
+        }
       }
       
       const existingOrg = await this.backendService.queryFirst(
@@ -68,7 +87,7 @@ class OrganizationController {
         [newOrgID, userID]
       );
       
-      // Add this block to handle official status submission
+      // Add to OFFICIAL_PENDING if requested
       if (submitForOfficialStatus) {
         await this.backendService.query(
           `INSERT INTO OFFICIAL_PENDING (orgID, eventID) VALUES (?, NULL)`,
