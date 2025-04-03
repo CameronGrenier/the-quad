@@ -206,6 +206,11 @@ export default {
       if (path === "/api/official-organizations" && request.method === "GET") {
         return await orgCtrl.getOfficialOrganizations(request);
       }
+
+      // Add this route to your existing routes
+      if (path === "/api/official-events" && request.method === "GET") {
+        return await eventCtrl.getOfficialEvents(request);
+      }
       
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });
     } catch (error) {

@@ -510,6 +510,47 @@ class EventController {
       );
     }
   }
+
+  /**
+   * Gets a list of official events
+   */
+  async getOfficialEvents(request) {
+    try {
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get('limit') || '4');
+      const showPast = url.searchParams.get('showPast') === 'true';
+      
+      // Base query to get events with official status
+      let query = `
+        SELECT e.*, o.name as organizationName
+        FROM EVENT e
+        JOIN OFFICIAL of ON e.eventID = of.eventID
+        LEFT JOIN ORGANIZATION o ON e.organizationID = o.orgID
+        WHERE of.eventID IS NOT NULL
+      `;
+      
+      // Filter out past events if not explicitly requested
+      if (!showPast) {
+        query += ` AND e.endDate >= datetime('now')`;
+      }
+      
+      // Order by start date (upcoming first)
+      query += ` ORDER BY e.startDate ASC LIMIT ?`;
+      
+      const events = await this.backendService.query(query, [limit]);
+      
+      return new Response(JSON.stringify({
+        success: true,
+        events: events.results || []
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      console.error('Error fetching official events:', error);
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
 }
 
 export default EventController;
