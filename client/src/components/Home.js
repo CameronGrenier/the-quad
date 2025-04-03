@@ -51,17 +51,46 @@ function Home() {
             setUserEvents(userEventsData.events || []);
           }
           
-          // Fetch user's organizations
-          const orgsResponse = await fetch(`${API_URL}/api/user-organizations?userID=${currentUser.id}`, {
+          // Fetch user's organizations (both admin and member)
+          const userId = currentUser.id || currentUser.userID;
+          
+          // Fetch admin organizations
+          const adminOrgsResponse = await fetch(`${API_URL}/api/user-organizations?userID=${userId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
           
-          if (orgsResponse.ok) {
-            const orgsData = await orgsResponse.json();
-            setOrganizations(orgsData.organizations || []);
+          // Fetch member organizations
+          const memberOrgsResponse = await fetch(`${API_URL}/api/user-member-organizations?userID=${userId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          // Process both responses
+          let allOrgs = [];
+          
+          if (adminOrgsResponse.ok) {
+            const adminOrgsData = await adminOrgsResponse.json();
+            if (adminOrgsData.success && adminOrgsData.organizations) {
+              allOrgs = [...adminOrgsData.organizations];
+            }
           }
+          
+          if (memberOrgsResponse.ok) {
+            const memberOrgsData = await memberOrgsResponse.json();
+            if (memberOrgsData.success && memberOrgsData.organizations) {
+              // Filter out duplicates (in case user is both admin and member)
+              const adminOrgIds = new Set(allOrgs.map(org => org.orgID));
+              const newMemberOrgs = memberOrgsData.organizations.filter(org => 
+                !adminOrgIds.has(org.orgID)
+              );
+              allOrgs = [...allOrgs, ...newMemberOrgs];
+            }
+          }
+          
+          setOrganizations(allOrgs);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -143,7 +172,10 @@ function Home() {
                   <i className="fas fa-calendar-check"></i>
                 </div>
                 <div className="card-content">
-                  <h3>{userEvents.filter(e => e.rsvpStatus === 'attending').length}</h3>
+                  <h3>{userEvents
+                    .filter(e => e.rsvpStatus === 'attending' || e.role === 'attending')
+                    .filter(e => new Date(e.startDate) > new Date())
+                    .length}</h3>
                   <p>Events you're attending</p>
                 </div>
                 <Link to="/my-events" className="card-link">View Events</Link>
