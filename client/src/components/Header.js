@@ -43,7 +43,7 @@ function Header() {
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef(null);
 
-  // Add this state
+  const isAuthenticated = !!currentUser;
   const [isStaff, setIsStaff] = useState(false);
 
   // Close dropdown when clicking outside
@@ -70,7 +70,7 @@ function Header() {
   // Add this useEffect to check staff status
   useEffect(() => {
     async function checkStaffStatus() {
-      if (!currentUser) {
+      if (!isAuthenticated || !currentUser) {
         setIsStaff(false);
         return;
       }
@@ -103,7 +103,7 @@ function Header() {
     }
     
     checkStaffStatus();
-  }, [currentUser]); // Only depend on currentUser
+  }, [isAuthenticated, currentUser]); // Only depend on currentUser
 
   return (
     <div className={`header-container ${isFixedHeaderPage ? 'fixed' : 'static'} ${isEventPage ? 'event-page-header' : ''}`}>

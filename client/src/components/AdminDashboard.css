@@ -374,6 +374,20 @@ button:disabled {
   text-align: center;
 }
 
+/* Add this to your existing CSS */
+.error-message {
+  background-color: rgba(231, 76, 60, 0.2);
+  border-left: 4px solid #e74c3c;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
+
+.error-message p {
+  color: #e74c3c;
+  margin: 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .dashboard-content {

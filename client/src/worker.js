@@ -541,7 +541,8 @@ export default {
           // Extract orgID from URL
           const orgId = path.match(/\/api\/admin\/org-details\/(\d+)/)[1];
           
-          // Get organization details
+          // Get organization details - use existing endpoint logic
+          // First get the organization details
           const organization = await backendService.queryFirst(
             "SELECT * FROM ORGANIZATION WHERE orgID = ?",
             [orgId]
@@ -554,12 +555,9 @@ export default {
             }), { status: 404, headers: corsHeaders });
           }
           
-          // Get organization admins
+          // Get organization admins - just get the IDs without joining
           const admins = await backendService.query(
-            `SELECT u.userID, u.email 
-             FROM ORG_ADMIN oa 
-             JOIN USER u ON oa.userID = u.userID 
-             WHERE oa.orgID = ?`,
+            "SELECT userID FROM ORG_ADMIN WHERE orgID = ?",
             [orgId]
           );
           
@@ -582,18 +580,47 @@ export default {
             // Get event IDs
             const eventIds = events.results.map(event => event.eventID);
             
-            // Build the IN clause for the SQL query
-            const placeholders = eventIds.map(() => '?').join(',');
-            
-            // Get all attending RSVPs
-            const rsvpCount = await backendService.queryFirst(
-              `SELECT COUNT(*) as count 
-               FROM EVENT_RSVP 
-               WHERE eventID IN (${placeholders}) AND status = 'attending'`,
-              eventIds
-            );
-            
-            totalRSVPs = rsvpCount ? rsvpCount.count : 0;
+            if (eventIds.length > 0) {
+              try {
+                // First check if 'status' column exists in EVENT_RSVP
+                const tableInfo = await backendService.query(
+                  "PRAGMA table_info(EVENT_RSVP)",
+                  []
+                );
+                
+                // Check if status column exists
+                const hasStatusColumn = tableInfo.results && tableInfo.results.some(col => 
+                  col.name && col.name.toLowerCase() === 'status'
+                );
+                
+                let rsvpCount;
+                
+                if (hasStatusColumn) {
+                  // Use status for filtering if it exists
+                  const placeholders = eventIds.map(() => '?').join(',');
+                  rsvpCount = await backendService.queryFirst(
+                    `SELECT COUNT(*) as count 
+                     FROM EVENT_RSVP 
+                     WHERE eventID IN (${placeholders}) AND status = 'attending'`,
+                    eventIds
+                  );
+                } else {
+                  // Just count all RSVPs if no status column exists
+                  const placeholders = eventIds.map(() => '?').join(',');
+                  rsvpCount = await backendService.queryFirst(
+                    `SELECT COUNT(*) as count 
+                     FROM EVENT_RSVP 
+                     WHERE eventID IN (${placeholders})`,
+                    eventIds
+                  );
+                }
+                
+                totalRSVPs = rsvpCount ? rsvpCount.count : 0;
+              } catch (error) {
+                console.error("Error counting RSVPs:", error);
+                // Continue with totalRSVPs = 0
+              }
+            }
           }
           
           return new Response(JSON.stringify({
@@ -665,12 +692,9 @@ export default {
             );
           }
           
-          // Get event admins
+          // Get event admins - just the IDs without joining
           const admins = await backendService.query(
-            `SELECT u.userID, u.email 
-             FROM EVENT_ADMIN ea 
-             JOIN USER u ON ea.userID = u.userID 
-             WHERE ea.eventID = ?`,
+            "SELECT userID FROM EVENT_ADMIN WHERE eventID = ?",
             [eventId]
           );
           

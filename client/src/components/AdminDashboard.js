@@ -14,6 +14,7 @@ function AdminDashboard() {
   const [itemType, setItemType] = useState(null); // 'org' or 'event'
   const [detailedData, setDetailedData] = useState(null);
   const [processingAction, setProcessingAction] = useState(false);
+  const [error, setError] = useState(null); // Add error state to track and display API errors
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -81,6 +82,7 @@ function AdminDashboard() {
   const viewDetails = async (id, type) => {
     setSelectedItem(id);
     setItemType(type);
+    setError(null); // Clear any previous errors
     
     try {
       const token = localStorage.getItem('token');
@@ -98,15 +100,22 @@ function AdminDashboard() {
         }
       });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Server responded with status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         setDetailedData(data);
       } else {
-        console.error(`Failed to fetch ${type} details:`, data.error);
+        throw new Error(data.error || 'Unknown error occurred');
       }
     } catch (error) {
-      console.error(`Error fetching ${type} details:`, error);
+      console.error(`Failed to fetch ${type} details:`, error);
+      setError(`Error loading details: ${error.message}`);
+      setDetailedData(null);
     }
   };
 
@@ -310,6 +319,12 @@ function AdminDashboard() {
         </div>
 
         <div className="detailed-view-panel">
+          {error && (
+            <div className="error-message">
+              <p>{error}</p>
+            </div>
+          )}
+          
           {selectedItem && detailedData ? (
             <div className="detailed-view">
               {itemType === 'org' ? (
@@ -351,7 +366,6 @@ function AdminDashboard() {
                       <ul className="admin-list">
                         {detailedData.admins.map(admin => (
                           <li key={admin.userID} className="admin-item">
-                            <span>{admin.email || 'Unknown'}</span>
                             <span>User ID: {admin.userID}</span>
                           </li>
                         ))}
@@ -443,7 +457,6 @@ function AdminDashboard() {
                       <ul className="admin-list">
                         {detailedData.admins.map(admin => (
                           <li key={admin.userID} className="admin-item">
-                            <span>{admin.email || 'Unknown'}</span>
                             <span>User ID: {admin.userID}</span>
                           </li>
                         ))}
@@ -482,7 +495,7 @@ function AdminDashboard() {
                 </button>
               </div>
             </div>
-          ) : (
+          ) : !error && (
             <div className="no-selection">
               <p>Select an organization or event to view details</p>
             </div>
