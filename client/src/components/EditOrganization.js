@@ -8,40 +8,43 @@ import ImageLoader from './ImageLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
-// Add this function near the beginning of your component
+// Update the fetchAlternativeMembersList function to extract members better
+
 async function fetchAlternativeMembersList(orgId) {
   try {
-    // Use the main organization endpoint which should be working
+    console.log("Using fallback method to get members");
+    
+    // Try to get organization data that might include admins
     const response = await fetch(`${API_URL}/api/organizations/${orgId}`);
     
     if (!response.ok) {
+      console.error("Failed to fetch organization data for fallback", response.status);
       return [];
     }
     
     const data = await response.json();
     if (!data.success) {
+      console.error("API returned unsuccessful response", data.error);
       return [];
     }
     
-    // Extract from the organization response
-    // If the organization response includes members directly
-    if (data.organization.members && Array.isArray(data.organization.members)) {
-      return data.organization.members;
-    }
+    const organization = data.organization;
     
-    // Or if we need to combine admin data with member IDs
-    const admins = data.organization.admins || [];
-    const adminIds = admins.map(admin => admin.id || admin.userID);
+    // Start with admins, which should definitely be present
+    const admins = organization.admins || [];
     
-    // If we can't get the full member list, at least use the admins we have
-    return admins.map(admin => ({
+    // Map to consistent format
+    const formattedAdmins = admins.map(admin => ({
       userID: admin.id || admin.userID,
-      firstName: admin.firstName || admin.f_name,
-      lastName: admin.lastName || admin.l_name,
-      email: admin.email,
-      profileImage: admin.profileImage || admin.profile_picture,
+      firstName: admin.firstName || admin.f_name || '',
+      lastName: admin.lastName || admin.l_name || '',
+      email: admin.email || '',
+      profileImage: admin.profileImage || admin.profile_picture || null,
       isAdmin: true
     }));
+    
+    console.log(`Found ${formattedAdmins.length} admins to use as fallback members`);
+    return formattedAdmins;
     
   } catch (error) {
     console.error("Error in fallback members fetch:", error);

@@ -517,7 +517,7 @@ class OrganizationController {
    */
   async getOrganizationMembers(orgId, request) {
     try {
-      // Verify authorization
+      // Verify authentication
       const auth = this.auth.getAuthFromRequest(request);
       if (!auth.isAuthenticated) {
         return new Response(JSON.stringify({ 
@@ -526,20 +526,34 @@ class OrganizationController {
         }), { status: 401, headers: this.corsHeaders });
       }
       
-      // Verify user is an admin
-      const isAdmin = await this.backendService.queryFirst(
-        "SELECT 1 FROM ORG_ADMIN WHERE orgID = ? AND userID = ?",
-        [orgId, auth.userId]
+      // First check if organization exists
+      const org = await this.backendService.queryFirst(
+        "SELECT orgID FROM ORGANIZATIONS WHERE orgID = ?",
+        [orgId]
       );
       
-      if (!isAdmin) {
+      if (!org) {
         return new Response(JSON.stringify({
           success: false,
-          error: "Only administrators can view member details"
+          error: "Organization not found"
+        }), { status: 404, headers: this.corsHeaders });
+      }
+      
+      // Check if user has access (is admin or member)
+      const userAccess = await this.backendService.queryFirst(
+        "SELECT 1 FROM ORG_MEMBER WHERE orgID = ? AND userID = ? UNION " +
+        "SELECT 1 FROM ORG_ADMIN WHERE orgID = ? AND userID = ?",
+        [orgId, auth.userId, orgId, auth.userId]
+      );
+      
+      if (!userAccess) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "You don't have access to this organization"
         }), { status: 403, headers: this.corsHeaders });
       }
       
-      // Get organization members
+      // Get members with user details
       const members = await this.backendService.queryAll(
         `SELECT u.userID, u.email, u.f_name as firstName, u.l_name as lastName, 
          u.profile_picture as profileImage
@@ -555,10 +569,10 @@ class OrganizationController {
       }), { headers: this.corsHeaders });
       
     } catch (error) {
-      console.error("Error fetching organization members:", error);
+      console.error("Error in getOrganizationMembers:", error);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: "Internal server error: " + error.message
       }), { status: 500, headers: this.corsHeaders });
     }
   }
