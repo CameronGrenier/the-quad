@@ -395,4 +395,133 @@ describe('EventController', () => {
       expect(bodyJson.rsvpStatus).toBe(null);
     });
   });
+
+  describe('getUserEvents', () => {
+    it('should return combined admin and RSVP events for a user', async () => {
+      // Mock request with auth
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Bearer mock-token')
+        }
+      };
+      
+      // Mock admin events
+      const mockAdminEvents = {
+        results: [
+          { 
+            eventID: 1, 
+            title: 'Admin Event 1', 
+            organizationName: 'Org 1',
+            startDate: '2023-06-01',
+            endDate: '2023-06-02',
+            role: 'admin'
+          },
+          {
+            eventID: 2, 
+            title: 'Admin Event 2', 
+            organizationName: 'Org 1',
+            startDate: '2023-07-01',
+            endDate: '2023-07-02', 
+            role: 'admin'
+          }
+        ]
+      };
+      
+      // Mock RSVP events
+      const mockRsvpEvents = {
+        results: [
+          {
+            eventID: 3, 
+            title: 'RSVP Event', 
+            organizationName: 'Org 2',
+            startDate: '2023-08-01',
+            endDate: '2023-08-02',
+            role: 'attending'
+          },
+          // Include an event the user is both admin of and RSVP'd to
+          {
+            eventID: 1, 
+            title: 'Admin Event 1', 
+            organizationName: 'Org 1',
+            startDate: '2023-06-01',
+            endDate: '2023-06-02',
+            role: 'attending'
+          }
+        ]
+      };
+      
+      // Set up mock responses
+      mockBackendService.queryAll
+        .mockResolvedValueOnce(mockAdminEvents) // Admin events query
+        .mockResolvedValueOnce(mockRsvpEvents); // RSVP events query
+      
+      // Execute
+      const result = await eventController.getUserEvents(mockRequest);
+      
+      // Assert
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(true);
+      
+      // Should have 3 unique events (with no duplicates)
+      expect(bodyJson.events.length).toBe(3);
+      
+      // Admin role should take precedence for event 1
+      const event1 = bodyJson.events.find(e => e.eventID === 1);
+      expect(event1.role).toBe('admin');
+      
+      // Check that RSVP event is included
+      const event3 = bodyJson.events.find(e => e.eventID === 3);
+      expect(event3.role).toBe('attending');
+      
+      // Verify both queries were called with the right user ID
+      expect(mockBackendService.queryAll).toHaveBeenCalledWith(
+        expect.stringContaining("JOIN EVENT_ADMIN"),
+        [1]
+      );
+      expect(mockBackendService.queryAll).toHaveBeenCalledWith(
+        expect.stringContaining("JOIN EVENT_RSVP"),
+        [1]
+      );
+    });
+    
+    it('should return empty array when user has no events', async () => {
+      // Mock request with auth
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Bearer mock-token')
+        }
+      };
+      
+      // User has no events
+      mockBackendService.queryAll
+        .mockResolvedValueOnce({ results: [] })
+        .mockResolvedValueOnce({ results: [] });
+      
+      // Execute
+      const result = await eventController.getUserEvents(mockRequest);
+      
+      // Assert
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(true);
+      expect(bodyJson.events).toEqual([]);
+    });
+    
+    it('should return 401 when authorization is missing', async () => {
+      // Mock request without auth token
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('')
+        }
+      };
+      
+      // Execute
+      const result = await eventController.getUserEvents(mockRequest);
+      
+      // Assert
+      expect(result.status).toBe(401);
+      const bodyJson = JSON.parse(result.body);
+      expect(bodyJson.success).toBe(false);
+      expect(bodyJson.error).toContain('Authentication required');
+    });
+  });
 });

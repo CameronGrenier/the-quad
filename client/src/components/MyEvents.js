@@ -37,6 +37,7 @@ function MyEvents() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('attending');
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     const fetchUserEvents = async () => {
@@ -85,12 +86,23 @@ function MyEvents() {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
-  // Filter events based on active tab
+  // Update the filtering logic to be more robust
   const filteredEvents = events.filter(event => {
-    if (activeTab === 'attending') return event.rsvpStatus === 'attending';
-    if (activeTab === 'maybe') return event.rsvpStatus === 'maybe';
-    if (activeTab === 'declined') return event.rsvpStatus === 'declined';
-    if (activeTab === 'organized') return event.isOrganizer;
+    if (activeTab === 'attending') {
+      return event.rsvpStatus === 'attending' || 
+             (event.role === 'attending' && !event.isOrganizer);
+    }
+    if (activeTab === 'maybe') {
+      return event.rsvpStatus === 'maybe' || 
+             (event.role === 'maybe' && !event.isOrganizer);
+    }
+    if (activeTab === 'declined') {
+      return event.rsvpStatus === 'declined' || 
+             (event.role === 'declined' && !event.isOrganizer);
+    }
+    if (activeTab === 'organized') {
+      return event.isOrganizer === true || event.role === 'admin';
+    }
     return true; // 'all' tab
   });
 
@@ -101,6 +113,8 @@ function MyEvents() {
   
   const pastEvents = filteredEvents.filter(event => new Date(event.startDate) <= now)
     .sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+
+  const toggleDebug = () => setShowDebug(!showDebug);
 
   if (!currentUser) {
     return (
@@ -117,6 +131,25 @@ function MyEvents() {
     <div className="my-events-container">
       <h1>My Events</h1>
       
+      {/* <div className="debug-section">
+        <button onClick={toggleDebug} className="debug-toggle">
+          {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
+        </button>
+        
+        {showDebug && (
+          <div className="debug-info">
+            <h3>Debug Information</h3>
+            <p>Total events: {events.length}</p>
+            <p>Filtered events: {filteredEvents.length}</p>
+            <p>Active tab: {activeTab}</p>
+            <details>
+              <summary>Event Data</summary>
+              <pre>{JSON.stringify(events, null, 2)}</pre>
+            </details>
+          </div>
+        )}
+      </div> */}
+
       <div className="event-tabs">
         <button 
           className={`tab-button ${activeTab === 'attending' ? 'active' : ''}`} 
@@ -183,11 +216,11 @@ function MyEvents() {
                         {event.landmarkName || event.customLocation || 'Location not specified'}
                       </p>
                       <div className="event-status">
-                        <span className={`status-badge ${event.rsvpStatus}`}>
-                          {event.rsvpStatus === 'attending' ? 'Attending' : 
-                           event.rsvpStatus === 'maybe' ? 'Maybe' : 
-                           event.rsvpStatus === 'declined' ? 'Declined' : 
-                           event.isOrganizer ? 'Organizing' : ''}
+                        <span className={`status-badge ${event.rsvpStatus || event.role}`}>
+                          {(event.rsvpStatus === 'attending' || event.role === 'attending') ? 'Attending' : 
+                           (event.rsvpStatus === 'maybe' || event.role === 'maybe') ? 'Maybe' : 
+                           (event.rsvpStatus === 'declined' || event.role === 'declined') ? 'Declined' : 
+                           event.isOrganizer || event.role === 'admin' ? 'Organizing' : ''}
                         </span>
                       </div>
                       <Link to={`/events/${event.eventID}`} className="view-event-button">
@@ -222,11 +255,11 @@ function MyEvents() {
                         {event.landmarkName || event.customLocation || 'Location not specified'}
                       </p>
                       <div className="event-status">
-                        <span className={`status-badge ${event.rsvpStatus} past`}>
-                          {event.rsvpStatus === 'attending' ? 'Attended' : 
-                           event.rsvpStatus === 'maybe' ? 'Maybe' : 
-                           event.rsvpStatus === 'declined' ? 'Declined' : 
-                           event.isOrganizer ? 'Organized' : ''}
+                        <span className={`status-badge ${event.rsvpStatus || event.role}`}>
+                          {(event.rsvpStatus === 'attending' || event.role === 'attending') ? 'Attended' : 
+                           (event.rsvpStatus === 'maybe' || event.role === 'maybe') ? 'Maybe' : 
+                           (event.rsvpStatus === 'declined' || event.role === 'declined') ? 'Declined' : 
+                           event.isOrganizer || event.role === 'admin' ? 'Organized' : ''}
                         </span>
                       </div>
                       <Link to={`/events/${event.eventID}`} className="view-event-button">

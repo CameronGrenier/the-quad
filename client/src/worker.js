@@ -95,6 +95,11 @@ export default {
         return await eventCtrl.registerEvent(request);
       }
       
+      // Add this new route for user events
+      if (path === "/api/user/events" && request.method === "GET") {
+        return await eventCtrl.getUserEvents(request);
+      }
+      
       if (path.startsWith("/images/")) {
         const imagePath = path.substring(8);
         return await backendService.serveImage(imagePath, corsHeaders);

@@ -362,6 +362,125 @@ class EventController {
       );
     }
   }
+  
+  /**
+   * Get events associated with the authenticated user
+   * (events they've created, are admin of, or have RSVP'd to)
+   * @param {Request} request - The request object with auth headers
+   * @returns {Response} JSON response with user's events
+   */
+  async getUserEvents(request) {
+    try {
+      // Verify authorization
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Authentication required" 
+          }), 
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      // Get user from token
+      const userData = this.auth.verifyJWT(token);
+      const userId = userData.userId;
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Invalid authentication token" 
+          }), 
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      console.log("Fetching events for user ID:", userId);
+      
+      // Get events that the user is admin of
+      const adminQuery = `
+        SELECT e.*, o.name as organizationName, 'admin' as role
+        FROM EVENT e
+        JOIN ORGANIZATION o ON e.organizationID = o.orgID
+        JOIN EVENT_ADMIN ea ON e.eventID = ea.eventID
+        WHERE ea.userID = ?
+      `;
+      
+      // Get events that the user has RSVP'd to - IMPORTANT: Add both rsvpStatus and role fields
+      const rsvpQuery = `
+        SELECT e.*, o.name as organizationName, er.rsvpStatus, er.rsvpStatus as role
+        FROM EVENT e
+        JOIN ORGANIZATION o ON e.organizationID = o.orgID
+        JOIN EVENT_RSVP er ON e.eventID = er.eventID
+        WHERE er.userID = ?
+      `;
+      
+      const [adminEvents, rsvpEvents] = await Promise.all([
+        this.backendService.queryAll(adminQuery, [userId]),
+        this.backendService.queryAll(rsvpQuery, [userId])
+      ]);
+      
+      console.log("Admin events:", adminEvents.results?.length || 0);
+      console.log("RSVP events:", rsvpEvents.results?.length || 0);
+      
+      // Create a map of all events by ID to avoid duplicates
+      const eventMap = new Map();
+      
+      // Process admin events first (admin role has priority)
+      (adminEvents.results || []).forEach(event => {
+        eventMap.set(event.eventID, {
+          ...event,
+          isOrganizer: true
+        });
+      });
+      
+      // Process RSVP events
+      (rsvpEvents.results || []).forEach(event => {
+        if (eventMap.has(event.eventID)) {
+          // If already added as admin event, just add the rsvpStatus
+          const existingEvent = eventMap.get(event.eventID);
+          eventMap.set(event.eventID, {
+            ...existingEvent,
+            rsvpStatus: event.rsvpStatus
+          });
+        } else {
+          // Add as new event
+          eventMap.set(event.eventID, {
+            ...event,
+            isOrganizer: false
+          });
+        }
+      });
+      
+      // Convert to array
+      const events = Array.from(eventMap.values());
+      console.log("Final events count:", events.length);
+      
+      // Sort by start date (newest first)
+      events.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          events
+        }), 
+        { headers: this.corsHeaders }
+      );
+    } catch (error) {
+      console.error("Error in getUserEvents:", error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }), 
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
 }
 
 export default EventController;
