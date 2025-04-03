@@ -8,6 +8,7 @@ import { ReactComponent as Account } from '../icons/user-solid.svg';
 import { ReactComponent as Search } from '../icons/magnifying-glass-solid.svg';
 import { ReactComponent as Organization } from '../icons/people-group-solid.svg';
 import { ReactComponent as MyOrganization } from '../icons/user-group-solid.svg';
+import { ReactComponent as Shield } from '../icons/shield-halved-solid.svg'; // Add this line
 import { useAuth } from '../context/AuthContext';
 
 // Add this utility function for profile image
@@ -156,6 +157,7 @@ function Header() {
           {/* Add this button to the nav-links section - place it before the logout button */}
           {currentUser && isStaff && (
             <div className="nav-item">
+              <Shield />
               <Link to="/admin">Admin Dashboard</Link>
             </div>
           )}
