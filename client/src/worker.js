@@ -68,6 +68,10 @@ export default {
         const orgId = parseInt(parts[3]);
         return await orgCtrl.getOrganizationEvents(orgId);
       }
+
+      if (path === "/api/user-member-organizations" && request.method === "GET") {
+        return await orgCtrl.getUserMemberOrganizations(request);
+      }
       
       // Add these new routes for events
       if (path === "/api/events" && request.method === "GET") {
@@ -98,6 +102,14 @@ export default {
       // Add this new route for user events
       if (path === "/api/user/events" && request.method === "GET") {
         return await eventCtrl.getUserEvents(request);
+      }
+      
+      if (path === "/api/check-membership" && request.method === "GET") {
+        return await orgCtrl.checkMembership(request);
+      }
+
+      if (path === "/api/organization-membership" && request.method === "POST") {
+        return await orgCtrl.handleMembership(request);
       }
       
       if (path.startsWith("/images/")) {

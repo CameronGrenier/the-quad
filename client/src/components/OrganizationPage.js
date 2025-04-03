@@ -340,16 +340,30 @@ function OrganizationPage() {
           
           {!isAdmin && currentUser && (
             <button 
-              className={`${isMember ? 'leave-org-btn' : 'join-org-btn'}`}
+              className={`membership-button ${isMember ? 'leave' : 'join'} ${joinLoading ? 'loading' : ''}`} 
               onClick={handleMembershipToggle}
               disabled={joinLoading}
             >
-              {joinLoading 
-                ? 'Processing...' 
-                : isMember 
-                  ? 'Leave Organization' 
-                  : 'Join Organization'
-              }
+              {joinLoading ? (
+                <>
+                  <span className="spinner"></span>
+                  {isMember ? 'Leaving...' : 'Joining...'}
+                </>
+              ) : (
+                <>
+                  {isMember ? (
+                    <>
+                      <i className="fas fa-sign-out-alt"></i>
+                      Leave Organization
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-user-plus"></i>
+                      Join Organization
+                    </>
+                  )}
+                </>
+              )}
             </button>
           )}
         </div>

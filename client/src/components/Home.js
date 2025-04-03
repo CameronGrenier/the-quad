@@ -20,13 +20,20 @@ function Home() {
       try {
         setLoading(true);
         
-        // Fetch featured/upcoming events for all users
-        const eventsResponse = await fetch(`${API_URL}/api/events?limit=4`);
+        // Fetch featured/upcoming events for all users with filter parameter
+        const eventsResponse = await fetch(`${API_URL}/api/events?limit=4&filter=upcoming`);
         if (!eventsResponse.ok) {
           throw new Error('Failed to fetch events');
         }
         const eventsData = await eventsResponse.json();
-        setUpcomingEvents(eventsData.events || []);
+        
+        // Double-check on frontend to ensure only future events are shown
+        const now = new Date();
+        const filteredEvents = (eventsData.events || [])
+          .filter(event => new Date(event.startDate) > now)
+          .sort((a, b) => new Date(a.startDate) - new Date(b.startDate)); // Sort by date ascending
+        
+        setUpcomingEvents(filteredEvents);
         
         // If user is logged in, fetch personalized data
         if (currentUser) {
