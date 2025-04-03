@@ -403,6 +403,210 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+
+/* ===== MODERNIZED RSVP BUTTONS ===== */
+
+/* RSVP Button Container */
+.rsvp-button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+/* Primary RSVP Buttons */
+.rsvp-button {
+  flex: 1;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rsvp-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.rsvp-button:hover::before {
+  transform: translateX(100%);
+}
+
+.rsvp-button i {
+  font-size: 18px;
+}
+
+/* Attending Button - Green Gradient */
+.rsvp-button.attending {
+  background: linear-gradient(135deg, #20bf55 0%, #01baef 100%);
+  color: white;
+  box-shadow: 0 6px 15px rgba(32, 191, 85, 0.3);
+}
+
+.rsvp-button.attending:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(32, 191, 85, 0.4);
+}
+
+/* Maybe Button - Amber Gradient */
+.rsvp-button.maybe {
+  background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%);
+  color: #333;
+  box-shadow: 0 6px 15px rgba(255, 167, 81, 0.3);
+}
+
+.rsvp-button.maybe:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255, 167, 81, 0.4);
+}
+
+/* Decline Button - Red Gradient */
+.rsvp-button.decline {
+  background: linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%);
+  color: white;
+  box-shadow: 0 6px 15px rgba(255, 95, 109, 0.3);
+}
+
+.rsvp-button.decline:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255, 95, 109, 0.4);
+}
+
+.rsvp-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.rsvp-button:disabled {
+  background: linear-gradient(135deg, #ccc 0%, #eee 100%);
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* RSVP Status Display */
+.rsvp-status-container {
+  margin-top: 30px;
+  width: 100%;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rsvp-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 15px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.rsvp-status i {
+  margin-right: 12px;
+  font-size: 20px;
+}
+
+/* Style based on status */
+.rsvp-status.attending {
+  background: linear-gradient(120deg, rgba(32, 191, 85, 0.15) 0%, rgba(1, 186, 239, 0.15) 100%);
+  border-left: 4px solid #20bf55;
+  color: #eaf8f2;
+}
+
+.rsvp-status.maybe {
+  background: linear-gradient(120deg, rgba(255, 167, 81, 0.15) 0%, rgba(255, 226, 89, 0.15) 100%);
+  border-left: 4px solid #ffa751;
+  color: #fff8e8;
+}
+
+.rsvp-status.declined {
+  background: linear-gradient(120deg, rgba(255, 95, 109, 0.15) 0%, rgba(255, 195, 113, 0.15) 100%);
+  border-left: 4px solid #ff5f6d;
+  color: #fff0f0;
+}
+
+/* Update RSVP Buttons */
+.rsvp-button-group.update {
+  margin-top: 15px;
+  display: flex;
+  gap: 8px;
+}
+
+.update-rsvp-button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.update-rsvp-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.update-rsvp-button.active {
+  background-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.update-rsvp-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 600px) {
+  .rsvp-button-group {
+    flex-direction: column;
+  }
+  
+  .rsvp-button,
+  .update-rsvp-button {
+    width: 100%;
+  }
+}
+
 @media (max-width: 900px) {
   .event-content-container {
     flex-direction: column;

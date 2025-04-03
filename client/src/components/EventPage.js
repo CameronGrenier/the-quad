@@ -152,7 +152,7 @@ function EventPage() {
     fetchEventData();
   }, [id, currentUser]);
 
-  const handleRSVP = async () => {
+  const handleRSVP = async (status) => {
     if (!currentUser) {
       navigate('/login', { state: { from: `/events/${id}`, message: 'You need to log in to RSVP for events.' } });
       return;
@@ -168,15 +168,23 @@ function EventPage() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          rsvpStatus: 'attending' // Changed from 'going' to 'attending'
+          rsvpStatus: status
         })
       });
 
       const data = await response.json();
       
       if (data.success) {
-        setRsvpStatus('attending'); // Changed from 'going' to 'attending'
-        setSuccessMessage('RSVP successful! You\'re now attending this event.');
+        setRsvpStatus(status);
+        let message = '';
+        if (status === 'attending') {
+          message = "RSVP successful! You're now attending this event.";
+        } else if (status === 'maybe') {
+          message = "You've marked this event as maybe attending.";
+        } else {
+          message = "You've declined this event.";
+        }
+        setSuccessMessage(message);
         setTimeout(() => setSuccessMessage(''), 5000);
       } else {
         throw new Error(data.error || 'Failed to RSVP');
@@ -184,39 +192,6 @@ function EventPage() {
     } catch (error) {
       console.error('RSVP error:', error);
       setError(`Failed to RSVP: ${error.message}`);
-      setTimeout(() => setError(null), 5000);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const cancelRSVP = async () => {
-    try {
-      setIsSubmitting(true);
-      
-      const response = await fetch(`${API_URL}/api/events/${id}/rsvp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          rsvpStatus: 'declined' // Changed from 'not going' to 'declined'
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setRsvpStatus('');
-        setSuccessMessage('Your RSVP has been canceled.');
-        setTimeout(() => setSuccessMessage(''), 5000);
-      } else {
-        throw new Error(data.error || 'Failed to cancel RSVP');
-      }
-    } catch (error) {
-      console.error('Cancel RSVP error:', error);
-      setError(`Failed to cancel RSVP: ${error.message}`);
       setTimeout(() => setError(null), 5000);
     } finally {
       setIsSubmitting(false);
@@ -333,32 +308,72 @@ function EventPage() {
           <div className="event-actions">
             {!isPast ? (
               <>
-                {rsvpStatus !== 'attending' ? ( // Changed from 'going' to 'attending'
-                  <button 
-                    className="rsvp-button" 
-                    onClick={handleRSVP}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Processing...' : 'RSVP Now'}
-                  </button>
-                ) : (
-                  <div className="rsvp-status-container">
-                    <div className="rsvp-status">
-                      <i className="fas fa-check-circle"></i>
-                      You're attending this event
-                    </div>
+                {!rsvpStatus ? (
+                  <div className="rsvp-button-group">
                     <button 
-                      className="cancel-rsvp-button" 
-                      onClick={cancelRSVP}
+                      className="rsvp-button attending" 
+                      onClick={() => handleRSVP('attending')}
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? 'Processing...' : 'Cancel RSVP'}
+                      <i className="fas fa-check-circle"></i>
+                      <span>I'll Attend</span>
                     </button>
+                    <button 
+                      className="rsvp-button maybe" 
+                      onClick={() => handleRSVP('maybe')}
+                      disabled={isSubmitting}
+                    >
+                      <i className="fas fa-question-circle"></i>
+                      <span>Maybe</span>
+                    </button>
+                    <button 
+                      className="rsvp-button decline" 
+                      onClick={() => handleRSVP('declined')}
+                      disabled={isSubmitting}
+                    >
+                      <i className="fas fa-times-circle"></i>
+                      <span>Decline</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rsvp-status-container">
+                    <div className={`rsvp-status ${rsvpStatus}`}>
+                      <i className={rsvpStatus === 'attending' ? 'fas fa-check-circle' : 
+                                    rsvpStatus === 'maybe' ? 'fas fa-question-circle' : 
+                                    'fas fa-times-circle'}></i>
+                      {rsvpStatus === 'attending' ? "You're attending this event" :
+                      rsvpStatus === 'maybe' ? "You might attend this event" :
+                      "You've declined this event"}
+                    </div>
+                    <div className="rsvp-button-group update">
+                      <button 
+                        className={`update-rsvp-button ${rsvpStatus === 'attending' ? 'active' : ''}`}
+                        onClick={() => handleRSVP('attending')}
+                        disabled={isSubmitting || rsvpStatus === 'attending'}
+                      >
+                        <i className="fas fa-check-circle"></i> Attend
+                      </button>
+                      <button 
+                        className={`update-rsvp-button ${rsvpStatus === 'maybe' ? 'active' : ''}`}
+                        onClick={() => handleRSVP('maybe')}
+                        disabled={isSubmitting || rsvpStatus === 'maybe'}
+                      >
+                        <i className="fas fa-question-circle"></i> Maybe
+                      </button>
+                      <button 
+                        className={`update-rsvp-button ${rsvpStatus === 'declined' ? 'active' : ''}`}
+                        onClick={() => handleRSVP('declined')}
+                        disabled={isSubmitting || rsvpStatus === 'declined'}
+                      >
+                        <i className="fas fa-times-circle"></i> Decline
+                      </button>
+                    </div>
                   </div>
                 )}
               </>
             ) : (
               <div className="event-past-notice">
+                <i className="fas fa-hourglass-end"></i>
                 This event has already ended
               </div>
             )}
