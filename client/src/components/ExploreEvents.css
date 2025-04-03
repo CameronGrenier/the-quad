@@ -1,9 +1,12 @@
 /* Event List Page - Similar to OrganizationList.css but customized for events */
 .event-list-page {
-  max-width: 1200px;
-  margin: 0 auto;
+  align-self: center;
+  max-width: 1800px; /* Increased from 1200px to 1800px */
+  margin: 0 auto; /* Uncomment this line to center the container */
   padding: 20px;
   position: relative;
+  width: 100%; /* Add explicit width */
+  box-sizing: border-box; /* Ensure padding is included in width calculation */
 }
 
 /* Create a fixed background container that sits behind all content */
@@ -180,20 +183,21 @@
 /* Event Grid - Use a more balanced layout with maximum card width */
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 25px;
   margin-bottom: 40px;
   width: 100%;
-  justify-items: center; /* Center items horizontally in grid cells */
+  max-width: 100%;
+  justify-items: center;
 }
 
-/* Limit event card link width */
+/* Adjust event card link constraints */
 .event-card-link {
   text-decoration: none;
   color: inherit;
   display: block;
   width: 100%;
-  max-width: 400px; /* Limit the maximum width of cards */
+  max-width: none; /* Allow cards to fill their grid cells */
 }
 
 /* Event card styling */
@@ -347,9 +351,27 @@
 }
 
 /* Responsive Adjustments */
-@media (max-width: 1200px) {
+@media (min-width: 1800px) {
+  .event-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
+@media (max-width: 1600px) {
   .event-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 1400px) {
+  .event-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 1200px) {
+  .event-grid {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   }
 }
 
@@ -364,7 +386,7 @@
   }
   
   .event-grid {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 20px;
   }
   
