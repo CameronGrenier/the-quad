@@ -254,7 +254,7 @@ export default {
         }
       }
       
-      // Add this new route to handle submitting items for official status
+      //handle submitting items for official status
 
       if (path === "/api/submit-for-official" && request.method === "POST") {
         try {
@@ -467,6 +467,437 @@ export default {
             isOfficial: !!isOfficial
           }), { headers: corsHeaders });
         } catch (error) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+
+      // Add these endpoints for the admin dashboard
+
+      // Test if a user is staff
+      if (path === "/api/admin/test-staff" && request.method === "GET") {
+        try {
+          // Verify authentication
+          const { isAuthenticated, userId } = auth.getAuthFromRequest(request);
+          
+          if (!isAuthenticated) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Authentication required" 
+            }), { status: 401, headers: corsHeaders });
+          }
+          
+          // Check if user is in the STAFF table
+          const staffRecord = await backendService.queryFirst(
+            "SELECT * FROM STAFF WHERE userID = ?", 
+            [userId]
+          );
+          
+          // Return result, including the record for debugging if found
+          return new Response(JSON.stringify({ 
+            success: true,
+            userId: userId,
+            isInStaffTable: !!staffRecord,
+            staffRecord: staffRecord || null,
+            message: "This is a debug route"
+          }), { headers: corsHeaders });
+        } catch (error) {
+          console.error("Staff check error:", error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+
+      // Get detailed organization information for admin review
+      if (path.match(/\/api\/admin\/org-details\/(\d+)/) && request.method === "GET") {
+        try {
+          // Verify authentication
+          const { isAuthenticated, userId } = auth.getAuthFromRequest(request);
+          
+          if (!isAuthenticated) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Authentication required" 
+            }), { status: 401, headers: corsHeaders });
+          }
+          
+          // Check if user is staff
+          const isStaff = await backendService.queryFirst(
+            "SELECT 1 FROM STAFF WHERE userID = ?", 
+            [userId]
+          );
+          
+          if (!isStaff) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Staff access required" 
+            }), { status: 403, headers: corsHeaders });
+          }
+          
+          // Extract orgID from URL
+          const orgId = path.match(/\/api\/admin\/org-details\/(\d+)/)[1];
+          
+          // Get organization details
+          const organization = await backendService.queryFirst(
+            "SELECT * FROM ORGANIZATION WHERE orgID = ?",
+            [orgId]
+          );
+          
+          if (!organization) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Organization not found" 
+            }), { status: 404, headers: corsHeaders });
+          }
+          
+          // Get organization admins
+          const admins = await backendService.query(
+            `SELECT u.userID, u.email 
+             FROM ORG_ADMIN oa 
+             JOIN USER u ON oa.userID = u.userID 
+             WHERE oa.orgID = ?`,
+            [orgId]
+          );
+          
+          // Get member count
+          const memberCount = await backendService.queryFirst(
+            "SELECT COUNT(*) as count FROM ORG_MEMBER WHERE orgID = ?",
+            [orgId]
+          );
+          
+          // Get organization's events
+          const events = await backendService.query(
+            "SELECT * FROM EVENT WHERE organizationID = ?",
+            [orgId]
+          );
+          
+          // Calculate total RSVPs for all organization's events
+          let totalRSVPs = 0;
+          
+          if (events.results && events.results.length > 0) {
+            // Get event IDs
+            const eventIds = events.results.map(event => event.eventID);
+            
+            // Build the IN clause for the SQL query
+            const placeholders = eventIds.map(() => '?').join(',');
+            
+            // Get all attending RSVPs
+            const rsvpCount = await backendService.queryFirst(
+              `SELECT COUNT(*) as count 
+               FROM EVENT_RSVP 
+               WHERE eventID IN (${placeholders}) AND status = 'attending'`,
+              eventIds
+            );
+            
+            totalRSVPs = rsvpCount ? rsvpCount.count : 0;
+          }
+          
+          return new Response(JSON.stringify({
+            success: true,
+            organization,
+            admins: admins.results || [],
+            memberCount: memberCount ? memberCount.count : 0,
+            events: events.results || [],
+            eventsCount: events.results ? events.results.length : 0,
+            totalRSVPs
+          }), { headers: corsHeaders });
+        } catch (error) {
+          console.error("Org details error:", error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+
+      // Get detailed event information for admin review
+      if (path.match(/\/api\/admin\/event-details\/(\d+)/) && request.method === "GET") {
+        try {
+          // Verify authentication
+          const { isAuthenticated, userId } = auth.getAuthFromRequest(request);
+          
+          if (!isAuthenticated) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Authentication required" 
+            }), { status: 401, headers: corsHeaders });
+          }
+          
+          // Check if user is staff
+          const isStaff = await backendService.queryFirst(
+            "SELECT 1 FROM STAFF WHERE userID = ?", 
+            [userId]
+          );
+          
+          if (!isStaff) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Staff access required" 
+            }), { status: 403, headers: corsHeaders });
+          }
+          
+          // Extract eventID from URL
+          const eventId = path.match(/\/api\/admin\/event-details\/(\d+)/)[1];
+          
+          // Get event details
+          const event = await backendService.queryFirst(
+            "SELECT * FROM EVENT WHERE eventID = ?",
+            [eventId]
+          );
+          
+          if (!event) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Event not found" 
+            }), { status: 404, headers: corsHeaders });
+          }
+          
+          // Get event's organization
+          let organization = null;
+          if (event.organizationID) {
+            organization = await backendService.queryFirst(
+              "SELECT * FROM ORGANIZATION WHERE orgID = ?",
+              [event.organizationID]
+            );
+          }
+          
+          // Get event admins
+          const admins = await backendService.query(
+            `SELECT u.userID, u.email 
+             FROM EVENT_ADMIN ea 
+             JOIN USER u ON ea.userID = u.userID 
+             WHERE ea.eventID = ?`,
+            [eventId]
+          );
+          
+          // Get RSVP statistics
+          const rsvpStats = {
+            attending: 0,
+            maybe: 0,
+            declined: 0
+          };
+          
+          // Get attending count
+          const attendingCount = await backendService.queryFirst(
+            "SELECT COUNT(*) as count FROM EVENT_RSVP WHERE eventID = ? AND status = 'attending'",
+            [eventId]
+          );
+          
+          if (attendingCount) {
+            rsvpStats.attending = attendingCount.count;
+          }
+          
+          // Get maybe count
+          const maybeCount = await backendService.queryFirst(
+            "SELECT COUNT(*) as count FROM EVENT_RSVP WHERE eventID = ? AND status = 'maybe'",
+            [eventId]
+          );
+          
+          if (maybeCount) {
+            rsvpStats.maybe = maybeCount.count;
+          }
+          
+          // Get declined count
+          const declinedCount = await backendService.queryFirst(
+            "SELECT COUNT(*) as count FROM EVENT_RSVP WHERE eventID = ? AND status = 'declined'",
+            [eventId]
+          );
+          
+          if (declinedCount) {
+            rsvpStats.declined = declinedCount.count;
+          }
+          
+          return new Response(JSON.stringify({
+            success: true,
+            event,
+            organization,
+            admins: admins.results || [],
+            rsvpStats
+          }), { headers: corsHeaders });
+        } catch (error) {
+          console.error("Event details error:", error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+
+      // Approve an official status request
+      if (path === "/api/admin/approve-official" && request.method === "POST") {
+        try {
+          // Verify authentication
+          const { isAuthenticated, userId } = auth.getAuthFromRequest(request);
+          
+          if (!isAuthenticated) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Authentication required" 
+            }), { status: 401, headers: corsHeaders });
+          }
+          
+          // Check if user is staff
+          const isStaff = await backendService.queryFirst(
+            "SELECT 1 FROM STAFF WHERE userID = ?", 
+            [userId]
+          );
+          
+          if (!isStaff) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Staff access required" 
+            }), { status: 403, headers: corsHeaders });
+          }
+          
+          // Parse request body
+          const body = await request.json();
+          const { orgID, eventID } = body;
+          
+          // Ensure at least one ID is provided
+          if (!orgID && !eventID) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Either orgID or eventID must be provided" 
+            }), { status: 400, headers: corsHeaders });
+          }
+          
+          // Check if the entry exists in OFFICIAL_PENDING
+          let pendingEntry;
+          
+          if (orgID) {
+            pendingEntry = await backendService.queryFirst(
+              "SELECT * FROM OFFICIAL_PENDING WHERE orgID = ?",
+              [orgID]
+            );
+          } else {
+            pendingEntry = await backendService.queryFirst(
+              "SELECT * FROM OFFICIAL_PENDING WHERE eventID = ?",
+              [eventID]
+            );
+          }
+          
+          if (!pendingEntry) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "No pending official status request found" 
+            }), { status: 404, headers: corsHeaders });
+          }
+          
+          // Move from OFFICIAL_PENDING to OFFICIAL
+          await backendService.query(
+            "INSERT INTO OFFICIAL (orgID, eventID) VALUES (?, ?)",
+            [orgID || null, eventID || null]
+          );
+          
+          // Remove from OFFICIAL_PENDING
+          if (orgID) {
+            await backendService.query(
+              "DELETE FROM OFFICIAL_PENDING WHERE orgID = ?",
+              [orgID]
+            );
+          } else {
+            await backendService.query(
+              "DELETE FROM OFFICIAL_PENDING WHERE eventID = ?",
+              [eventID]
+            );
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: "Official status approved" 
+          }), { headers: corsHeaders });
+        } catch (error) {
+          console.error("Approve official error:", error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+
+      // Reject an official status request
+      if (path === "/api/admin/reject-official" && request.method === "POST") {
+        try {
+          // Verify authentication
+          const { isAuthenticated, userId } = auth.getAuthFromRequest(request);
+          
+          if (!isAuthenticated) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Authentication required" 
+            }), { status: 401, headers: corsHeaders });
+          }
+          
+          // Check if user is staff
+          const isStaff = await backendService.queryFirst(
+            "SELECT 1 FROM STAFF WHERE userID = ?", 
+            [userId]
+          );
+          
+          if (!isStaff) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Staff access required" 
+            }), { status: 403, headers: corsHeaders });
+          }
+          
+          // Parse request body
+          const body = await request.json();
+          const { orgID, eventID } = body;
+          
+          // Ensure at least one ID is provided
+          if (!orgID && !eventID) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Either orgID or eventID must be provided" 
+            }), { status: 400, headers: corsHeaders });
+          }
+          
+          // Check if the entry exists in OFFICIAL_PENDING
+          let pendingEntry;
+          
+          if (orgID) {
+            pendingEntry = await backendService.queryFirst(
+              "SELECT * FROM OFFICIAL_PENDING WHERE orgID = ?",
+              [orgID]
+            );
+          } else {
+            pendingEntry = await backendService.queryFirst(
+              "SELECT * FROM OFFICIAL_PENDING WHERE eventID = ?",
+              [eventID]
+            );
+          }
+          
+          if (!pendingEntry) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "No pending official status request found" 
+            }), { status: 404, headers: corsHeaders });
+          }
+          
+          // Remove from OFFICIAL_PENDING
+          if (orgID) {
+            await backendService.query(
+              "DELETE FROM OFFICIAL_PENDING WHERE orgID = ?",
+              [orgID]
+            );
+          } else {
+            await backendService.query(
+              "DELETE FROM OFFICIAL_PENDING WHERE eventID = ?",
+              [eventID]
+            );
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: "Official status request rejected" 
+          }), { headers: corsHeaders });
+        } catch (error) {
+          console.error("Reject official error:", error);
           return new Response(JSON.stringify({ 
             success: false, 
             error: error.message 
