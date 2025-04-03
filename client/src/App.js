@@ -19,6 +19,8 @@ import EventPage from './components/EventPage';
 import EventList from './components/EventList'; // Note the 's' in EventsList
 import MyEvents from './components/MyEvents';
 import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import EditOrganization from './components/EditOrganization';
 import './App.css';
 
 function App() {
@@ -57,6 +59,11 @@ function App() {
               <Route path="/my-organizations" element={<MyOrganizations />} />
               <Route path="/events" element={<ExploreEvents />} />
               <Route path="/my-events" element={<MyEvents />} /> {/* New route */}
+              <Route path="/edit-organization/:orgId" element={
+                <PrivateRoute>
+                  <EditOrganization />
+                </PrivateRoute>
+              } />
             </Routes>
           </main>
           {isMobile && <MobileNavbar />}

@@ -63,12 +63,35 @@ export default {
         const orgId = parseInt(path.split('/').pop());
         return await orgCtrl.getOrganization(orgId);
       }
+      if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "PUT") {
+        const orgId = parseInt(path.split('/').pop());
+        return await orgCtrl.updateOrganization(orgId, request);
+      }
       if (path.match(/^\/api\/organizations\/\d+\/events$/)) {
         const parts = path.split('/');
         const orgId = parseInt(parts[3]);
         return await orgCtrl.getOrganizationEvents(orgId);
       }
-
+      if (path.match(/^\/api\/organizations\/\d+\/members$/) && request.method === "GET") {
+        const orgId = parseInt(path.split('/').pop());
+        return await orgCtrl.getOrganizationMembers(orgId, request);
+      }
+      if (path.match(/^\/api\/organizations\/\d+\/members\/\d+$/) && request.method === "DELETE") {
+        const parts = path.split('/');
+        const orgId = parseInt(parts[3]);
+        const memberId = parseInt(parts[5]);
+        return await orgCtrl.removeMember(orgId, memberId, request);
+      }
+      if (path.match(/^\/api\/organizations\/\d+\/admins$/) && request.method === "POST") {
+        const orgId = parseInt(path.split('/').pop());
+        return await orgCtrl.addAdmin(orgId, request);
+      }
+      if (path.match(/^\/api\/organizations\/\d+\/admins\/\d+$/) && request.method === "DELETE") {
+        const parts = path.split('/');
+        const orgId = parseInt(parts[3]);
+        const adminId = parseInt(parts[5]);
+        return await orgCtrl.removeAdmin(orgId, adminId, request);
+      }
       if (path === "/api/user-member-organizations" && request.method === "GET") {
         return await orgCtrl.getUserMemberOrganizations(request);
       }
