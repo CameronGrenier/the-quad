@@ -21,6 +21,8 @@ class OrganizationController {
       const description = formData.get('description') || '';
       const userID = formData.get('userID');
       const privacy = formData.get('privacy') || 'public';
+      // Add this line to get the submitForOfficialStatus flag
+      const submitForOfficialStatus = formData.get('submitForOfficialStatus') === 'true';
       
       if (!name || !userID) {
         return new Response(JSON.stringify({
@@ -65,6 +67,15 @@ class OrganizationController {
         `INSERT INTO ORG_ADMIN (orgID, userID) VALUES (?, ?)`,
         [newOrgID, userID]
       );
+      
+      // Add this block to handle official status submission
+      if (submitForOfficialStatus) {
+        await this.backendService.query(
+          `INSERT INTO OFFICIAL_PENDING (orgID, eventID) VALUES (?, NULL)`,
+          [newOrgID]
+        );
+        console.log(`Added organization ${newOrgID} to OFFICIAL_PENDING table`);
+      }
       
       return new Response(JSON.stringify({
         success: true,
@@ -805,6 +816,132 @@ class OrganizationController {
       return new Response(JSON.stringify({ 
         success: false, 
         error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
+
+  /**
+   * Delete an organization with the given ID
+   */
+  async deleteOrganization(orgId, request) {
+    try {
+      // Check authentication
+      const { isAuthenticated, userId } = this.auth.getAuthFromRequest(request);
+      
+      if (!isAuthenticated) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Authentication required"
+        }), { status: 401, headers: this.corsHeaders });
+      }
+      
+      // Parse request body to get userID if different from token
+      const body = await request.json();
+      const requestedUserId = body.userID || userId;
+      
+      // Check if user is an admin of the organization
+      const isAdmin = await this.backendService.queryFirst(
+        "SELECT 1 FROM ORG_ADMIN WHERE orgID = ? AND userID = ?",
+        [orgId, requestedUserId]
+      );
+      
+      if (!isAdmin) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Only organization admins can delete organizations"
+        }), { status: 403, headers: this.corsHeaders });
+      }
+      
+      // Check if organization exists
+      const org = await this.backendService.queryFirst(
+        "SELECT * FROM ORGANIZATION WHERE orgID = ?",
+        [orgId]
+      );
+      
+      if (!org) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Organization not found"
+        }), { status: 404, headers: this.corsHeaders });
+      }
+      
+      // First, delete related records in tables with foreign keys
+      
+      // Delete organization from OFFICIAL_PENDING table
+      await this.backendService.query(
+        "DELETE FROM OFFICIAL_PENDING WHERE orgID = ?",
+        [orgId]
+      );
+      
+      // Delete organization from OFFICIAL table if it exists
+      await this.backendService.query(
+        "DELETE FROM OFFICIAL WHERE orgID = ?",
+        [orgId]
+      );
+      
+      // Remove any org admins
+      await this.backendService.query(
+        "DELETE FROM ORG_ADMIN WHERE orgID = ?",
+        [orgId]
+      );
+      
+      // Remove any org members
+      await this.backendService.query(
+        "DELETE FROM ORG_MEMBER WHERE orgID = ?",
+        [orgId]
+      );
+      
+      // Get all associated events to delete them too
+      const events = await this.backendService.query(
+        "SELECT eventID FROM EVENT WHERE organizationID = ?",
+        [orgId]
+      );
+      
+      // Delete events associated with this organization
+      if (events && events.results && events.results.length > 0) {
+        for (const event of events.results) {
+          await this.backendService.query(
+            "DELETE FROM EVENT_RSVP WHERE eventID = ?",
+            [event.eventID]
+          );
+          
+          await this.backendService.query(
+            "DELETE FROM EVENT_ADMIN WHERE eventID = ?",
+            [event.eventID]
+          );
+          
+          await this.backendService.query(
+            "DELETE FROM OFFICIAL_PENDING WHERE eventID = ?",
+            [event.eventID]
+          );
+          
+          await this.backendService.query(
+            "DELETE FROM OFFICIAL WHERE eventID = ?",
+            [event.eventID]
+          );
+          
+          await this.backendService.query(
+            "DELETE FROM EVENT WHERE eventID = ?",
+            [event.eventID]
+          );
+        }
+      }
+      
+      // Finally, delete the organization itself
+      await this.backendService.query(
+        "DELETE FROM ORGANIZATION WHERE orgID = ?",
+        [orgId]
+      );
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Organization and all associated data deleted successfully"
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
       }), { status: 500, headers: this.corsHeaders });
     }
   }

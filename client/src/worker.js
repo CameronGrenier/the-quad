@@ -67,6 +67,12 @@ export default {
         const orgId = parseInt(path.split('/').pop());
         return await orgCtrl.updateOrganization(orgId, request);
       }
+
+      if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "DELETE") {
+        const orgId = parseInt(path.split('/').pop());
+        return await orgCtrl.deleteOrganization(orgId, request);
+      }
+
       if (path.match(/^\/api\/organizations\/\d+\/events$/)) {
         const parts = path.split('/');
         const orgId = parseInt(parts[3]);
@@ -138,6 +144,305 @@ export default {
       if (path.startsWith("/images/")) {
         const imagePath = path.substring(8);
         return await backendService.serveImage(imagePath, corsHeaders);
+      }
+
+      // Add these routes to handle admin requests for pending items
+
+      if (path === "/api/admin/pending-requests" && request.method === "GET") {
+        try {
+          // Verify authentication
+          const { isAuthenticated, userId } = auth.getAuthFromRequest(request);
+          
+          if (!isAuthenticated) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Authentication required" 
+            }), { status: 401, headers: corsHeaders });
+          }
+          
+          // Check if user is staff
+          const isStaff = await backendService.queryFirst(
+            "SELECT 1 FROM STAFF WHERE userID = ?", 
+            [userId]
+          );
+          
+          if (!isStaff) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Staff access required" 
+            }), { status: 403, headers: corsHeaders });
+          }
+      
+          // Get pending organization requests
+          const pendingOrgs = await backendService.query(
+            `SELECT o.* FROM ORGANIZATION o
+             JOIN OFFICIAL_PENDING op ON o.orgID = op.orgID
+             WHERE op.orgID IS NOT NULL`,
+            []
+          );
+      
+          // Get pending event requests
+          const pendingEvents = await backendService.query(
+            `SELECT e.* FROM EVENT e
+             JOIN OFFICIAL_PENDING op ON e.eventID = op.eventID
+             WHERE op.eventID IS NOT NULL`,
+            []
+          );
+      
+          return new Response(JSON.stringify({
+            success: true,
+            pendingOrganizations: pendingOrgs.results || [],
+            pendingEvents: pendingEvents.results || []
+          }), { headers: corsHeaders });
+        } catch (error) {
+          console.error("Admin pending-requests error:", error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+      
+      if (path === "/api/admin/pending-counts" && request.method === "GET") {
+        try {
+          // Verify authentication
+          const { isAuthenticated, userId } = auth.getAuthFromRequest(request);
+          
+          if (!isAuthenticated) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Authentication required" 
+            }), { status: 401, headers: corsHeaders });
+          }
+          
+          // Check if user is staff
+          const isStaff = await backendService.queryFirst(
+            "SELECT 1 FROM STAFF WHERE userID = ?", 
+            [userId]
+          );
+          
+          if (!isStaff) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Staff access required" 
+            }), { status: 403, headers: corsHeaders });
+          }
+      
+          // Get count of pending organizations
+          const orgCount = await backendService.queryFirst(
+            "SELECT COUNT(*) as count FROM OFFICIAL_PENDING WHERE orgID IS NOT NULL",
+            []
+          );
+      
+          // Get count of pending events
+          const eventCount = await backendService.queryFirst(
+            "SELECT COUNT(*) as count FROM OFFICIAL_PENDING WHERE eventID IS NOT NULL",
+            []
+          );
+      
+          return new Response(JSON.stringify({
+            success: true,
+            orgCount: orgCount?.count || 0,
+            eventCount: eventCount?.count || 0
+          }), { headers: corsHeaders });
+        } catch (error) {
+          console.error("Admin pending-counts error:", error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+      
+      // Add this new route to handle submitting items for official status
+
+      if (path === "/api/submit-for-official" && request.method === "POST") {
+        try {
+          // Verify authentication
+          const { isAuthenticated, userId } = auth.getAuthFromRequest(request);
+          
+          if (!isAuthenticated) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Authentication required" 
+            }), { status: 401, headers: corsHeaders });
+          }
+          
+          // Parse request body
+          const body = await request.json();
+          const { orgID, eventID } = body;
+          
+          // Ensure at least one ID is provided
+          if (!orgID && !eventID) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Either orgID or eventID must be provided" 
+            }), { status: 400, headers: corsHeaders });
+          }
+          
+          // Check if user is an admin of the organization or event
+          let isAdmin = false;
+          
+          if (orgID) {
+            isAdmin = await backendService.queryFirst(
+              "SELECT 1 FROM ORG_ADMIN WHERE orgID = ? AND userID = ?",
+              [orgID, userId]
+            );
+          } else if (eventID) {
+            isAdmin = await backendService.queryFirst(
+              "SELECT 1 FROM EVENT_ADMIN WHERE eventID = ? AND userID = ?",
+              [eventID, userId]
+            );
+          }
+          
+          if (!isAdmin) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Only admins can submit for official status" 
+            }), { status: 403, headers: corsHeaders });
+          }
+          
+          // Check if already in OFFICIAL_PENDING
+          let alreadyPending = false;
+          
+          if (orgID) {
+            alreadyPending = await backendService.queryFirst(
+              "SELECT 1 FROM OFFICIAL_PENDING WHERE orgID = ?",
+              [orgID]
+            );
+          } else if (eventID) {
+            alreadyPending = await backendService.queryFirst(
+              "SELECT 1 FROM OFFICIAL_PENDING WHERE eventID = ?",
+              [eventID]
+            );
+          }
+          
+          if (alreadyPending) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Already pending official approval" 
+            }), { status: 400, headers: corsHeaders });
+          }
+          
+          // Check if already in OFFICIAL
+          let alreadyOfficial = false;
+          
+          if (orgID) {
+            alreadyOfficial = await backendService.queryFirst(
+              "SELECT 1 FROM OFFICIAL WHERE orgID = ?",
+              [orgID]
+            );
+          } else if (eventID) {
+            alreadyOfficial = await backendService.queryFirst(
+              "SELECT 1 FROM OFFICIAL WHERE eventID = ?",
+              [eventID]
+            );
+          }
+          
+          if (alreadyOfficial) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Already has official status" 
+            }), { status: 400, headers: corsHeaders });
+          }
+          
+          // Add to OFFICIAL_PENDING
+          await backendService.query(
+            "INSERT INTO OFFICIAL_PENDING (orgID, eventID) VALUES (?, ?)",
+            [orgID || null, eventID || null]
+          );
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: "Successfully submitted for official status" 
+          }), { headers: corsHeaders });
+        } catch (error) {
+          console.error("Submit for official status error:", error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+      
+      // Add these routes to check official status
+
+      if (path === "/api/admin/check-official-pending" && request.method === "GET") {
+        try {
+          const url = new URL(request.url);
+          const orgId = url.searchParams.get('orgID');
+          const eventId = url.searchParams.get('eventID');
+          
+          if (!orgId && !eventId) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Either orgID or eventID parameter is required" 
+            }), { status: 400, headers: corsHeaders });
+          }
+          
+          let isPending = false;
+          
+          if (orgId) {
+            isPending = await backendService.queryFirst(
+              "SELECT 1 FROM OFFICIAL_PENDING WHERE orgID = ?",
+              [orgId]
+            );
+          } else if (eventId) {
+            isPending = await backendService.queryFirst(
+              "SELECT 1 FROM OFFICIAL_PENDING WHERE eventID = ?",
+              [eventId]
+            );
+          }
+          
+          return new Response(JSON.stringify({
+            success: true,
+            isPending: !!isPending
+          }), { headers: corsHeaders });
+        } catch (error) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
+      }
+      
+      if (path === "/api/admin/check-official" && request.method === "GET") {
+        try {
+          const url = new URL(request.url);
+          const orgId = url.searchParams.get('orgID');
+          const eventId = url.searchParams.get('eventID');
+          
+          if (!orgId && !eventId) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: "Either orgID or eventID parameter is required" 
+            }), { status: 400, headers: corsHeaders });
+          }
+          
+          let isOfficial = false;
+          
+          if (orgId) {
+            isOfficial = await backendService.queryFirst(
+              "SELECT 1 FROM OFFICIAL WHERE orgID = ?",
+              [orgId]
+            );
+          } else if (eventId) {
+            isOfficial = await backendService.queryFirst(
+              "SELECT 1 FROM OFFICIAL WHERE eventID = ?",
+              [eventId]
+            );
+          }
+          
+          return new Response(JSON.stringify({
+            success: true,
+            isOfficial: !!isOfficial
+          }), { headers: corsHeaders });
+        } catch (error) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), { status: 500, headers: corsHeaders });
+        }
       }
       
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });

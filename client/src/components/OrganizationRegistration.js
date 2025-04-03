@@ -12,7 +12,8 @@ function OrganizationRegistration() {
     description: '',
     privacy: 'public',
     thumbnail: null,
-    banner: null
+    banner: null,
+    submitForOfficialStatus: false // Add this line
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,6 +94,7 @@ function OrganizationRegistration() {
       submitData.append('description', formData.description);
       submitData.append('privacy', formData.privacy);
       submitData.append('userID', userId);
+      submitData.append('submitForOfficialStatus', formData.submitForOfficialStatus); // Add this line
       
       if (formData.thumbnail) {
         submitData.append('thumbnail', formData.thumbnail);
@@ -109,7 +111,8 @@ function OrganizationRegistration() {
         privacy: formData.privacy,
         userID: userId,
         thumbnail: formData.thumbnail ? "File included" : "No file",
-        banner: formData.banner ? "File included" : "No file"
+        banner: formData.banner ? "File included" : "No file",
+        submitForOfficialStatus: formData.submitForOfficialStatus // Add this line
       });
       
       const response = await fetch(`${API_URL}/api/register-organization`, {
@@ -242,6 +245,17 @@ function OrganizationRegistration() {
                   { value: 'public', label: 'Public' },
                   { value: 'private', label: 'Private' }
                 ]}
+              />
+            </div>
+
+            <div className="form-group checkbox-group">
+              <label htmlFor="submitForOfficialStatus">Submit for Official Status</label>
+              <input
+                type="checkbox"
+                id="submitForOfficialStatus"
+                name="submitForOfficialStatus"
+                checked={formData.submitForOfficialStatus}
+                onChange={handleChange}
               />
             </div>
             

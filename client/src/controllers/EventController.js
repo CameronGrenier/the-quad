@@ -70,13 +70,12 @@ class EventController {
       const insertResult = await this.backendService.query(
         `INSERT INTO EVENT (
           organizationID, title, description, thumbnail, banner,
-          startDate, endDate, privacy, officialStatus, landmarkID,
+          startDate, endDate, privacy, landmarkID,
           customLocation
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           organizationID, title, description, thumbnailURL, bannerURL,
-          startDate, endDate, privacy, submitForOfficialStatus ? 1 : 0,
-          landmarkID, customLocation
+          startDate, endDate, privacy, landmarkID, customLocation
         ]
       );
       
@@ -85,6 +84,15 @@ class EventController {
         `INSERT INTO EVENT_ADMIN (eventID, userID) VALUES (?, ?)`,
         [newEventID, userID]
       );
+      
+      // Add this block to handle official status submission
+      if (submitForOfficialStatus) {
+        await this.backendService.query(
+          `INSERT INTO OFFICIAL_PENDING (orgID, eventID) VALUES (NULL, ?)`,
+          [newEventID]
+        );
+        console.log(`Added event ${newEventID} to OFFICIAL_PENDING table`);
+      }
       
       return new Response(JSON.stringify({
         success: true,
