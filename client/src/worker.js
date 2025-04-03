@@ -201,6 +201,11 @@ export default {
       if (path === "/api/submit-for-official" && request.method === "POST") {
         return await adminCtrl.submitForOfficial(request);
       }
+
+      // Add this route to your existing routes
+      if (path === "/api/official-organizations" && request.method === "GET") {
+        return await orgCtrl.getOfficialOrganizations(request);
+      }
       
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });
     } catch (error) {

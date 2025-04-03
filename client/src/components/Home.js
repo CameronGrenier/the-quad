@@ -12,6 +12,7 @@ function Home() {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [userEvents, setUserEvents] = useState([]);
   const [organizations, setOrganizations] = useState([]);
+  const [officialOrgs, setOfficialOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -91,6 +92,18 @@ function Home() {
           }
           
           setOrganizations(allOrgs);
+        }
+
+        // Fetch official organizations for the Featured Organizations section
+        try {
+          const officialOrgsResponse = await fetch(`${API_URL}/api/official-organizations?limit=4`);
+          if (officialOrgsResponse.ok) {
+            const officialOrgsData = await officialOrgsResponse.json();
+            setOfficialOrgs(officialOrgsData.organizations || []);
+          }
+        } catch (error) {
+          console.error('Error fetching official organizations:', error);
+          // Don't set the main error state here to avoid disrupting the whole page
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -259,14 +272,47 @@ function Home() {
             <Link to="/organizations" className="view-all-link">Explore Organizations</Link>
           </div>
           
-          {/* This would ideally pull from an API, but for now we'll use a static CTA */}
-          <div className="explore-orgs-cta">
-            <div className="cta-content">
-              <h3>Discover Campus Organizations</h3>
-              <p>Find clubs, groups, and communities that match your interests</p>
-              <Link to="/organizations" className="cta-button">Explore All Organizations</Link>
+          {loading ? (
+            <div className="loading-indicator">Loading featured organizations...</div>
+          ) : officialOrgs.length === 0 ? (
+            <div className="explore-orgs-cta">
+              <div className="cta-content">
+                <h3>Discover Campus Organizations</h3>
+                <p>Find clubs, groups, and communities that match your interests</p>
+                <Link to="/organizations" className="cta-button">Explore All Organizations</Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="org-cards">
+              {officialOrgs.map(org => (
+                <div key={org.orgID} className="org-card">
+                  <div 
+                    className="org-image" 
+                    style={org.thumbnail ? { 
+                      backgroundImage: `url(${formatImageUrl(org.thumbnail)})` 
+                    } : {}}
+                  >
+                    <div className="official-badge">
+                      <i className="fas fa-check-circle"></i> Official
+                    </div>
+                  </div>
+                  <div className="org-details">
+                    <h3>{org.name}</h3>
+                    <p className="org-description">
+                      {org.description ? (
+                        org.description.length > 100 ? 
+                          `${org.description.substring(0, 100)}...` : 
+                          org.description
+                      ) : 'No description available'}
+                    </p>
+                    <Link to={`/organizations/${org.orgID}`} className="view-org-button">
+                      View Organization
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
       

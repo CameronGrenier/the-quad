@@ -964,6 +964,38 @@ class OrganizationController {
       }), { status: 500, headers: this.corsHeaders });
     }
   }
+
+  /**
+   * Gets a list of official organizations
+   */
+  async getOfficialOrganizations(request) {
+    try {
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get('limit') || '10');
+      
+      // Query to get organizations with official status
+      const query = `
+        SELECT o.*
+        FROM ORGANIZATION o
+        JOIN OFFICIAL of ON o.orgID = of.orgID
+        WHERE of.orgID IS NOT NULL
+        LIMIT ?
+      `;
+      
+      const organizations = await this.backendService.query(query, [limit]);
+      
+      return new Response(JSON.stringify({
+        success: true,
+        organizations: organizations.results || []
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      console.error('Error fetching official organizations:', error);
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
 }
 
 export default OrganizationController;

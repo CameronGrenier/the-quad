@@ -423,3 +423,607 @@ body {
 .react-multi-carousel-list {
   margin-bottom: 20px;
 }
+
+/* Official Organizations Section */
+.org-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.8rem;
+  margin-top: 1.5rem;
+}
+
+.org-card {
+  background: linear-gradient(135deg, rgba(25, 15, 40, 0.9), rgba(45, 25, 80, 0.7));
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid rgba(124, 77, 255, 0.2);
+}
+
+.org-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 14px 28px rgba(124, 77, 255, 0.2);
+  border-color: rgba(124, 77, 255, 0.4);
+}
+
+/* Enhanced image area */
+.org-image {
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.org-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(25, 10, 40, 0.7), transparent);
+}
+
+/* More prominent official badge */
+.official-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: linear-gradient(135deg, #9168ff, #7c4dff);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.official-badge i {
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+/* Enhanced card content */
+.org-details {
+  padding: 1.5rem;
+  position: relative;
+}
+
+.org-details h3 {
+  margin: 0 0 0.8rem;
+  font-size: 1.4rem;
+  color: #fff;
+  line-height: 1.3;
+  font-weight: 700;
+  position: relative;
+  padding-bottom: 12px;
+}
+
+.org-details h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background-color: #7c4dff;
+}
+
+.org-description {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  min-height: 60px;
+}
+
+/* Enhanced button */
+.view-org-button {
+  text-align: center;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(124, 77, 255, 0.9), rgba(100, 60, 200, 0.8));
+  color: white;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s;
+  display: block;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.view-org-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.4s;
+  z-index: -1;
+}
+
+.view-org-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(124, 77, 255, 0.3);
+  background: linear-gradient(135deg, rgba(133, 89, 255, 1), rgba(124, 77, 255, 1));
+}
+
+.view-org-button:hover::after {
+  left: 100%;
+}
+
+/* Add a special background for the section */
+.orgs-section {
+  background: linear-gradient(180deg, transparent, rgba(124, 77, 255, 0.05), transparent);
+  margin: -2rem -1rem 3rem -1rem;
+  padding: 2rem 1rem;
+  border-radius: 16px;
+  position: relative;
+}
+
+/* Add subtle decorative element */
+.orgs-section::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  right: 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #7c4dff;
+  opacity: 0.3;
+  filter: blur(10px);
+}
+
+.orgs-section::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #7c4dff;
+  opacity: 0.2;
+  filter: blur(15px);
+}
+
+/* Add a member badge if available */
+.org-member-count {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.org-member-count i {
+  font-size: 0.8rem;
+}
+
+/* Enhanced Official Organizations Section */
+
+/* Make the section title more special */
+.orgs-section .section-header h2 {
+  position: relative;
+  display: inline-block;
+  font-weight: 700;
+  color: #fff;
+  padding-bottom: 8px;
+}
+
+.orgs-section .section-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, #7c4dff, rgba(124, 77, 255, 0));
+  border-radius: 3px;
+}
+
+/* Ultra-Premium Official Organizations Section */
+
+/* Create a premium section with special header */
+.orgs-section {
+  background: linear-gradient(180deg, rgba(25, 15, 40, 0.2), rgba(124, 77, 255, 0.08), rgba(25, 15, 40, 0.2));
+  margin: -2rem -1rem 3rem -1rem;
+  padding: 3rem 1.5rem;
+  border-radius: 16px;
+  position: relative;
+  border: 1px solid rgba(124, 77, 255, 0.15);
+  box-shadow: 
+    0 0 80px rgba(124, 77, 255, 0.1) inset,
+    0 0 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Premium section decorations */
+.orgs-section::before {
+  content: '';
+  position: absolute;
+  top: -25px;
+  right: 15%;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #9168ff, rgba(124, 77, 255, 0));
+  opacity: 0.6;
+  filter: blur(25px);
+  animation: float 8s ease-in-out infinite;
+}
+
+.orgs-section::after {
+  content: '';
+  position: absolute;
+  bottom: -35px;
+  left: 20%;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #7c4dff, rgba(124, 77, 255, 0));
+  opacity: 0.4;
+  filter: blur(25px);
+  animation: float 12s ease-in-out infinite alternate;
+}
+
+/* Premium header styling */
+.orgs-section .section-header {
+  position: relative;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid rgba(124, 77, 255, 0.2);
+}
+
+.orgs-section .section-header::before {
+  content: '★ ★ ★';
+  color: rgba(124, 77, 255, 0.5);
+  position: absolute;
+  top: -1.5rem;
+  left: 0;
+  font-size: 0.9rem;
+  letter-spacing: 8px;
+}
+
+.orgs-section .section-header h2 {
+  position: relative;
+  display: inline-block;
+  font-weight: 800;
+  font-size: 2.2rem;
+  color: #fff;
+  padding-bottom: 10px;
+  text-shadow: 0 2px 10px rgba(124, 77, 255, 0.5);
+}
+
+.orgs-section .section-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 80%;
+  height: 4px;
+  background: linear-gradient(90deg, #9168ff, #7c4dff, rgba(124, 77, 255, 0));
+  border-radius: 4px;
+}
+
+/* Special badge for the "Official" status */
+.official-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #9168ff, #7c4dff);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 5; /* Higher z-index to ensure it's above other elements */
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  
+  /* Remove transformZ and simplify animation */
+  transform: none;
+  animation: badge-pulse 3s infinite;
+  
+  /* Text rendering improvements */
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.official-badge i {
+  font-size: 1.1rem;
+  color: #fff;
+  animation: none; /* Remove animation from the icon */
+  margin-right: 2px;
+}
+
+/* Simplified animation that won't blur the badge */
+@keyframes badge-pulse {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.9);
+  }
+  50% {
+    border-color: rgba(124, 77, 255, 0.9);
+  }
+}
+
+/* Premium card design */
+.org-card {
+  background: linear-gradient(135deg, rgba(35, 20, 65, 0.95), rgba(55, 30, 100, 0.85));
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(124, 77, 255, 0.3);
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+/* Gold accents on corners */
+.org-card::before, 
+.org-card::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  z-index: 3;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.org-card::before {
+  top: 0;
+  left: 0;
+  border-top: 2px solid #9168ff;
+  border-left: 2px solid #9168ff;
+  border-radius: 10px 0 0 0;
+}
+
+.org-card::after {
+  bottom: 0;
+  right: 0;
+  border-bottom: 2px solid #7c4dff;
+  border-right: 2px solid #7c4dff;
+  border-radius: 0 0 10px 0;
+}
+
+.org-card:hover {
+  transform: translateY(-10px) rotateX(5deg) rotateY(-5deg);
+  box-shadow: 
+    20px 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 2px rgba(124, 77, 255, 0.5);
+}
+
+.org-card:hover::before,
+.org-card:hover::after {
+  opacity: 1;
+}
+
+/* 3D image effect */
+.org-image {
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  transform: translateZ(20px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.org-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(25, 10, 40, 0.8), rgba(80, 50, 120, 0.2));
+  z-index: 1;
+}
+
+/* Premium organization name */
+.org-details h3 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  color: #fff;
+  line-height: 1.3;
+  font-weight: 700;
+  position: relative;
+  padding-bottom: 15px;
+  text-shadow: 0 1px 8px rgba(124, 77, 255, 0.5);
+}
+
+.org-details h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(90deg, #9168ff, #7c4dff);
+}
+
+/* Button with animated border */
+.view-org-button {
+  text-align: center;
+  padding: 0.85rem 1.2rem;
+  background: linear-gradient(135deg, rgba(124, 77, 255, 0.9), rgba(100, 60, 200, 0.8));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.4s;
+  display: block;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.view-org-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #9168ff, #7c4dff, #9168ff) border-box;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.view-org-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: all 0.6s;
+  z-index: -1;
+}
+
+.view-org-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #9168ff, #7c4dff);
+  letter-spacing: 0.5px;
+}
+
+.view-org-button:hover::before {
+  opacity: 1;
+}
+
+.view-org-button:hover::after {
+  left: 100%;
+}
+
+/* Enhance member count badge */
+.org-member-count {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(124, 77, 255, 0.3);
+}
+
+.org-member-count i {
+  font-size: 0.9rem;
+  color: #9168ff;
+}
+
+/* Subtle animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 
+      0 4px 15px rgba(0, 0, 0, 0.3),
+      0 0 0 2px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 
+      0 4px 20px rgba(124, 77, 255, 0.5),
+      0 0 0 3px rgba(255, 255, 255, 0.6);
+  }
+}
+
+@keyframes star-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* Section introduction text */
+.orgs-section-intro {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto 2.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.orgs-section-intro::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124, 77, 255, 0.6), transparent);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .org-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .orgs-section .section-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .orgs-section-intro {
+    font-size: 1rem;
+  }
+}
