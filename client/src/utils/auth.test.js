@@ -188,4 +188,56 @@ describe('Auth', () => {
       expect(decoded).toBe(original);
     });
   });
+
+  describe('Request authentication', () => {
+    test('getAuthFromRequest should extract and verify token from headers', () => {
+      const userId = 123;
+      const payload = { userId };
+      const token = auth.generateJWT(payload);
+      
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockImplementation((header) => {
+            if (header === 'Authorization') {
+              return `Bearer ${token}`;
+            }
+            return null;
+          })
+        }
+      };
+      
+      const authInfo = auth.getAuthFromRequest(mockRequest);
+      
+      expect(authInfo.isAuthenticated).toBe(true);
+      expect(authInfo.userId).toBe(userId);
+      expect(authInfo.token).toBe(token);
+    });
+    
+    test('getAuthFromRequest should handle missing token', () => {
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue(null)
+        }
+      };
+      
+      const authInfo = auth.getAuthFromRequest(mockRequest);
+      
+      expect(authInfo.isAuthenticated).toBe(false);
+      expect(authInfo.userId).toBeNull();
+      expect(authInfo.token).toBeFalsy();
+    });
+    
+    test('getAuthFromRequest should handle invalid token', () => {
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Bearer invalid.token')
+        }
+      };
+      
+      const authInfo = auth.getAuthFromRequest(mockRequest);
+      
+      expect(authInfo.isAuthenticated).toBe(false);
+      expect(authInfo.userId).toBeNull();
+    });
+  });
 });

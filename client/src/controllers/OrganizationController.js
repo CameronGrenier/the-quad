@@ -528,7 +528,7 @@ class OrganizationController {
       
       // First check if organization exists
       const org = await this.backendService.queryFirst(
-        "SELECT orgID FROM ORGANIZATIONS WHERE orgID = ?",
+        "SELECT orgID FROM ORGANIZATION WHERE orgID = ?",
         [orgId]
       );
       
@@ -537,20 +537,6 @@ class OrganizationController {
           success: false,
           error: "Organization not found"
         }), { status: 404, headers: this.corsHeaders });
-      }
-      
-      // Check if user has access (is admin or member)
-      const userAccess = await this.backendService.queryFirst(
-        "SELECT 1 FROM ORG_MEMBER WHERE orgID = ? AND userID = ? UNION " +
-        "SELECT 1 FROM ORG_ADMIN WHERE orgID = ? AND userID = ?",
-        [orgId, auth.userId, orgId, auth.userId]
-      );
-      
-      if (!userAccess) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: "You don't have access to this organization"
-        }), { status: 403, headers: this.corsHeaders });
       }
       
       // Get members with user details

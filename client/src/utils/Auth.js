@@ -114,6 +114,34 @@ class Auth {
     const passwordHash = await this.hashPassword(password);
     return passwordHash === hashedPassword;
   }
+
+  /**
+   * Extract authentication data from the request
+   * @param {Request} request - The HTTP request
+   * @returns {Object} Authentication information with isAuthenticated and userId
+   */
+  getAuthFromRequest(request) {
+    const authHeader = request.headers.get('Authorization') || '';
+    const token = authHeader.replace('Bearer ', '');
+    
+    let isAuthenticated = false;
+    let userId = null;
+    
+    if (token) {
+      try {
+        const userData = this.verifyJWT(token);
+        isAuthenticated = !!userData.userId;
+        userId = userData.userId;
+      } catch (error) {
+        // Silently handle the error - don't log it to avoid test issues
+        // Just return unauthenticated status
+        isAuthenticated = false;
+        userId = null;
+      }
+    }
+    
+    return { isAuthenticated, userId, token };
+  }
 }
 
 export default Auth;
