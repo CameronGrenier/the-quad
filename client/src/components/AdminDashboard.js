@@ -17,6 +17,29 @@ function AdminDashboard() {
   const [error, setError] = useState(null); // Add error state to track and display API errors
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+  
+  // Helper function to ensure image URLs are properly formatted - moved inside the component
+  const formatImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // If it's already a full URL (including our API_URL), use it as is
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    // If it's a relative path or just a filename, ensure it's properly prefixed
+    if (imageUrl.startsWith('/images/')) {
+      return `${API_URL}${imageUrl}`;
+    } else {
+      return `${API_URL}/images/${imageUrl}`;
+    }
+  };
+
+  // Add image error handling
+  const handleImageError = (e) => {
+    console.error('Image failed to load:', e.target.src);
+    e.target.src = '/placeholder.png'; // Fallback image
+  };
 
   // Check if user is staff
   useEffect(() => {
@@ -243,7 +266,12 @@ function AdminDashboard() {
                   >
                     <div className="item-info" onClick={() => viewDetails(org.orgID, 'org')}>
                       {org.thumbnail && (
-                        <img src={org.thumbnail} alt={org.name} className="item-thumbnail" />
+                        <img 
+                          src={formatImageUrl(org.thumbnail)} 
+                          alt={org.name} 
+                          className="item-thumbnail" 
+                          onError={handleImageError}
+                        />
                       )}
                       <div className="item-details">
                         <h3>{org.name}</h3>
@@ -285,7 +313,12 @@ function AdminDashboard() {
                   >
                     <div className="item-info" onClick={() => viewDetails(event.eventID, 'event')}>
                       {event.thumbnail && (
-                        <img src={event.thumbnail} alt={event.title} className="item-thumbnail" />
+                        <img 
+                          src={formatImageUrl(event.thumbnail)} 
+                          alt={event.title} 
+                          className="item-thumbnail" 
+                          onError={handleImageError}
+                        />
                       )}
                       <div className="item-details">
                         <h3>{event.title}</h3>
@@ -333,7 +366,12 @@ function AdminDashboard() {
                   
                   {detailedData.organization.banner && (
                     <div className="banner-container">
-                      <img src={detailedData.organization.banner} alt="Organization banner" className="detail-banner" />
+                      <img 
+                        src={formatImageUrl(detailedData.organization.banner)} 
+                        alt="Organization banner" 
+                        className="detail-banner" 
+                        onError={handleImageError}
+                      />
                     </div>
                   )}
                   
@@ -382,7 +420,12 @@ function AdminDashboard() {
                         {detailedData.events.map(event => (
                           <div key={event.eventID} className="event-item">
                             {event.thumbnail && (
-                              <img src={event.thumbnail} alt={event.title} className="event-thumbnail" />
+                              <img 
+                                src={formatImageUrl(event.thumbnail)} 
+                                alt={event.title} 
+                                className="event-thumbnail" 
+                                onError={handleImageError}
+                              />
                             )}
                             <div className="event-info">
                               <h4>{event.title}</h4>
@@ -405,7 +448,12 @@ function AdminDashboard() {
                   
                   {detailedData.event.banner && (
                     <div className="banner-container">
-                      <img src={detailedData.event.banner} alt="Event banner" className="detail-banner" />
+                      <img 
+                        src={formatImageUrl(detailedData.event.banner)} 
+                        alt="Event banner" 
+                        className="detail-banner" 
+                        onError={handleImageError}
+                      />
                     </div>
                   )}
                   
@@ -421,7 +469,12 @@ function AdminDashboard() {
                     {detailedData.organization ? (
                       <div className="parent-org">
                         {detailedData.organization.thumbnail && (
-                          <img src={detailedData.organization.thumbnail} alt={detailedData.organization.name} className="org-thumbnail" />
+                          <img 
+                            src={formatImageUrl(detailedData.organization.thumbnail)} 
+                            alt={detailedData.organization.name} 
+                            className="org-thumbnail" 
+                            onError={handleImageError}
+                          />
                         )}
                         <div className="org-info">
                           <h4>{detailedData.organization.name}</h4>
