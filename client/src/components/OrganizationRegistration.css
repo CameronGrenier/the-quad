@@ -22,24 +22,46 @@
 /* Ensure the wrapper expands naturally */
 .org-registration-wrapper {
     width: 100%;
-    padding: 30px 0 60px;  /* Adjust as needed */
+    padding: 30px 0 60px;
     position: relative;
-    overflow: visible;  /* Allow content to expand */
-    /* Remove any height or min-height properties if present */
+    overflow: visible;
+    display: flex;         /* Add these flex properties */
+    justify-content: center;
+    align-items: flex-start; /* Align to the top */
+    min-height: 100vh;     /* Ensure consistent height */
 }
 
 .registration-container {
-  max-width: 600px;
-  margin: 20px auto;
-  padding: 30px;
+  max-width: 1000px;
+  width: 90%;
+  margin: 30px auto; /* Standard margin top of 30px */
+  padding: 30px 40px;
   border-radius: 16px;
-  /* Frosted glass effect */
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); /* For Safari */
+  -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  margin-top: 30px;
+  box-sizing: border-box;
+}
+
+/* Add improved responsive behavior for the wider container */
+@media (max-width: 1050px) {
+  .registration-container {
+    width: 92%;
+    max-width: 92%;
+    margin: 30px auto; /* Changed from 100px to 30px to match */
+    padding: 25px 30px;
+  }
+}
+
+@media (max-width: 650px) {
+  .registration-container {
+    width: 95%;
+    max-width: 95%;
+    margin: 30px 10px; /* Changed from 80px to 30px to match */
+    padding: 20px;
+  }
 }
 
 .registration-container h2 {

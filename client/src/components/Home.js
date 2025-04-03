@@ -20,13 +20,20 @@ function Home() {
       try {
         setLoading(true);
         
-        // Fetch featured/upcoming events for all users
-        const eventsResponse = await fetch(`${API_URL}/api/events?limit=4`);
+        // Fetch featured/upcoming events for all users with filter parameter
+        const eventsResponse = await fetch(`${API_URL}/api/events?limit=4&filter=upcoming`);
         if (!eventsResponse.ok) {
           throw new Error('Failed to fetch events');
         }
         const eventsData = await eventsResponse.json();
-        setUpcomingEvents(eventsData.events || []);
+        
+        // Double-check on frontend to ensure only future events are shown
+        const now = new Date();
+        const filteredEvents = (eventsData.events || [])
+          .filter(event => new Date(event.startDate) > now)
+          .sort((a, b) => new Date(a.startDate) - new Date(b.startDate)); // Sort by date ascending
+        
+        setUpcomingEvents(filteredEvents);
         
         // If user is logged in, fetch personalized data
         if (currentUser) {
@@ -44,17 +51,46 @@ function Home() {
             setUserEvents(userEventsData.events || []);
           }
           
-          // Fetch user's organizations
-          const orgsResponse = await fetch(`${API_URL}/api/user-organizations?userID=${currentUser.id}`, {
+          // Fetch user's organizations (both admin and member)
+          const userId = currentUser.id || currentUser.userID;
+          
+          // Fetch admin organizations
+          const adminOrgsResponse = await fetch(`${API_URL}/api/user-organizations?userID=${userId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
           
-          if (orgsResponse.ok) {
-            const orgsData = await orgsResponse.json();
-            setOrganizations(orgsData.organizations || []);
+          // Fetch member organizations
+          const memberOrgsResponse = await fetch(`${API_URL}/api/user-member-organizations?userID=${userId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          // Process both responses
+          let allOrgs = [];
+          
+          if (adminOrgsResponse.ok) {
+            const adminOrgsData = await adminOrgsResponse.json();
+            if (adminOrgsData.success && adminOrgsData.organizations) {
+              allOrgs = [...adminOrgsData.organizations];
+            }
           }
+          
+          if (memberOrgsResponse.ok) {
+            const memberOrgsData = await memberOrgsResponse.json();
+            if (memberOrgsData.success && memberOrgsData.organizations) {
+              // Filter out duplicates (in case user is both admin and member)
+              const adminOrgIds = new Set(allOrgs.map(org => org.orgID));
+              const newMemberOrgs = memberOrgsData.organizations.filter(org => 
+                !adminOrgIds.has(org.orgID)
+              );
+              allOrgs = [...allOrgs, ...newMemberOrgs];
+            }
+          }
+          
+          setOrganizations(allOrgs);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -136,7 +172,10 @@ function Home() {
                   <i className="fas fa-calendar-check"></i>
                 </div>
                 <div className="card-content">
-                  <h3>{userEvents.filter(e => e.rsvpStatus === 'attending').length}</h3>
+                  <h3>{userEvents
+                    .filter(e => e.rsvpStatus === 'attending' || e.role === 'attending')
+                    .filter(e => new Date(e.startDate) > new Date())
+                    .length}</h3>
                   <p>Events you're attending</p>
                 </div>
                 <Link to="/my-events" className="card-link">View Events</Link>

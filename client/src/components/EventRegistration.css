@@ -13,10 +13,22 @@
     width: 100vw; /* Ensure full viewport width */
 }
 
+.event-registration-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Align to the top */
+  width: 100%;
+  z-index: 1;
+  position: relative;
+  padding: 30px 0 60px;
+  min-height: 100vh;
+}
+
 .registration-container {
-  max-width: 600px;
-  margin: 30px auto 30px;
-  padding: 30px;
+  max-width: 1000px;
+  width: 90%; /* Add explicit width percentage */
+  margin: 30px auto; /* Simplify margin declaration */
+  padding: 30px 40px;
   border-radius: 16px;
   /* Frosted glass effect */
   background: rgba(255, 255, 255, 0.15);
@@ -24,6 +36,7 @@
   -webkit-backdrop-filter: blur(10px); /* For Safari */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.18);
+  box-sizing: border-box; /* Add this to include padding in width calculation */
 }
 
 .registration-container h2 {
@@ -270,9 +283,20 @@
 }
 
 /* Fix for mobile responsiveness */
+@media (max-width: 1050px) {
+  .registration-container {
+    width: 92%;
+    max-width: 92%; /* Make sure both width properties match */
+    margin: 30px auto; /* Ensure this is 30px, not 100px */
+    padding: 25px 30px;
+  }
+}
+
 @media (max-width: 650px) {
   .registration-container {
-    margin: 100px 20px 30px;
+    width: 95%; 
+    max-width: 95%; /* Make sure both width properties match */
+    margin: 30px 10px; /* Ensure this is 30px, not 80px */
     padding: 20px;
   }
   .react-datepicker__time-container,

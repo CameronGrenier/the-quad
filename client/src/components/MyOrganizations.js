@@ -51,48 +51,55 @@ function MyOrganizations() {
 
       try {
         setLoading(true);
-        // Fetch both admin and member organizations
-        const [adminResponse, memberResponse] = await Promise.all([
-          fetch(`${API_URL}/api/user-organizations?userID=${userId}`),
-          fetch(`${API_URL}/api/user-member-organizations?userID=${userId}`)
-        ]);
+        
+        // Try to fetch admin organizations
+        const adminResponse = await fetch(`${API_URL}/api/user-organizations?userID=${userId}`);
         
         if (!adminResponse.ok) {
-          throw new Error('Failed to fetch admin organizations');
-        }
-
-        if (!memberResponse.ok) {
-          throw new Error('Failed to fetch member organizations');
+          throw new Error('Failed to fetch organizations');
         }
         
         const adminData = await adminResponse.json();
-        const memberData = await memberResponse.json();
         
-        if (adminData.success && memberData.success) {
-          // Mark admin organizations
+        // Mark admin organizations
+        let allOrgs = [];
+        if (adminData.success) {
           const adminOrgs = adminData.organizations.map(org => ({
             ...org,
             isAdmin: true
           }));
-          
-          // Avoid duplicates by filtering out orgs from member list that are already in admin list
-          const adminOrgIds = new Set(adminOrgs.map(org => org.orgID));
-          const memberOrgs = memberData.organizations
-            .filter(org => !adminOrgIds.has(org.orgID))
-            .map(org => ({
-              ...org,
-              isAdmin: false
-            }));
-          
-          // Combine both lists
-          setOrganizations([...adminOrgs, ...memberOrgs]);
-        } else {
-          throw new Error(adminData.error || memberData.error || 'Failed to load organizations');
+          allOrgs = adminOrgs;
         }
-      } catch (error) {
+        
+        try {
+          // Try to fetch member organizations, but handle missing endpoint gracefully
+          const memberResponse = await fetch(`${API_URL}/api/user-member-organizations?userID=${userId}`);
+          if (memberResponse.ok) {
+            const memberData = await memberResponse.json();
+            if (memberData.success) {
+              // Avoid duplicates
+              const adminOrgIds = new Set(allOrgs.map(org => org.orgID));
+              const memberOrgs = memberData.organizations
+                .filter(org => !adminOrgIds.has(org.orgID))
+                .map(org => ({
+                  ...org,
+                  isAdmin: false
+                }));
+              allOrgs = [...allOrgs, ...memberOrgs];
+            }
+          }
+        } catch (memberError) {
+          console.warn("Member organizations endpoint not available:", memberError);
+          // Continue without member organizations
+        }
+        
+        setOrganizations(allOrgs);
+      }
+      catch (error) {
         console.error('Error fetching organizations:', error);
         setError(error.message);
-      } finally {
+      }
+      finally {
         setLoading(false);
       }
     }

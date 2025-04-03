@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './OrganizationRegistration.css';
+import CustomSelect from './CustomSelect';
 
 function OrganizationRegistration() {
   const { currentUser } = useAuth();
@@ -40,7 +41,8 @@ function OrganizationRegistration() {
   };
   
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
+    const { name, value, type, checked, files } = e.target;
+    
     if (name === 'thumbnail' || name === 'banner') {
       setFormData(prev => ({
         ...prev,
@@ -49,8 +51,13 @@ function OrganizationRegistration() {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: value
+        [name]: type === 'checkbox' ? checked : value
       }));
+    }
+    
+    // Clear any errors for this field
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
   
@@ -227,43 +234,15 @@ function OrganizationRegistration() {
             
             <div className="form-group">
               <label>Privacy:</label>
-              <div className="privacy-options">
-                <div className="privacy-option">
-                  <input
-                    type="radio"
-                    id="public"
-                    name="privacy"
-                    value="public"
-                    checked={formData.privacy === 'public'}
-                    onChange={handleChange}
-                  />
-                  <label htmlFor="public">
-                    <span className="radio-circle"></span>
-                    <div>
-                      <span className="option-title">Public</span>
-                      <span className="option-description">Anyone can see this organization</span>
-                    </div>
-                  </label>
-                </div>
-                
-                <div className="privacy-option">
-                  <input
-                    type="radio"
-                    id="private"
-                    name="privacy"
-                    value="private"
-                    checked={formData.privacy === 'private'}
-                    onChange={handleChange}
-                  />
-                  <label htmlFor="private">
-                    <span className="radio-circle"></span>
-                    <div>
-                      <span className="option-title">Private</span>
-                      <span className="option-description">Only members can see this organization</span>
-                    </div>
-                  </label>
-                </div>
-              </div>
+              <CustomSelect
+                name="privacy"
+                value={formData.privacy}
+                onChange={handleChange}
+                options={[
+                  { value: 'public', label: 'Public' },
+                  { value: 'private', label: 'Private' }
+                ]}
+              />
             </div>
             
             <button 
