@@ -814,17 +814,17 @@ class CalendarController {
           }
         });
         
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && Array.isArray(data.rsvps)) {
-            this.log(`Fetched ${data.rsvps.length} RSVP'd events from backend`);
-            console.log("RSVP Events:", data.rsvps);
-            
-            // Extract just the event data from each RSVP
-            return data.rsvps.map(rsvp => rsvp.event);
-          }
+        const responseData = await response.json().catch(e => ({ success: false, error: "Invalid JSON response" }));
+        
+        if (response.ok && responseData.success && Array.isArray(responseData.rsvps)) {
+          this.log(`Fetched ${responseData.rsvps.length} RSVP'd events from backend`);
+          console.log("RSVP Events:", responseData.rsvps);
+          
+          // Extract just the event data from each RSVP
+          return responseData.rsvps.map(rsvp => rsvp.event);
         } else {
-          this.log(`API returned status ${response.status}, falling back to local data`);
+          this.log(`API returned status ${response.status}, error: ${responseData.error || "Unknown error"}`);
+          this.log("Falling back to local data");
         }
       } catch (fetchError) {
         this.log(`API fetch error: ${fetchError.message}, falling back to local data`);
@@ -838,8 +838,7 @@ class CalendarController {
           this.log("Using pending event from localStorage");
           console.log("Using pending event:", eventData);
           
-          // We'll keep the event in localStorage until it's successfully synced
-          
+          // Return the pending event
           return [eventData];
         } catch (parseError) {
           this.log("Failed to parse pending event");

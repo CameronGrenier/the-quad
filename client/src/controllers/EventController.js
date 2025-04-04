@@ -551,6 +551,99 @@ class EventController {
       }), { status: 500, headers: this.corsHeaders });
     }
   }
+
+  /**
+   * Get all events a user has RSVP'd to with 'attending' status
+   * @param {Request} request - The HTTP request
+   * @returns {Response} JSON response with RSVP events
+   */
+  async getUserRsvpEvents(request) {
+    try {
+      // Verify the user is authenticated
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Authentication required" }),
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      // Get user from token
+      const userData = this.auth.verifyJWT(token);
+      const userId = userData.userId;
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid authentication token" }),
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      console.log(`Fetching RSVP events for user: ${userId}`);
+      
+      try {
+        // Get all RSVP entries for this user with status 'attending'
+        const query = `
+          SELECT r.rsvpStatus, 
+                 e.eventID, e.title, e.description, e.startDate, e.endDate, 
+                 e.location, e.landmarkName, e.customLocation,
+                 o.name as organizationName 
+          FROM EVENT_RSVP r 
+          JOIN EVENT e ON r.eventID = e.eventID
+          LEFT JOIN ORGANIZATION o ON e.organizationID = o.orgID
+          WHERE r.userID = ? AND r.rsvpStatus = 'attending'
+        `;
+        
+        const rsvpsResult = await this.backendService.queryAll(query, [userId]);
+        const rsvps = rsvpsResult.results || [];
+        
+        console.log(`Found ${rsvps.length} RSVP events for user ${userId}`);
+        
+        // Format the response
+        const formattedRsvps = rsvps.map(rsvp => {
+          return {
+            rsvpStatus: rsvp.rsvpStatus,
+            event: {
+              eventID: rsvp.eventID,
+              title: rsvp.title,
+              description: rsvp.description,
+              startDate: rsvp.startDate,
+              endDate: rsvp.endDate,
+              location: rsvp.location || rsvp.landmarkName || rsvp.customLocation || '',
+              organizationName: rsvp.organizationName || ''
+            }
+          };
+        });
+
+        return new Response(
+          JSON.stringify({ success: true, rsvps: formattedRsvps }),
+          { status: 200, headers: this.corsHeaders }
+        );
+      } catch (dbError) {
+        console.error("Database error fetching RSVPs:", dbError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Database error fetching RSVP events",
+            debug: dbError.message 
+          }),
+          { status: 500, headers: this.corsHeaders }
+        );
+      }
+    } catch (error) {
+      console.error("Error in getUserRsvpEvents:", error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Failed to process RSVP events request",
+          debug: error.message 
+        }),
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
 }
 
 export default EventController;
