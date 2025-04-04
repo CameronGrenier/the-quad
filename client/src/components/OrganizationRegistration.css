@@ -531,3 +531,21 @@
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.6);
 }
+
+/* Add these styles to your CSS file */
+.required-field {
+  color: #e74c3c;
+  margin-left: 4px;
+}
+
+.warning {
+  color: #f39c12;
+  font-size: 0.85em;
+  margin-top: 4px;
+}
+
+/* Highlight required fields when official status is checked */
+.submitForOfficialStatus-checked .required-for-official label {
+  color: #e74c3c;
+  font-weight: 600;
+}

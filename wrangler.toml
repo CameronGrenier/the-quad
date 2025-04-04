@@ -23,3 +23,5 @@ d1_databases = [
 r2_buckets = [
   { binding = "R2_BUCKET", bucket_name = "images" }
 ]
+[observability.logs]
+enabled = true

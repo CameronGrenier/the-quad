@@ -11,6 +11,7 @@ import formDataUtil from './utils/formData.js';
 import AccountController from './controllers/AccountController.js';
 import OrganizationController from './controllers/OrganizationController.js';
 import EventController from './controllers/EventController.js';
+import AdminController from './controllers/AdminController.js';
 
 /* ==================== MAIN WORKER FUNCTION ==================== */
 export default {
@@ -35,6 +36,7 @@ export default {
     const accountCtrl = new AccountController(env, corsHeaders, backendService, auth);
     const orgCtrl = new OrganizationController(env, corsHeaders, backendService, auth);
     const eventCtrl = new EventController(env, corsHeaders, backendService, auth);
+    const adminCtrl = new AdminController(env, corsHeaders, backendService, auth);
 
     try {
       // Routes remain the same - no changes needed here
@@ -67,13 +69,20 @@ export default {
         const orgId = parseInt(path.split('/').pop());
         return await orgCtrl.updateOrganization(orgId, request);
       }
+
+      if (path.match(/^\/api\/organizations\/\d+$/) && request.method === "DELETE") {
+        const orgId = parseInt(path.split('/').pop());
+        return await orgCtrl.deleteOrganization(orgId, request);
+      }
+
       if (path.match(/^\/api\/organizations\/\d+\/events$/)) {
         const parts = path.split('/');
         const orgId = parseInt(parts[3]);
         return await orgCtrl.getOrganizationEvents(orgId);
       }
       if (path.match(/^\/api\/organizations\/\d+\/members$/) && request.method === "GET") {
-        const orgId = parseInt(path.split('/').pop());
+        const parts = path.split('/');
+        const orgId = parseInt(parts[3]); // This gets the orgId from the URL
         return await orgCtrl.getOrganizationMembers(orgId, request);
       }
       if (path.match(/^\/api\/organizations\/\d+\/members\/\d+$/) && request.method === "DELETE") {
@@ -83,7 +92,8 @@ export default {
         return await orgCtrl.removeMember(orgId, memberId, request);
       }
       if (path.match(/^\/api\/organizations\/\d+\/admins$/) && request.method === "POST") {
-        const orgId = parseInt(path.split('/').pop());
+        const parts = path.split('/');
+        const orgId = parseInt(parts[3]); // This gets the orgId properly
         return await orgCtrl.addAdmin(orgId, request);
       }
       if (path.match(/^\/api\/organizations\/\d+\/admins\/\d+$/) && request.method === "DELETE") {
@@ -139,7 +149,71 @@ export default {
         const imagePath = path.substring(8);
         return await backendService.serveImage(imagePath, corsHeaders);
       }
-      
+
+      // Add these routes to handle admin requests for pending items
+
+      // Test if a user is staff
+      if (path === "/api/admin/test-staff" && request.method === "GET") {
+        return await adminCtrl.testStaff(request);
+      }
+
+      // Get pending official status requests
+      if (path === "/api/admin/pending-requests" && request.method === "GET") {
+        return await adminCtrl.getPendingRequests(request);
+      }
+
+      // Get counts of pending items
+      if (path === "/api/admin/pending-counts" && request.method === "GET") {
+        return await adminCtrl.getPendingCounts(request);
+      }
+
+      // Get organization details for admin
+      if (path.match(/\/api\/admin\/org-details\/(\d+)/) && request.method === "GET") {
+        const orgId = path.match(/\/api\/admin\/org-details\/(\d+)/)[1];
+        return await adminCtrl.getOrganizationDetails(request, orgId);
+      }
+
+      // Get event details for admin
+      if (path.match(/\/api\/admin\/event-details\/(\d+)/) && request.method === "GET") {
+        const eventId = path.match(/\/api\/admin\/event-details\/(\d+)/)[1];
+        return await adminCtrl.getEventDetails(request, eventId);
+      }
+
+      // Approve an official status request
+      if (path === "/api/admin/approve-official" && request.method === "POST") {
+        return await adminCtrl.approveOfficial(request);
+      }
+
+      // Reject an official status request
+      if (path === "/api/admin/reject-official" && request.method === "POST") {
+        return await adminCtrl.rejectOfficial(request);
+      }
+
+      // Check if item is in OFFICIAL_PENDING
+      if (path === "/api/admin/check-official-pending" && request.method === "GET") {
+        return await adminCtrl.checkOfficialPending(request);
+      }
+
+      // Check if item is in OFFICIAL
+      if (path === "/api/admin/check-official" && request.method === "GET") {
+        return await adminCtrl.checkOfficial(request);
+      }
+
+      // Submit for official status
+      if (path === "/api/submit-for-official" && request.method === "POST") {
+        return await adminCtrl.submitForOfficial(request);
+      }
+
+      // Add this route to your existing routes
+      if (path === "/api/official-organizations" && request.method === "GET") {
+        return await orgCtrl.getOfficialOrganizations(request);
+      }
+
+      // Add this route to your existing routes
+      if (path === "/api/official-events" && request.method === "GET") {
+        return await eventCtrl.getOfficialEvents(request);
+      }
+
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });
     } catch (error) {
       return new Response(JSON.stringify({ error: "Server error", message: error.message }),

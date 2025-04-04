@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import './Home.css';
 import Footer from './Footer';
 import MarkdownRenderer from './MarkdownRenderer';
+import Carousel from 'react-multi-carousel';
+import 'react-multi-carousel/lib/styles.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -12,6 +14,8 @@ function Home() {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [userEvents, setUserEvents] = useState([]);
   const [organizations, setOrganizations] = useState([]);
+  const [officialOrgs, setOfficialOrgs] = useState([]);
+  const [officialEvents, setOfficialEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -91,6 +95,30 @@ function Home() {
           }
           
           setOrganizations(allOrgs);
+        }
+
+        // Fetch official organizations for the Featured Organizations section
+        try {
+          const officialOrgsResponse = await fetch(`${API_URL}/api/official-organizations?limit=4`);
+          if (officialOrgsResponse.ok) {
+            const officialOrgsData = await officialOrgsResponse.json();
+            setOfficialOrgs(officialOrgsData.organizations || []);
+          }
+        } catch (error) {
+          console.error('Error fetching official organizations:', error);
+          // Don't set the main error state here to avoid disrupting the whole page
+        }
+
+        // Fetch official events
+        try {
+          const officialEventsResponse = await fetch(`${API_URL}/api/official-events?limit=6`);
+          if (officialEventsResponse.ok) {
+            const officialEventsData = await officialEventsResponse.json();
+            setOfficialEvents(officialEventsData.events || []);
+          }
+        } catch (error) {
+          console.error('Error fetching official events:', error);
+          // Don't set the main error state to avoid disrupting the whole page
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -259,14 +287,191 @@ function Home() {
             <Link to="/organizations" className="view-all-link">Explore Organizations</Link>
           </div>
           
-          {/* This would ideally pull from an API, but for now we'll use a static CTA */}
-          <div className="explore-orgs-cta">
-            <div className="cta-content">
-              <h3>Discover Campus Organizations</h3>
-              <p>Find clubs, groups, and communities that match your interests</p>
-              <Link to="/organizations" className="cta-button">Explore All Organizations</Link>
+          {loading ? (
+            <div className="loading-indicator">Loading featured organizations...</div>
+          ) : officialOrgs.length === 0 ? (
+            <div className="explore-orgs-cta">
+              <div className="cta-content">
+                <h3>Discover Campus Organizations</h3>
+                <p>Find clubs, groups, and communities that match your interests</p>
+                <Link to="/organizations" className="cta-button">Explore All Organizations</Link>
+              </div>
             </div>
+          ) : (
+            <Carousel
+              responsive={{
+                superLargeDesktop: {
+                  breakpoint: { max: 4000, min: 1200 },
+                  items: 3,
+                  slidesToSlide: 1
+                },
+                desktop: {
+                  breakpoint: { max: 1200, min: 992 },
+                  items: 3,
+                  slidesToSlide: 1
+                },
+                tablet: {
+                  breakpoint: { max: 992, min: 576 },
+                  items: 2,
+                  slidesToSlide: 1
+                },
+                mobile: {
+                  breakpoint: { max: 576, min: 0 },
+                  items: 1,
+                  slidesToSlide: 1
+                }
+              }}
+              containerClass="org-carousel-container"
+              itemClass="org-carousel-item"
+              dotListClass="org-carousel-dots"
+              sliderClass="org-carousel-slider"
+              infinite={true}
+              autoPlay={officialOrgs.length > 3}
+              autoPlaySpeed={5000}
+              keyBoardControl={true}
+              customTransition="transform 500ms ease-in-out"
+              transitionDuration={500}
+              removeArrowOnDeviceType={["mobile"]}
+              dotColorActive="#9168ff"
+              dotColor="rgba(255, 255, 255, 0.5)"
+              showDots={true}
+            >
+              {officialOrgs.map(org => (
+                <div key={org.orgID} className="org-card">
+                  <div 
+                    className="org-image" 
+                    style={org.thumbnail ? { 
+                      backgroundImage: `url(${formatImageUrl(org.thumbnail)})` 
+                    } : {}}
+                  >
+                    <div className="official-badge">
+                      <i className="fas fa-crown"></i> Official
+                    </div>
+                    {org.memberCount !== undefined && (
+                      <div className="org-member-count">
+                        <i className="fas fa-users"></i> {org.memberCount || 0} Members
+                      </div>
+                    )}
+                  </div>
+                  <div className="org-details">
+                    <h3>{org.name}</h3>
+                    <p className="org-description">
+                      {org.description ? (
+                        org.description.length > 100 ? 
+                          `${org.description.substring(0, 100)}...` : 
+                          org.description
+                      ) : 'No description available'}
+                    </p>
+                    <Link to={`/organizations/${org.orgID}`} className="view-org-button">
+                      View Organization
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </Carousel>
+          )}
+        </section>
+
+        {/* Official Events Section */}
+        <section className="official-events-section">
+          <div className="section-header">
+            <h2>Official Campus Events</h2>
+            <Link to="/events?filter=official" className="view-all-link">View All</Link>
           </div>
+          
+          <p className="section-intro">
+            Discover events sponsored and endorsed by the university. These official events represent the pinnacle of campus activities.
+          </p>
+          
+          {loading ? (
+            <div className="loading-indicator">Loading official events...</div>
+          ) : officialEvents.length === 0 ? (
+            <div className="explore-events-cta">
+              <div className="cta-content">
+                <h3>No Official Events Currently</h3>
+                <p>Check back soon for university sponsored events and activities</p>
+                <Link to="/events" className="cta-button">Browse All Events</Link>
+              </div>
+            </div>
+          ) : (
+            <Carousel
+              responsive={{
+                superLargeDesktop: {
+                  breakpoint: { max: 4000, min: 1200 },
+                  items: 3,
+                  slidesToSlide: 1
+                },
+                desktop: {
+                  breakpoint: { max: 1200, min: 992 },
+                  items: 3,
+                  slidesToSlide: 1
+                },
+                tablet: {
+                  breakpoint: { max: 992, min: 576 },
+                  items: 2,
+                  slidesToSlide: 1
+                },
+                mobile: {
+                  breakpoint: { max: 576, min: 0 },
+                  items: 1,
+                  slidesToSlide: 1
+                }
+              }}
+              containerClass="event-carousel-container"
+              itemClass="event-carousel-item"
+              dotListClass="event-carousel-dots"
+              sliderClass="event-carousel-slider"
+              infinite={true}
+              autoPlay={officialEvents.length > 3}
+              autoPlaySpeed={5000}
+              keyBoardControl={true}
+              customTransition="transform 500ms ease-in-out"
+              transitionDuration={500}
+              removeArrowOnDeviceType={["mobile"]}
+              dotColorActive="#9168ff"
+              dotColor="rgba(255, 255, 255, 0.5)"
+              showDots={true}
+            >
+              {officialEvents.map(event => (
+                <div key={event.eventID} className="official-event-card">
+                  <div 
+                    className="event-image" 
+                    style={event.thumbnail ? { 
+                      backgroundImage: `url(${formatImageUrl(event.thumbnail)})` 
+                    } : {}}
+                  >
+                    <div className="official-badge">
+                      <i className="fas fa-certificate"></i> Official
+                    </div>
+                    <div className="event-date-badge">
+                      {formatDate(event.startDate)}
+                    </div>
+                  </div>
+                  <div className="event-details">
+                    <h3>{event.title}</h3>
+                    <p className="event-location">
+                      <i className="fas fa-map-marker-alt"></i> {event.landmarkName || event.customLocation || 'Location TBA'}
+                    </p>
+                    {event.organizationName && (
+                      <p className="event-organization">
+                        <i className="fas fa-users"></i> {event.organizationName}
+                      </p>
+                    )}
+                    <p className="event-description">
+                      {event.description ? (
+                        event.description.length > 80 ? 
+                          `${event.description.substring(0, 80)}...` : 
+                          event.description
+                      ) : 'No description available'}
+                    </p>
+                    <Link to={`/events/${event.eventID}`} className="view-event-button">
+                      View Details
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </Carousel>
+          )}
         </section>
       </div>
       

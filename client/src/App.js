@@ -21,6 +21,7 @@ import MyEvents from './components/MyEvents';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import EditOrganization from './components/EditOrganization';
+import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
 function App() {
@@ -64,6 +65,7 @@ function App() {
                   <EditOrganization />
                 </PrivateRoute>
               } />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Routes>
           </main>
           {isMobile && <MobileNavbar />}

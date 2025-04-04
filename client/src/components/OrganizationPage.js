@@ -56,6 +56,11 @@ function OrganizationPage() {
   const [joinLoading, setJoinLoading] = useState(false);
   const [memberCount, setMemberCount] = useState(0);
 
+  // Add these state variables
+  const [submittingForOfficial, setSubmittingForOfficial] = useState(false);
+  const [isOfficial, setIsOfficial] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+
   useEffect(() => {
     async function fetchOrganizationData() {
       try {
@@ -126,6 +131,45 @@ function OrganizationPage() {
     
     fetchOrganizationData();
   }, [orgId, currentUser]);
+
+  // Add this function to check official status
+  useEffect(() => {
+    async function checkOfficialStatus() {
+      if (!orgId) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        
+        // Check if already pending
+        const pendingResponse = await fetch(`${API_URL}/api/admin/check-official-pending?orgID=${orgId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (pendingResponse.ok) {
+          const pendingData = await pendingResponse.json();
+          setIsPending(pendingData.isPending);
+        }
+        
+        // Check if already official
+        const officialResponse = await fetch(`${API_URL}/api/admin/check-official?orgID=${orgId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (officialResponse.ok) {
+          const officialData = await officialResponse.json();
+          setIsOfficial(officialData.isOfficial);
+        }
+      } catch (error) {
+        console.error("Error checking official status:", error);
+      }
+    }
+    
+    checkOfficialStatus();
+  }, [orgId]);
 
   // Update the handleDeleteOrganization function
   const handleDeleteOrganization = async () => {
@@ -209,6 +253,50 @@ function OrganizationPage() {
       setError(`Membership update failed: ${error.message}`);
     } finally {
       setJoinLoading(false);
+    }
+  };
+
+  // Add this function to submit for official status
+  const handleSubmitForOfficial = async () => {
+    if (!isAdmin || !currentUser) return;
+    
+    // Check if organization has both thumbnail and banner
+    if (!organization.thumbnail || !organization.banner) {
+      setError("Both thumbnail and banner are required for official status");
+      return;
+    }
+    
+    try {
+      setSubmittingForOfficial(true);
+      const userId = currentUser.id || currentUser.userID;
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/submit-for-official`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orgID: orgId,
+          userID: userId
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit for official status');
+      }
+      
+      // Update the pending status
+      setIsPending(true);
+      alert('Successfully submitted for official status!');
+    } catch (error) {
+      console.error("Error submitting for official status:", error);
+      setError(`Error: ${error.message}`);
+    } finally {
+      setSubmittingForOfficial(false);
     }
   };
 
@@ -308,6 +396,31 @@ function OrganizationPage() {
             <button className="delete-org-btn" onClick={() => setShowDeleteConfirm(true)}>
               Delete Organization
             </button>
+            
+            {/* Add this conditional button for official status */}
+            {!isOfficial && !isPending && (
+              <button 
+                className="submit-official-btn" 
+                onClick={handleSubmitForOfficial}
+                disabled={submittingForOfficial || !organization.thumbnail || !organization.banner}
+                title={(!organization.thumbnail || !organization.banner) ? 
+                  "Thumbnail and banner are required for official status" : ""}
+              >
+                {submittingForOfficial ? 'Submitting...' : 'Submit for Official Status'}
+              </button>
+            )}
+            
+            {isPending && (
+              <button className="pending-official-btn" disabled>
+                Official Status Pending
+              </button>
+            )}
+            
+            {isOfficial && (
+              <div className="official-badge">
+                Official Organization
+              </div>
+            )}
           </div>
         )}
       </div>

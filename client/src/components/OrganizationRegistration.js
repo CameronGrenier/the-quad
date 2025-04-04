@@ -12,7 +12,8 @@ function OrganizationRegistration() {
     description: '',
     privacy: 'public',
     thumbnail: null,
-    banner: null
+    banner: null,
+    submitForOfficialStatus: false // Add this line
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,39 +33,98 @@ function OrganizationRegistration() {
   }, [currentUser, navigate]);
   
   const validateForm = () => {
-    const newErrors = {};
+    const errors = {};
+    
     if (!formData.name.trim()) {
-      newErrors.name = 'Organization name is required';
+      errors.name = 'Organization name is required';
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    // If submitting for official status, require thumbnail and banner
+    if (formData.submitForOfficialStatus) {
+      if (!formData.thumbnail) {
+        errors.thumbnail = 'Thumbnail is required for official status';
+      }
+      
+      if (!formData.banner) {
+        errors.banner = 'Banner is required for official status';
+      }
+    }
+    
+    setErrors(errors);
+    return Object.keys(errors).length === 0; // Return true if no errors
   };
   
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     
-    if (name === 'thumbnail' || name === 'banner') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: files[0]
-      }));
+    if (type === 'file') {
+      setFormData({
+        ...formData,
+        [name]: files[0] || null
+      });
+      
+      // Clear file error if a file is selected
+      if (files[0] && errors[name]) {
+        setErrors({
+          ...errors,
+          [name]: null
+        });
+      }
+    } else if (type === 'checkbox') {
+      const newValue = checked;
+      setFormData({
+        ...formData,
+        [name]: newValue
+      });
+      
+      // If toggling submitForOfficialStatus, check if we need thumbnail and banner
+      if (name === 'submitForOfficialStatus') {
+        const newErrors = {};
+        
+        if (newValue) {
+          if (!formData.thumbnail) {
+            newErrors.thumbnail = 'Thumbnail is required for official status';
+          }
+          
+          if (!formData.banner) {
+            newErrors.banner = 'Banner is required for official status';
+          }
+        } else {
+          // Clear thumbnail and banner errors if turning off official status
+          if (errors.thumbnail) newErrors.thumbnail = null;
+          if (errors.banner) newErrors.banner = null;
+        }
+        
+        // Update errors if needed
+        if (Object.keys(newErrors).length > 0) {
+          setErrors({
+            ...errors,
+            ...newErrors
+          });
+        }
+      }
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
-    }
-    
-    // Clear any errors for this field
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+      
+      // Clear string field error if it's not empty
+      if (value.trim() && errors[name]) {
+        setErrors({
+          ...errors,
+          [name]: null
+        });
+      }
     }
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    // Validate the form and only proceed if valid
+    const isValid = validateForm();
+    if (!isValid) return;
     
     try {
       setIsSubmitting(true);
@@ -93,6 +153,7 @@ function OrganizationRegistration() {
       submitData.append('description', formData.description);
       submitData.append('privacy', formData.privacy);
       submitData.append('userID', userId);
+      submitData.append('submitForOfficialStatus', formData.submitForOfficialStatus); // Add this line
       
       if (formData.thumbnail) {
         submitData.append('thumbnail', formData.thumbnail);
@@ -109,7 +170,8 @@ function OrganizationRegistration() {
         privacy: formData.privacy,
         userID: userId,
         thumbnail: formData.thumbnail ? "File included" : "No file",
-        banner: formData.banner ? "File included" : "No file"
+        banner: formData.banner ? "File included" : "No file",
+        submitForOfficialStatus: formData.submitForOfficialStatus // Add this line
       });
       
       const response = await fetch(`${API_URL}/api/register-organization`, {
@@ -157,7 +219,10 @@ function OrganizationRegistration() {
             </div>
           )}
           
-          <form onSubmit={handleSubmit}>
+          <form 
+            onSubmit={handleSubmit}
+            className={formData.submitForOfficialStatus ? 'submitForOfficialStatus-checked' : ''}
+          >
             <div className="form-group">
               <label>Organization Name:</label>
               <input
@@ -180,8 +245,11 @@ function OrganizationRegistration() {
               />
             </div>
             
-            <div className="form-group">
-              <label>Thumbnail Image:</label>
+            <div className="form-group required-for-official">
+              <label>
+                Thumbnail Image:
+                {formData.submitForOfficialStatus && <span className="required-field">*</span>}
+              </label>
               <div className="custom-file-upload">
                 <input
                   type="file"
@@ -204,10 +272,14 @@ function OrganizationRegistration() {
                   </div>
                 )}
               </div>
+              {errors.thumbnail && <p className="error">{errors.thumbnail}</p>}
             </div>
             
-            <div className="form-group">
-              <label>Banner Image:</label>
+            <div className="form-group required-for-official">
+              <label>
+                Banner Image:
+                {formData.submitForOfficialStatus && <span className="required-field">*</span>}
+              </label>
               <div className="custom-file-upload">
                 <input
                   type="file"
@@ -230,6 +302,7 @@ function OrganizationRegistration() {
                   </div>
                 )}
               </div>
+              {errors.banner && <p className="error">{errors.banner}</p>}
             </div>
             
             <div className="form-group">
@@ -244,11 +317,22 @@ function OrganizationRegistration() {
                 ]}
               />
             </div>
+
+            <div className="form-group checkbox-group">
+              <label htmlFor="submitForOfficialStatus">Submit for Official Status</label>
+              <input
+                type="checkbox"
+                id="submitForOfficialStatus"
+                name="submitForOfficialStatus"
+                checked={formData.submitForOfficialStatus}
+                onChange={handleChange}
+              />
+            </div>
             
             <button 
               type="submit" 
               className="submit-button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (formData.submitForOfficialStatus && (!formData.thumbnail || !formData.banner))}
             >
               {isSubmitting ? 'Creating...' : 'Create Organization'}
             </button>

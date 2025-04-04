@@ -8,6 +8,7 @@ import { ReactComponent as Account } from '../icons/user-solid.svg';
 import { ReactComponent as Search } from '../icons/magnifying-glass-solid.svg';
 import { ReactComponent as Organization } from '../icons/people-group-solid.svg';
 import { ReactComponent as MyOrganization } from '../icons/user-group-solid.svg';
+import { ReactComponent as Shield } from '../icons/shield-halved-solid.svg'; // Add this line
 import { useAuth } from '../context/AuthContext';
 
 // Add this utility function for profile image
@@ -29,7 +30,7 @@ const formatImageUrl = (url) => {
 };
 
 function Header() {
-  const { currentUser, refreshUserData } = useAuth();
+  const { currentUser, refreshUserData, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -42,6 +43,9 @@ function Header() {
   
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef(null);
+
+  const isAuthenticated = !!currentUser;
+  const [isStaff, setIsStaff] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -63,6 +67,44 @@ function Header() {
       refreshUserData();
     }
   }, []); // Run once when component mounts
+
+  // Add this useEffect to check staff status
+  useEffect(() => {
+    async function checkStaffStatus() {
+      if (!isAuthenticated || !currentUser) {
+        setIsStaff(false);
+        return;
+      }
+      
+      try {
+        const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+        const token = localStorage.getItem('token');
+        
+        console.log("Testing staff status with token:", token);
+        const response = await fetch(`${API_URL}/api/admin/test-staff`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        console.log("Staff test response:", data);
+        
+        if (data.success && data.isInStaffTable) {
+          setIsStaff(true);
+          console.log("Direct staff check: TRUE");
+        } else {
+          setIsStaff(false);
+          console.log("Direct staff check: FALSE");
+        }
+      } catch (error) {
+        console.error("Error checking staff status:", error);
+        setIsStaff(false);
+      }
+    }
+    
+    checkStaffStatus();
+  }, [isAuthenticated, currentUser]); // Only depend on currentUser
 
   return (
     <div className={`header-container ${isFixedHeaderPage ? 'fixed' : 'static'} ${isEventPage ? 'event-page-header' : ''}`}>
@@ -111,6 +153,14 @@ function Header() {
             <MyOrganization />
             <Link to="/my-organizations">My Organizations</Link>
           </div>
+
+          {/* Add this button to the nav-links section - place it before the logout button */}
+          {currentUser && isStaff && (
+            <div className="nav-item">
+              <Shield />
+              <Link to="/admin">Admin Dashboard</Link>
+            </div>
+          )}
         </nav>
         
         {/* User authentication section */}

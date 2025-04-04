@@ -121,26 +121,33 @@ class Auth {
    * @returns {Object} Authentication information with isAuthenticated and userId
    */
   getAuthFromRequest(request) {
-    const authHeader = request.headers.get('Authorization') || '';
-    const token = authHeader.replace('Bearer ', '');
-    
-    let isAuthenticated = false;
-    let userId = null;
-    
-    if (token) {
-      try {
-        const userData = this.verifyJWT(token);
-        isAuthenticated = !!userData.userId;
-        userId = userData.userId;
-      } catch (error) {
-        // Silently handle the error - don't log it to avoid test issues
-        // Just return unauthenticated status
-        isAuthenticated = false;
-        userId = null;
+    try {
+      const authHeader = request.headers.get('Authorization') || '';
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return { isAuthenticated: false };
       }
+      
+      const token = authHeader.split(' ')[1];
+      if (!token) {
+        return { isAuthenticated: false };
+      }
+      
+      // Add some debug logging
+      console.log("Processing auth token:", token.substring(0, 10) + "...");
+      
+      const decoded = this.verifyJWT(token);
+      
+      return {
+        isAuthenticated: true,
+        userId: decoded.userId || decoded.id,
+        email: decoded.email,
+        token: token
+      };
+      
+    } catch (error) {
+      console.error('Authentication error:', error.message);
+      return { isAuthenticated: false };
     }
-    
-    return { isAuthenticated, userId, token };
   }
 }
 

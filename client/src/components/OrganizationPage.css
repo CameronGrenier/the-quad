@@ -713,3 +713,51 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Add these styles to your existing CSS file */
+
+.submit-official-btn, .pending-official-btn {
+  background-color: #8e44ad;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  padding: 8px 16px;
+  margin-left: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.submit-official-btn:hover {
+  background-color: #9b59b6;
+}
+
+.submit-official-btn:disabled {
+  background-color: #d1d1d1;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.pending-official-btn {
+  background-color: #f39c12;
+  cursor: default;
+}
+
+.official-badge {
+  background-color: #27ae60;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.official-badge::before {
+  content: '✓';
+  margin-right: 6px;
+  font-weight: bold;
+}
