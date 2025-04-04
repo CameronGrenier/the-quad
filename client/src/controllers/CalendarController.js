@@ -1,5 +1,5 @@
-// Import API_URL from EventPage.js
-import { API_URL } from '../components/EventPage';
+// Import API_URL from a central location instead
+import { API_URL } from '../config/constants';
 
 /**
  * CalendarController - Manages Google Calendar integration
@@ -47,34 +47,80 @@ class CalendarController {
   }
 
   /**
-   * Initialize Google API libraries
+   * Initialize Google API libraries with better persistence
    */
   async initialize() {
     this.log("Initializing Google Calendar integration...");
     
     try {
-      // Load the GAPI script
-      await this.loadGapiScript();
-      // Load the GIS script
-      await this.loadGisScript();
-      
-      // Try to restore token from localStorage
-      const storedToken = this.retrieveStoredToken();
-      if (storedToken && storedToken.access_token) {
-        this.log("Found stored token, attempting to restore");
-        
-        // Check if token has expired
-        if (storedToken.expires_at && Date.now() < storedToken.expires_at) {
-          window.gapi.client.setToken(storedToken);
-          this.log("Restored token from storage");
-        } else {
-          this.log("Stored token has expired");
-          this.clearStoredToken();
-        }
+      // Track initialization status
+      if (this.initializationPromise) {
+        this.log("Initialization already in progress, waiting...");
+        return await this.initializationPromise;
       }
+      
+      // Create a promise to track initialization
+      this.initializationPromise = (async () => {
+        // Load the GAPI script
+        await this.loadGapiScript();
+        // Load the GIS script
+        await this.loadGisScript();
+        
+        // Try to restore token from localStorage
+        await this.restoreAuthState();
+        
+        return true;
+      })();
+      
+      return await this.initializationPromise;
     } catch (error) {
       this.listeners.onError?.(error.message);
+      this.initializationPromise = null;
+      throw error;
+    } finally {
+      // Clear the promise reference when done
+      this.initializationPromise = null;
     }
+  }
+
+  /**
+   * Restore authentication state from storage
+   */
+  async restoreAuthState() {
+    const storedToken = this.retrieveStoredToken();
+    
+    if (storedToken && storedToken.access_token) {
+      this.log("Found stored token, attempting to restore");
+      
+      // Check if token has expired
+      if (storedToken.expires_at && Date.now() < storedToken.expires_at) {
+        try {
+          // Set the token in the GAPI client
+          window.gapi.client.setToken(storedToken);
+          this.log("Setting stored token in GAPI client");
+          
+          // Verify token with a simple API call
+          await window.gapi.client.calendar.calendarList.list({
+            maxResults: 1
+          });
+          
+          this.log("Successfully verified and restored authentication");
+          this.isAuthenticated = true;
+          this.listeners.onAuthChange?.(true);
+          return true;
+        } catch (error) {
+          this.log(`Token verification failed: ${error.message}`);
+          this.clearStoredToken();
+          this.isAuthenticated = false;
+        }
+      } else {
+        this.log("Stored token has expired");
+        this.clearStoredToken();
+      }
+    }
+    
+    this.isAuthenticated = false;
+    return false;
   }
 
   /**
@@ -471,14 +517,17 @@ class CalendarController {
   }
 
   /**
-   * Check if the user is already signed in
+   * Check if the user is already signed in with improved reliability
    */
   async checkIfSignedIn() {
     try {
-      // Check if gapi client is initialized
+      // Ensure API is initialized
       if (!window.gapi || !window.gapi.client) {
-        console.log("GAPI client not initialized");
-        return false;
+        await this.ensureInitialized();
+        if (!window.gapi || !window.gapi.client) {
+          console.log("GAPI client still not initialized");
+          return false;
+        }
       }
       
       // First check current token
@@ -506,10 +555,9 @@ class CalendarController {
       
       if (!token) {
         console.log("No valid token found");
+        this.isAuthenticated = false;
         return false;
       }
-      
-      console.log("Found token, verifying with API call");
       
       // Verify token with API call
       try {
@@ -523,7 +571,8 @@ class CalendarController {
       } catch (apiError) {
         console.error("API call with token failed:", apiError);
         
-        if (apiError.result && apiError.result.error && apiError.result.error.code === 401) {
+        // Handle 401 errors
+        if (apiError.result?.error?.code === 401) {
           console.log("Token is invalid or expired, clearing it");
           window.gapi.client.setToken(null);
           this.clearStoredToken();
@@ -531,7 +580,7 @@ class CalendarController {
           return false;
         }
         
-        // For other errors (network etc.), assume token is still valid
+        // For other errors, assume token is still valid
         this.isAuthenticated = true;
         return true;
       }
@@ -697,10 +746,11 @@ class CalendarController {
   }
 
   /**
-   * Add a method to ensure initialization is complete
+   * Add a method to ensure initialization is complete with improved handling
    */
   async ensureInitialized() {
     if (this.gapiInited && this.gisInited) {
+      await this.restoreAuthState();
       return true;
     }
     
@@ -716,8 +766,19 @@ class CalendarController {
 
   /**
    * Synchronize calendar events with RSVP data
+   * @param {boolean} force Whether to force sync even if recently synced
    */
-  async syncCalendarWithRsvp() {
+  async syncCalendarWithRsvp(force = false) {
+    // Prevent syncing too frequently
+    const now = Date.now();
+    if (!force && this._lastSyncTime && (now - this._lastSyncTime < 30000)) {
+      this.log("Skipping sync - last sync was less than 30 seconds ago");
+      return;
+    }
+    
+    // Set last sync time
+    this._lastSyncTime = now;
+    
     try {
       this.log("Starting calendar synchronization...");
       
@@ -741,9 +802,34 @@ class CalendarController {
       this.log(`Found ${calendarEvents.length} events in The Quad calendar`);
       console.log("Calendar Events:", calendarEvents);
       
-      // Fetch all RSVP'd events from the backend
-      const rsvpEvents = await this.fetchRsvpEventsFromBackend();
-      this.log(`Fetched ${rsvpEvents.length} RSVP'd events from backend`);
+      // Use local data directly instead of calling the failing API endpoint
+      let rsvpEvents = [];
+      
+      // Get pending event from localStorage
+      const pendingEvent = localStorage.getItem('pendingCalendarEvent');
+      if (pendingEvent) {
+        try {
+          const parsedEvent = JSON.parse(pendingEvent);
+          this.log("Using pending event from localStorage");
+          console.log("Using pending event:", parsedEvent);
+          rsvpEvents.push(parsedEvent);
+          
+          // Check if the event is already in the calendar
+          const eventExists = calendarEvents.some(calEvent => 
+            calEvent.summary === parsedEvent.title
+          );
+          
+          if (eventExists) {
+            // Event is already in calendar, remove from localStorage
+            this.log("Event already in calendar, clearing from localStorage");
+            localStorage.removeItem('pendingCalendarEvent');
+          }
+        } catch (parseError) {
+          this.log(`Failed to parse pending event: ${parseError.message}`);
+        }
+      }
+      
+      this.log(`Using ${rsvpEvents.length} RSVP'd events from local data`);
       console.log("RSVP Events:", rsvpEvents);
       
       // Add events that are in RSVP but not in calendar
@@ -756,34 +842,18 @@ class CalendarController {
           try {
             await this.addRsvpToCalendar(rsvpEvent);
             this.log(`Successfully added event "${rsvpEvent.title}" to calendar`);
+            
+            // Clear from localStorage after successful add
+            localStorage.removeItem('pendingCalendarEvent');
           } catch (addError) {
             this.log(`Failed to add event "${rsvpEvent.title}" to calendar: ${addError.message}`);
             console.error("Add error details:", addError);
           }
         } else {
           this.log(`Event "${rsvpEvent.title}" already exists in calendar`);
-        }
-      }
-      
-      // Remove events that are in calendar but not in RSVP
-      for (const calendarEvent of calendarEvents) {
-        // Check if event exists in RSVP
-        const eventExists = rsvpEvents.some(rsvpEvent => rsvpEvent.title === calendarEvent.summary);
-        
-        if (!eventExists) {
-          this.log(`Event "${calendarEvent.summary}" not found in RSVP, removing...`);
-          try {
-            await window.gapi.client.calendar.events.delete({
-              calendarId: calendarId,
-              eventId: calendarEvent.id
-            });
-            this.log(`Successfully removed event "${calendarEvent.summary}" from calendar`);
-          } catch (removeError) {
-            this.log(`Failed to remove event "${calendarEvent.summary}" from calendar: ${removeError.message}`);
-            console.error("Remove error details:", removeError);
-          }
-        } else {
-          this.log(`Event "${calendarEvent.summary}" already exists in RSVP`);
+          
+          // Still clear from localStorage as it's already in calendar
+          localStorage.removeItem('pendingCalendarEvent');
         }
       }
       

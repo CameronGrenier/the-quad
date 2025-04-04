@@ -24,6 +24,7 @@ import EditOrganization from './components/EditOrganization';
 import AdminDashboard from './components/AdminDashboard';
 import PersonalCalendar from './components/PersonalCalendar';
 import './App.css';
+import calendarController from './controllers/CalendarController';
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1370);
@@ -38,6 +39,20 @@ function App() {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
+  }, []);
+
+  useEffect(() => {
+    // Initialize calendar controller once at app startup
+    const initCalendar = async () => {
+      try {
+        await calendarController.initialize();
+        console.log("Calendar controller initialized at app level");
+      } catch (err) {
+        console.error("Failed to initialize calendar controller:", err);
+      }
+    };
+    
+    initCalendar();
   }, []);
 
   return (

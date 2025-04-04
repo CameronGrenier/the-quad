@@ -200,14 +200,16 @@ function EventPage() {
     };
   }, []);
 
-  // Update the useEffect hook to call syncCalendarWithRsvp after authentication
+  // Update the useEffect hook to prevent sync loops
 
 useEffect(() => {
   // Set up a listener for Google Calendar auth changes
   const handleAuthChange = async (isAuthenticated) => {
     console.log("Google Calendar auth changed:", isAuthenticated);
     
-    if (isAuthenticated) {
+    // Store auth state to prevent repeated syncs
+    if (isAuthenticated && !window._lastCalendarAuthState) {
+      window._lastCalendarAuthState = true;
       console.log("User is authenticated, syncing calendar...");
       try {
         await calendarController.ensureInitialized();
@@ -216,6 +218,8 @@ useEffect(() => {
       } catch (syncError) {
         console.error("Failed to sync calendar:", syncError);
       }
+    } else if (!isAuthenticated) {
+      window._lastCalendarAuthState = false;
     }
   };
 
@@ -224,6 +228,14 @@ useEffect(() => {
     onAuthChange: handleAuthChange,
     onError: (error) => console.error("Calendar error:", error)
   });
+  
+  return () => {
+    // Clean up listeners when component unmounts
+    calendarController.setListeners({
+      onAuthChange: () => {},
+      onError: () => {}
+    });
+  };
 }, []);
 
 // Update the handleRSVP function to manually add/remove events
