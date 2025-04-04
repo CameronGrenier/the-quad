@@ -6,12 +6,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 import './EventRegistration.css';
 import CustomSelect from './CustomSelect';
 import LocationMap from './LocationMap';
-
-// Define the API URL using environment variables
-const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+import { API_URL } from '../config/constants';
 
 function EventRegistration() {
-  // Add this line near the top of your component
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [organizations, setOrganizations] = useState([]);
@@ -19,11 +16,11 @@ function EventRegistration() {
   const [landmarkAvailable, setLandmarkAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Add this line
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false); // Add this line
+  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false); 
   
   const [formData, setFormData] = useState({
-    organizationID: '', // Make sure this starts as empty string, not null
+    organizationID: '', 
     title: '',
     description: '',
     thumbnail: null,
@@ -35,14 +32,34 @@ function EventRegistration() {
     landmarkID: '',
     customLocation: '',
     customLocationData: null,
-    locationType: 'landmark', // Add this line
+    locationType: 'landmark', 
   });
   
   const [errors, setErrors] = useState({});
   const [useCustomLocation, setUseCustomLocation] = useState(true);
 
-  // Add this inside your component before the return statement
   const locationSearchRef = useRef(null);
+
+  const [landmarkAvailability, setLandmarkAvailability] = useState(null);
+
+  const handleLandmarkChange = async (e) => {
+    const landmarkID = e.target.value;
+    
+    // Update form data
+    const updatedFormData = {
+      ...formData,
+      landmarkID: landmarkID
+    };
+    setFormData(updatedFormData);
+    
+    // Check availability if landmark is selected and we have dates
+    if (landmarkID && formData.startDate && formData.endDate) {
+      const availability = await checkLandmarkAvailability(landmarkID);
+      setLandmarkAvailability(availability);
+    } else {
+      setLandmarkAvailability(null);
+    }
+  };
 
   // Update the useEffect to set loading to false properly
   useEffect(() => {
@@ -157,17 +174,17 @@ function EventRegistration() {
     }
   };
 
-  const handleDateChange = (date, field) => {
-    setFormData(prev => ({
-      ...prev,
+  const handleDateChange = async (date, field) => {
+    const updatedFormData = {
+      ...formData,
       [field]: date
-    }));
+    };
+    setFormData(updatedFormData);
     
-    // If landmark is selected, check availability when dates change
-    if (formData.landmarkID && !useCustomLocation) {
-      checkLandmarkAvailability(formData.landmarkID, 
-        field === 'startDate' ? date : formData.startDate,
-        field === 'endDate' ? date : formData.endDate);
+    // Check landmark availability when dates change
+    if (updatedFormData.landmarkID && updatedFormData.startDate && updatedFormData.endDate) {
+      const availability = await checkLandmarkAvailability(updatedFormData.landmarkID);
+      setLandmarkAvailability(availability);
     }
   };
 
@@ -344,11 +361,11 @@ function EventRegistration() {
       }
       
       // Submit the form
-      const response = await fetch(`${API_URL}/api/register-event`, {  // Note: Changed API endpoint to match worker.js
+      const response = await fetch(`${API_URL}/api/register-event`, {
         method: 'POST',
         body: submitData,
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Fixed token reference
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
       });
       
@@ -473,15 +490,25 @@ function EventRegistration() {
               {formData.submitForOfficialStatus && <span className="required-field">*</span>}
             </label>
             <div className="custom-file-upload">
-              {/* Existing file upload code */}
               <input
                 type="file"
-                id="thumbnail"
                 name="thumbnail"
-                accept="image/*"
                 onChange={handleChange}
+                accept="image/*"
+                id="thumbnail"
+                className="file-input"
               />
-              {/* Preview code */}
+              <label htmlFor="thumbnail" className="file-label">
+                <i className="fas fa-upload"></i> Choose Thumbnail
+              </label>
+              {formData.thumbnail && (
+                <div className="file-name">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                  </svg>
+                  {formData.thumbnail.name}
+                </div>
+              )}
             </div>
             {errors.thumbnail && <p className="error">{errors.thumbnail}</p>}
           </div>
@@ -492,15 +519,25 @@ function EventRegistration() {
               {formData.submitForOfficialStatus && <span className="required-field">*</span>}
             </label>
             <div className="custom-file-upload">
-              {/* Existing file upload code */}
               <input
                 type="file"
-                id="banner"
                 name="banner"
-                accept="image/*" 
                 onChange={handleChange}
+                accept="image/*"
+                id="banner"
+                className="file-input"
               />
-              {/* Preview code */}
+              <label htmlFor="banner" className="file-label">
+                <i className="fas fa-upload"></i> Choose Banner
+              </label>
+              {formData.banner && (
+                <div className="file-name">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                  </svg>
+                  {formData.banner.name}
+                </div>
+              )}
             </div>
             {errors.banner && <p className="error">{errors.banner}</p>}
           </div>

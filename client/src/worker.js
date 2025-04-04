@@ -141,6 +141,16 @@ export default {
       if (path === "/api/events/rsvps" && request.method === "GET") {
         return await eventCtrl.getUserRsvpEvents(request);
       }
+
+      // Add this route for getting landmarks
+      if (path === "/api/landmarks" && request.method === "GET") {
+        return await eventCtrl.getLandmarks(request);
+      }
+
+      // Add this route for checking landmark availability
+      if (path === "/api/check-landmark-availability" && request.method === "POST") {
+        return await eventCtrl.checkLandmarkAvailability(request);
+      }
       
       if (path === "/api/check-membership" && request.method === "GET") {
         return await orgCtrl.checkMembership(request);

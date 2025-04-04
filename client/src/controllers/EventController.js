@@ -644,6 +644,140 @@ class EventController {
       );
     }
   }
+
+  /**
+   * Get all landmarks
+   * @param {Request} request - The HTTP request
+   * @returns {Response} JSON response with landmarks
+   */
+  async getLandmarks(request) {
+    try {
+      // Landmarks should be available to all users, no auth required
+      const query = `
+        SELECT 
+          landmarkID as id,
+          name,
+          location,
+          multiEventAllowed
+        FROM LANDMARK
+      `;
+      
+      const landmarksResult = await this.backendService.queryAll(query, []);
+      const landmarks = landmarksResult.results || [];
+      
+      console.log(`Found ${landmarks.length} landmarks`);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          landmarks: landmarks 
+        }),
+        { status: 200, headers: this.corsHeaders }
+      );
+    } catch (error) {
+      console.error("Error fetching landmarks:", error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Failed to fetch landmarks",
+          debug: error.message 
+        }),
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
+
+  /**
+   * Check if a landmark is available at a specific time
+   * @param {Request} request - The HTTP request
+   * @returns {Response} JSON response with availability status
+   */
+  async checkLandmarkAvailability(request) {
+    try {
+      const { landmarkID, startDate, endDate } = await request.json();
+      
+      if (!landmarkID || !startDate || !endDate) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Missing required parameters" }),
+          { status: 400, headers: this.corsHeaders }
+        );
+      }
+      
+      // First, check if the landmark allows multiple events
+      const landmarkQuery = `
+        SELECT multiEventAllowed
+        FROM LANDMARK
+        WHERE landmarkID = ?
+      `;
+      
+      const landmarkResult = await this.backendService.queryAll(landmarkQuery, [landmarkID]);
+      
+      if (!landmarkResult.results || landmarkResult.results.length === 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Landmark not found" }),
+          { status: 404, headers: this.corsHeaders }
+        );
+      }
+      
+      const multiEventAllowed = landmarkResult.results[0].multiEventAllowed === 1;
+      
+      // If multiple events are allowed, landmark is always available
+      if (multiEventAllowed) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            available: true,
+            multiEventAllowed: true
+          }),
+          { status: 200, headers: this.corsHeaders }
+        );
+      }
+      
+      // Otherwise, check for overlapping events
+      const query = `
+        SELECT COUNT(*) AS eventCount
+        FROM EVENT
+        WHERE landmarkID = ?
+        AND (
+          (startDate <= ? AND endDate >= ?) OR
+          (startDate >= ? AND startDate <= ?) OR
+          (endDate >= ? AND endDate <= ?)
+        )
+      `;
+      
+      const params = [
+        landmarkID,
+        endDate, startDate,        // First condition: existing event spans the entire new event
+        startDate, endDate,        // Second condition: existing event starts during new event
+        startDate, endDate         // Third condition: existing event ends during new event
+      ];
+      
+      const result = await this.backendService.queryAll(query, params);
+      const eventCount = result.results?.[0]?.eventCount || 0;
+      
+      // If there are no overlapping events, the landmark is available
+      const available = eventCount === 0;
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          available: available,
+          multiEventAllowed: false
+        }),
+        { status: 200, headers: this.corsHeaders }
+      );
+    } catch (error) {
+      console.error("Error checking landmark availability:", error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Failed to check landmark availability",
+          debug: error.message 
+        }),
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
 }
 
 export default EventController;
