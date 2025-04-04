@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './EventPage.css';
 import MarkdownRenderer from './MarkdownRenderer';
+import calendarController from '../controllers/CalendarController';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
@@ -152,6 +153,53 @@ function EventPage() {
     fetchEventData();
   }, [id, currentUser]);
 
+  // Add this near your other useEffects
+  useEffect(() => {
+    // Set up a listener for Google Calendar auth changes
+    const handleAuthChange = async (isAuthenticated) => {
+      console.log("Google Calendar auth changed:", isAuthenticated);
+      
+      if (isAuthenticated) {
+        // Check for pending calendar event
+        const pendingEvent = localStorage.getItem('pendingCalendarEvent');
+        if (pendingEvent) {
+          try {
+            console.log("Found pending event to add to calendar");
+            const eventData = JSON.parse(pendingEvent);
+            console.log("Pending event data:", eventData);
+            
+            // Add delay to ensure auth is fully processed
+            setTimeout(async () => {
+              try {
+                await calendarController.addRsvpToCalendar(eventData);
+                console.log("Successfully added event to Google Calendar");
+                setSuccessMessage("RSVP successful! Event was added to your Google Calendar.");
+                localStorage.removeItem('pendingCalendarEvent');
+              } catch (delayedError) {
+                console.error('Failed to add event with delay:', delayedError);
+              }
+            }, 1000);
+          } catch (error) {
+            console.error('Failed to add pending event to calendar:', error);
+          }
+        }
+      }
+    };
+
+    // Update event auth listener right away
+    calendarController.setListeners({
+      onAuthChange: handleAuthChange,
+      onError: (error) => console.error("Calendar error:", error)
+    });
+
+    return () => {
+      calendarController.setListeners({
+        onAuthChange: () => {},
+        onError: () => {}
+      });
+    };
+  }, []);
+
   const handleRSVP = async (status) => {
     if (!currentUser) {
       navigate('/login', { state: { from: `/events/${id}`, message: 'You need to log in to RSVP for events.' } });
@@ -161,6 +209,7 @@ function EventPage() {
     try {
       setIsSubmitting(true);
       
+      // Submit RSVP to backend
       const response = await fetch(`${API_URL}/api/events/${id}/rsvp`, {
         method: 'POST',
         headers: {
@@ -177,13 +226,56 @@ function EventPage() {
       if (data.success) {
         setRsvpStatus(status);
         let message = '';
+        
+        // For attending status, offer to add to Google Calendar
         if (status === 'attending') {
           message = "RSVP successful! You're now attending this event.";
+          
+          // Store event data before showing prompt
+          const calendarEventData = {
+            ...event,
+            organizationName: organization ? organization.name : undefined
+          };
+          
+          // Check if Google Calendar is connected
+          if (calendarController.isAuthenticated) {
+            try {
+              // Ensure APIs are initialized first
+              await calendarController.ensureInitialized();
+              
+              console.log("Adding event directly to calendar:", calendarEventData);
+              await calendarController.addRsvpToCalendar(calendarEventData);
+              message += " Added to your Google Calendar.";
+            } catch (calError) {
+              console.error('Failed to add to Google Calendar:', calError);
+              // Offer to connect Google Calendar
+              if (window.confirm('Would you like to add this event to your Google Calendar? (You need to connect your account first)')) {
+                // Store event data before authentication
+                localStorage.setItem('pendingCalendarEvent', JSON.stringify(calendarEventData));
+                
+                // Give initialization some time if needed
+                setTimeout(() => calendarController.signIn(), 500);
+              }
+            }
+          } else {
+            // Ask if they want to connect Calendar
+            if (window.confirm('Would you like to add this event to your Google Calendar?')) {
+              // We need to store the event info to add after authentication
+              console.log("Storing pending event:", calendarEventData);
+              localStorage.setItem('pendingCalendarEvent', JSON.stringify(calendarEventData));
+              
+              // Ensure APIs are initialized before signing in
+              calendarController.ensureInitialized().then(() => {
+                calendarController.signIn();
+              });
+            }
+          }
         } else if (status === 'maybe') {
           message = "You've marked this event as maybe attending.";
         } else {
           message = "You've declined this event.";
         }
+        
         setSuccessMessage(message);
         setTimeout(() => setSuccessMessage(''), 5000);
       } else {

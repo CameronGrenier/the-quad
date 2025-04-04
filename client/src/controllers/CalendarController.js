@@ -3,17 +3,26 @@
  */
 class CalendarController {
   constructor() {
-    this.GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY || 'AIzaSyCT7Oi6lj9KCLeJ8khaNyv_-rziY6oMcjo';
-    this.GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '1018555477374-es86bnf9he036bbt7it7s8d2llk9sh75.apps.googleusercontent.com';
+    // API keys and client IDs
+    this.API_KEY = 'AIzaSyCT7Oi6lj9KCLeJ8khaNyv_-rziY6oMcjo';
+    this.CLIENT_ID = '1018555477374-es86bnf9he036bbt7it7s8d2llk9sh75.apps.googleusercontent.com';
     
+    // Define scopes needed for calendar integration
+    this.SCOPES = [
+      'https://www.googleapis.com/auth/calendar',
+      'https://www.googleapis.com/auth/calendar.events'
+    ];
+    
+    // Authentication state
     this.gapiInited = false;
     this.gisInited = false;
     this.isAuthenticated = false;
-    this.tokenClient = null;
+    
+    // Listeners for callbacks
     this.listeners = {
-      onLog: () => {},
-      onAuthChange: () => {},
-      onError: () => {},
+      onAuthChange: null,
+      onError: null,
+      onLog: null
     };
   }
 
@@ -135,7 +144,7 @@ class CalendarController {
       });
       
       await window.gapi.client.init({
-        apiKey: this.GOOGLE_API_KEY,
+        apiKey: this.API_KEY,
         discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
       });
       
@@ -155,8 +164,9 @@ class CalendarController {
     this.log("Initializing GIS client...");
     
     try {
+      // Here's the fix - use CLIENT_ID instead of GOOGLE_CLIENT_ID
       this.tokenClient = window.google.accounts.oauth2.initTokenClient({
-        client_id: this.GOOGLE_CLIENT_ID,
+        client_id: this.CLIENT_ID,  // Changed from this.GOOGLE_CLIENT_ID
         scope: 'https://www.googleapis.com/auth/calendar.readonly',
         callback: (resp) => this.handleTokenResponse(resp),
       });
@@ -200,20 +210,57 @@ class CalendarController {
   }
 
   /**
-   * Request access token from Google
+   * Request access token from Google with better error handling
    */
-  signIn() {
+  async signIn() {
     this.log("Requesting access token...");
     
+    // Check if SCOPES is defined
+    if (!this.SCOPES || !Array.isArray(this.SCOPES)) {
+      this.SCOPES = [
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/calendar.events'
+      ];
+      this.log("SCOPES was undefined, created default scopes");
+    }
+    
+    // Check if APIs are initialized
     if (!this.gapiInited || !this.gisInited) {
-      const error = "Google APIs are not fully initialized";
-      this.log(error);
-      this.listeners.onError?.(error);
+      this.log("APIs not fully initialized, attempting to initialize now...");
+      
+      try {
+        // Try to initialize before signing in
+        await this.initialize();
+        
+        // Double-check initialization status after attempt
+        if (!this.gapiInited || !this.gisInited) {
+          const error = "Failed to initialize Google APIs";
+          this.log(error);
+          this.listeners.onError?.(error);
+          return false;
+        }
+      } catch (error) {
+        this.log(`Initialization failed: ${error.message}`);
+        this.listeners.onError?.(`Failed to initialize: ${error.message}`);
+        return false;
+      }
+    }
+  
+    try {
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: this.CLIENT_ID,
+        scope: this.SCOPES.join(' '),
+        callback: (resp) => this.handleTokenResponse(resp)
+      });
+      
+      // Request token
+      client.requestAccessToken();
+      return true;
+    } catch (error) {
+      this.log(`Error requesting token: ${error.message}`);
+      this.listeners.onError?.(`Error requesting access: ${error.message}`);
       return false;
     }
-
-    this.tokenClient.requestAccessToken();
-    return true;
   }
 
   /**
@@ -529,6 +576,138 @@ class CalendarController {
       this.log('Token removed from local storage');
     } catch (error) {
       this.log(`Failed to remove token: ${error.message}`);
+    }
+  }
+
+  /**
+   * Find or create "The Quad" calendar
+   * @returns {Promise<string>} The calendar ID
+   */
+  async findOrCreateQuadCalendar() {
+    try {
+      this.log("Looking for 'The Quad' calendar...");
+      
+      if (!this.isAuthenticated) {
+        throw new Error("User is not authenticated with Google Calendar");
+      }
+      
+      // First check if "The Quad" calendar already exists
+      const response = await window.gapi.client.calendar.calendarList.list();
+      const calendars = response.result.items || [];
+      
+      // Look for a calendar named "The Quad"
+      const quadCalendar = calendars.find(cal => cal.summary === "The Quad");
+      
+      if (quadCalendar) {
+        this.log("Found existing 'The Quad' calendar");
+        return quadCalendar.id;
+      }
+      
+      // If not found, create it
+      this.log("Creating 'The Quad' calendar...");
+      const newCalendar = await window.gapi.client.calendar.calendars.insert({
+        resource: {
+          summary: "The Quad",
+          description: "Events from The Quad campus platform",
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
+      });
+      
+      this.log("'The Quad' calendar created successfully");
+      return newCalendar.result.id;
+    } catch (error) {
+      this.log(`Error finding/creating 'The Quad' calendar: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Add an event to "The Quad" calendar
+   * @param {Object} eventData The event data from The Quad
+   * @returns {Promise<Object>} The created calendar event
+   */
+  async addRsvpToCalendar(eventData) {
+    try {
+      this.log("Adding RSVP'd event to Google Calendar...");
+      
+      if (!this.isAuthenticated) {
+        throw new Error("User is not authenticated with Google Calendar");
+      }
+      
+      // Find or create "The Quad" calendar
+      const calendarId = await this.findOrCreateQuadCalendar();
+      
+      // Format the event for Google Calendar
+      const googleEvent = this.formatQuadRsvpForGoogle(eventData);
+      
+      // Add the event to the calendar
+      const response = await window.gapi.client.calendar.events.insert({
+        calendarId: calendarId,
+        resource: googleEvent
+      });
+      
+      this.log("Event added to Google Calendar successfully");
+      return response.result;
+    } catch (error) {
+      this.log(`Error adding event to calendar: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Format a RSVP'd event for Google Calendar
+   * @param {Object} eventData The event data from RSVP
+   */
+  formatQuadRsvpForGoogle(eventData) {
+    // Create a location string from available data
+    const location = eventData.customLocation || eventData.landmarkName || '';
+    
+    // Create a description that includes the original event and RSVP details
+    let description = eventData.description || '';
+    description += `\n\nRSVP'd via The Quad campus platform.`;
+    if (eventData.organizationName) {
+      description += `\nHosted by: ${eventData.organizationName}`;
+    }
+    
+    return {
+      summary: eventData.title,
+      description: description,
+      location: location,
+      start: {
+        dateTime: new Date(eventData.startDate).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      },
+      end: {
+        dateTime: new Date(eventData.endDate).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      },
+      colorId: "5", // A purple color in Google Calendar
+      // Add reminders
+      reminders: {
+        useDefault: false,
+        overrides: [
+          {method: 'popup', minutes: 30},
+          {method: 'email', minutes: 60 * 24} // 1 day before
+        ]
+      }
+    };
+  }
+
+  /**
+   * Add a method to ensure initialization is complete
+   */
+  async ensureInitialized() {
+    if (this.gapiInited && this.gisInited) {
+      return true;
+    }
+    
+    this.log("APIs not fully initialized, initializing now...");
+    try {
+      await this.initialize();
+      return this.gapiInited && this.gisInited;
+    } catch (error) {
+      this.log(`Initialization failed: ${error.message}`);
+      return false;
     }
   }
 }
