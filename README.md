@@ -113,16 +113,44 @@ the-quad/
 ├── client/                   # React front-end
 │   ├── public/
 │   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── services/         # API calls
+│       ├── components/       # React UI components
+│       ├── pages/            # Page-level components
+│       ├── controllers/      # Backend logic controllers
+│       │   ├── AdminController.js
+│       │   ├── EventController.js
+│       │   ├── OrganizationController.js
+│       │   └── UserController.js
+│       ├── services/         # Backend services
+│       │   └── BackendService.js  # Database and storage operations
+│       ├── utils/            # Utility functions and helpers
+│       │   ├── auth.js       # Authentication utilities
+│       │   └── formData.js   # Form data processing
 │       └── App.js
-├── client/src/worker.js      # Cloudflare Worker entry point
+├── client/src/worker.js      # Cloudflare Worker entry point (route definitions)
 ├── wrangler.toml             # Cloudflare Workers configuration
 ├── backend_info.md           # Backend documentation
 ├── README.md                 # This file
 └── package.json              # Root-level package configuration
 ```
+
+### Backend Architecture
+The application uses a modular backend architecture:
+
+- **Controllers**: Handle domain-specific logic and API endpoints (organizations, events, users, admin)
+- **Services**: Abstract database operations through BackendService for D1 (SQL) and R2 (object storage)
+- **Utils**: Cross-cutting concerns like authentication and form processing
+- **Worker.js**: Entry point that routes requests to appropriate controller methods
+
+The worker routes HTTP requests to controller methods based on URL patterns, with each controller responsible for its own domain operations (CRUD, validation, business logic). Controllers use BackendService for database operations and other services as needed.
+
+Database tables include:
+- USERS: User accounts and profiles
+- ORGANIZATION: Organization details and metadata  
+- ORG_ADMIN/ORG_MEMBER: Organization roles and memberships
+- EVENT: Event details and scheduling
+- EVENT_RSVP/EVENT_ADMIN: Event participation and management
+- OFFICIAL/OFFICIAL_PENDING: Status tracking for official recognition
+- STAFF: User accounts that are The Quad Staff
 
 ## <a name="contributing"></a>Contributing
 To contribute, follow these steps:
