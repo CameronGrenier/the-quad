@@ -29,19 +29,27 @@
 .view-toggle {
   display: flex;
   margin-right: 15px;
+  background-color: rgba(50, 50, 70, 0.5);
+  border-radius: 5px;
+  padding: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .view-toggle button {
-  padding: 6px 12px;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  cursor: pointer;
+  padding: 7px 14px;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 3px;
+  margin: 0;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .view-toggle button.active {
-  background: #4285f4;
+  background: linear-gradient(135deg, #7d4cdb 0%, #5a3db5 100%);
   color: white;
-  border-color: #3367d6;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .view-toggle button:first-child {
@@ -506,4 +514,219 @@
 
 .fc .fc-list-empty {
   background-color: rgba(40, 40, 55, 0.7);
+}
+
+/* Add these styles for the events list */
+
+.events-list-wrapper {
+  background: rgba(30, 30, 40, 0.8);
+  border-radius: 8px;
+  padding: 15px;
+  color: white;
+}
+
+.events-list-wrapper h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: white;
+}
+
+.events-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.event-list-item {
+  display: flex;
+  margin-bottom: 15px;
+  padding: 12px;
+  background: rgba(50, 50, 70, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.event-list-item:hover {
+  background: rgba(60, 60, 85, 0.8);
+  transform: translateY(-2px);
+}
+
+.event-color {
+  width: 6px;
+  min-width: 6px;
+  border-radius: 3px;
+  margin-right: 12px;
+}
+
+.event-details {
+  flex-grow: 1;
+}
+
+.event-title {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.event-time {
+  margin: 0 0 5px 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.event-calendar {
+  margin: 0 0 5px 0;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.event-location {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.no-events {
+  padding: 15px;
+  text-align: center;
+  background: rgba(50, 50, 70, 0.3);
+  border-radius: 6px;
+  margin: 0;
+}
+
+/* Updated button styling */
+
+/* Common button styles */
+.auth-buttons button,
+.view-toggle button {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: white;
+  letter-spacing: 0.3px;
+}
+
+/* View toggle buttons */
+.view-toggle {
+  display: flex;
+  margin-right: 15px;
+  background-color: rgba(50, 50, 70, 0.5);
+  border-radius: 5px;
+  padding: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.view-toggle button {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 3px;
+  margin: 0;
+  padding: 7px 14px;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.view-toggle button:hover {
+  background-color: rgba(125, 76, 219, 0.3);
+  color: white;
+}
+
+.view-toggle button.active {
+  background: linear-gradient(135deg, #7d4cdb 0%, #5a3db5 100%);
+  color: white;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Connect/Disconnect button */
+.auth-buttons > button {
+  background: linear-gradient(135deg, #7d4cdb 0%, #5a3db5 100%);
+  color: white;
+  border: none;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.auth-buttons > button:hover {
+  background: linear-gradient(135deg, #8d5ce6 0%, #6a4dc5 100%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.auth-buttons > button:active {
+  background: linear-gradient(135deg, #6a3db8 0%, #4a2d95 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transform: translateY(1px);
+}
+
+/* Add an icon to the Connect button */
+.auth-buttons > button::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5v-5z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  margin-right: 8px;
+}
+
+/* Add icon for disconnect button */
+.auth-buttons > button.disconnect::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* Error message and button */
+.error-message {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background-color: rgba(220, 53, 69, 0.2);
+  border-radius: 6px;
+  color: white;
+}
+
+.error-message p {
+  margin: 0;
+}
+
+.error-message button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.error-message button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Connect message */
+.connect-message {
+  text-align: center;
+  padding: 30px;
+  background: rgba(30, 30, 40, 0.8);
+  border-radius: 8px;
+  color: white;
+}
+
+.connect-message p {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
 }

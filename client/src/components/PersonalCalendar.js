@@ -24,8 +24,7 @@ function PersonalCalendar() {
   const [selectedCalendars, setSelectedCalendars] = useState({});
   
   // UI state
-  const [viewMode, setViewMode] = useState('calendar');
-  const [calendarView, setCalendarView] = useState('dayGridMonth');
+  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'list'
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -180,11 +179,6 @@ function PersonalCalendar() {
     setShowEventDetails(true);
   };
 
-  // Switch views
-  const handleViewChange = (viewName) => {
-    setCalendarView(viewName);
-  };
-
   return (
     <div className="personal-calendar-container">
       <div className="calendar-header">
@@ -194,19 +188,13 @@ function PersonalCalendar() {
             <div className="view-toggle">
               <button 
                 className={viewMode === 'list' ? 'active' : ''} 
-                onClick={() => {
-                  setViewMode('list');
-                  setCalendarView('listMonth');
-                }}
+                onClick={() => setViewMode('list')}
               >
                 List View
               </button>
               <button 
                 className={viewMode === 'calendar' ? 'active' : ''} 
-                onClick={() => {
-                  setViewMode('calendar');
-                  setCalendarView('dayGridMonth');
-                }}
+                onClick={() => setViewMode('calendar')}
               >
                 Calendar View
               </button>
@@ -262,68 +250,83 @@ function PersonalCalendar() {
                 </li>
               ))}
             </ul>
-            
-            <div className="calendar-view-selector">
-              <h3>Calendar Views</h3>
-              <ul className="view-selector-list">
-                <li>
-                  <button 
-                    className={calendarView === 'dayGridMonth' ? 'active' : ''} 
-                    onClick={() => handleViewChange('dayGridMonth')}
-                  >
-                    Month
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    className={calendarView === 'timeGridWeek' ? 'active' : ''} 
-                    onClick={() => handleViewChange('timeGridWeek')}
-                  >
-                    Week
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    className={calendarView === 'timeGridDay' ? 'active' : ''} 
-                    onClick={() => handleViewChange('timeGridDay')}
-                  >
-                    Day
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    className={calendarView === 'listMonth' ? 'active' : ''} 
-                    onClick={() => handleViewChange('listMonth')}
-                  >
-                    List
-                  </button>
-                </li>
-              </ul>
-            </div>
           </div>
           
           <div className="calendar-content">
-            <div className="full-calendar-wrapper">
-              <FullCalendar
-                plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
-                initialView={calendarView}
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: ''
-                }}
-                events={filteredEvents}
-                eventClick={handleEventClick}
-                height="600px"
-                dayMaxEvents={true}
-                nowIndicator={true}
-                eventTimeFormat={{
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  meridiem: 'short'
-                }}
-              />
-            </div>
+            {viewMode === 'calendar' ? (
+              <div className="full-calendar-wrapper">
+                <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  headerToolbar={{
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: ''
+                  }}
+                  events={filteredEvents}
+                  eventClick={handleEventClick}
+                  height="600px"
+                  dayMaxEvents={true}
+                  nowIndicator={true}
+                  eventTimeFormat={{
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    meridiem: 'short'
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="events-list-wrapper">
+                <h3>Upcoming Events</h3>
+                {filteredEvents.length === 0 ? (
+                  <p className="no-events">No events found</p>
+                ) : (
+                  <ul className="events-list">
+                    {/* Sort events by start time */}
+                    {filteredEvents
+                      .sort((a, b) => new Date(a.start) - new Date(b.start))
+                      .map(event => (
+                        <li 
+                          key={event.id} 
+                          className="event-list-item"
+                          onClick={() => {
+                            setSelectedEvent({
+                              id: event.id,
+                              title: event.title,
+                              start: event.start,
+                              end: event.end,
+                              allDay: event.allDay,
+                              calendarId: event.extendedProps?.calendarId,
+                              calendarName: event.extendedProps?.calendarName,
+                              backgroundColor: event.backgroundColor,
+                              description: event.extendedProps?.description,
+                              location: event.extendedProps?.location
+                            });
+                            setShowEventDetails(true);
+                          }}
+                        >
+                          <div 
+                            className="event-color" 
+                            style={{ backgroundColor: event.backgroundColor }}
+                          ></div>
+                          <div className="event-details">
+                            <h4 className="event-title">{event.title}</h4>
+                            <p className="event-time">
+                              {event.allDay 
+                                ? moment(event.start).format('MMM D, YYYY') + ' (All day)' 
+                                : moment(event.start).format('MMM D, YYYY, h:mm A')}
+                            </p>
+                            <p className="event-calendar">{event.extendedProps?.calendarName}</p>
+                            {event.extendedProps?.location && (
+                              <p className="event-location">📍 {event.extendedProps.location}</p>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
