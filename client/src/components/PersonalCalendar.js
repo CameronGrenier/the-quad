@@ -257,7 +257,7 @@ function PersonalCalendar() {
                       className="calendar-color" 
                       style={{ backgroundColor: calendar.color }}
                     ></span>
-                    {calendar.name}
+                    <span className="calendar-name">{calendar.name}</span>
                   </label>
                 </li>
               ))}
