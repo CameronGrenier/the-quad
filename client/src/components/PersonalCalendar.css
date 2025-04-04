@@ -83,6 +83,7 @@
   background: transparent; /* Make it transparent to let the calendar wrapper handle styling */
   border-radius: 4px;
   width: calc(100% - 240px); /* Account for sidebar width + gap */
+  height: auto; /* Allow content to determine height */
 }
 
 /* Ensure the calendar itself gets appropriate width */
@@ -92,6 +93,8 @@
   border-radius: 8px;
   width: 100%; /* Make sure it takes full width of parent */
   box-sizing: border-box;
+  height: auto; /* Allow it to grow with the calendar */
+  min-height: 850px; /* Account for padding + calendar height */
 }
 
 /* Calendar list */
@@ -523,6 +526,9 @@
   border-radius: 8px;
   padding: 15px;
   color: white;
+  min-height: 800px; /* Match calendar height */
+  max-height: 800px; /* Prevent excessive growth */
+  overflow-y: auto; /* Add scrolling for many events */
 }
 
 .events-list-wrapper h3 {
@@ -537,6 +543,8 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  max-height: 730px; /* Leave room for header */
+  overflow-y: auto;
 }
 
 .event-list-item {

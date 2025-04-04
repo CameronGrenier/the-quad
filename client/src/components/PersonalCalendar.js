@@ -265,7 +265,7 @@ function PersonalCalendar() {
                   }}
                   events={filteredEvents}
                   eventClick={handleEventClick}
-                  height="600px"
+                  height="800px"
                   dayMaxEvents={true}
                   nowIndicator={true}
                   eventTimeFormat={{
