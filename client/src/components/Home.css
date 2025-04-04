@@ -1540,3 +1540,86 @@ body {
     padding: 0 10px;
   }
 }
+
+/* Add these styles to your Home.css file */
+
+.calendar-section {
+  margin-bottom: 40px;
+  padding: 0 20px;
+}
+
+.calendar-container {
+  background: linear-gradient(135deg, rgba(35, 20, 65, 0.95), rgba(55, 30, 100, 0.85));
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(70, 40, 150, 0.3);
+  padding: 20px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(124, 77, 255, 0.2);
+}
+
+.calendar-container:hover {
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 2px rgba(124, 77, 255, 0.4);
+  transform: translateY(-5px);
+}
+
+/* Calendar styling overrides for dark theme */
+.calendar-container .fc {
+  --fc-page-bg-color: transparent;
+  --fc-border-color: rgba(255, 255, 255, 0.1);
+  --fc-neutral-bg-color: rgba(255, 255, 255, 0.05);
+  --fc-event-border-color: #7c4dff;
+  --fc-event-bg-color: rgba(124, 77, 255, 0.8);
+  --fc-event-selected-overlay-color: rgba(255, 255, 255, 0.2);
+  --fc-today-bg-color: rgba(124, 77, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-container .fc-theme-standard td, 
+.calendar-container .fc-theme-standard th,
+.calendar-container .fc-theme-standard .fc-scrollgrid {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.calendar-container .fc-button-primary {
+  background: rgba(124, 77, 255, 0.8);
+  border-color: rgba(124, 77, 255, 0.5);
+}
+
+.calendar-container .fc-button-primary:not(:disabled):hover {
+  background: rgba(145, 104, 255, 1);
+  border-color: rgba(145, 104, 255, 0.8);
+}
+
+.calendar-container .fc-button-primary:not(:disabled).fc-button-active,
+.calendar-container .fc-button-primary:not(:disabled):active {
+  background: #6535c9;
+  border-color: #5a2db8;
+}
+
+.calendar-container .fc-daygrid-day-number,
+.calendar-container .fc-col-header-cell-cushion {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-container .fc-daygrid-day.fc-day-today {
+  background-color: rgba(124, 77, 255, 0.15);
+}
+
+/* Override calendar text styles to be visible on dark background */
+.calendar-container .fc-event-title,
+.calendar-container .fc-event-time {
+  color: white;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .calendar-container {
+    padding: 10px;
+  }
+}

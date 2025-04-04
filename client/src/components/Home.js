@@ -6,8 +6,8 @@ import Footer from './Footer';
 import MarkdownRenderer from './MarkdownRenderer';
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+import PersonalCalendar from './PersonalCalendar';
+import { API_URL } from '../config/constants';
 
 function Home() {
   const { currentUser } = useAuth();
@@ -473,6 +473,25 @@ function Home() {
             </Carousel>
           )}
         </section>
+
+        {/* Calendar Section - Only visible to logged in users */}
+        {currentUser && (
+          <section className="calendar-section">
+            <div className="section-header">
+              <h2>Your Calendar</h2>
+              <Link to="/calendar" className="view-all-link">View Full Calendar</Link>
+            </div>
+            
+            <div className="calendar-container">
+              <PersonalCalendar 
+                compact={true} 
+                height="500px"
+                defaultView="dayGridMonth"
+                limit={5}
+              />
+            </div>
+          </section>
+        )}
       </div>
       
       <Footer />
