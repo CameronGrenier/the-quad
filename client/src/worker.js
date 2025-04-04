@@ -81,7 +81,8 @@ export default {
         return await orgCtrl.getOrganizationEvents(orgId);
       }
       if (path.match(/^\/api\/organizations\/\d+\/members$/) && request.method === "GET") {
-        const orgId = parseInt(path.split('/').pop());
+        const parts = path.split('/');
+        const orgId = parseInt(parts[3]); // This gets the orgId from the URL
         return await orgCtrl.getOrganizationMembers(orgId, request);
       }
       if (path.match(/^\/api\/organizations\/\d+\/members\/\d+$/) && request.method === "DELETE") {
@@ -91,7 +92,8 @@ export default {
         return await orgCtrl.removeMember(orgId, memberId, request);
       }
       if (path.match(/^\/api\/organizations\/\d+\/admins$/) && request.method === "POST") {
-        const orgId = parseInt(path.split('/').pop());
+        const parts = path.split('/');
+        const orgId = parseInt(parts[3]); // This gets the orgId properly
         return await orgCtrl.addAdmin(orgId, request);
       }
       if (path.match(/^\/api\/organizations\/\d+\/admins\/\d+$/) && request.method === "DELETE") {
@@ -211,7 +213,7 @@ export default {
       if (path === "/api/official-events" && request.method === "GET") {
         return await eventCtrl.getOfficialEvents(request);
       }
-      
+
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });
     } catch (error) {
       return new Response(JSON.stringify({ error: "Server error", message: error.message }),

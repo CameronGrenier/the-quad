@@ -6,56 +6,11 @@ import CustomSelect from './CustomSelect';
 import MarkdownRenderer from './MarkdownRenderer';
 import ImageLoader from './ImageLoader';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
-
-// Update the fetchAlternativeMembersList function to extract members better
-
-async function fetchAlternativeMembersList(orgId) {
-  try {
-    console.log("Using fallback method to get members");
-    
-    // Try to get organization data that might include admins
-    const response = await fetch(`${API_URL}/api/organizations/${orgId}`);
-    
-    if (!response.ok) {
-      console.error("Failed to fetch organization data for fallback", response.status);
-      return [];
-    }
-    
-    const data = await response.json();
-    if (!data.success) {
-      console.error("API returned unsuccessful response", data.error);
-      return [];
-    }
-    
-    const organization = data.organization;
-    
-    // Start with admins, which should definitely be present
-    const admins = organization.admins || [];
-    
-    // Map to consistent format
-    const formattedAdmins = admins.map(admin => ({
-      userID: admin.id || admin.userID,
-      firstName: admin.firstName || admin.f_name || '',
-      lastName: admin.lastName || admin.l_name || '',
-      email: admin.email || '',
-      profileImage: admin.profileImage || admin.profile_picture || null,
-      isAdmin: true
-    }));
-    
-    console.log(`Found ${formattedAdmins.length} admins to use as fallback members`);
-    return formattedAdmins;
-    
-  } catch (error) {
-    console.error("Error in fallback members fetch:", error);
-    return [];
-  }
-}
-
 function EditOrganization() {
   const { orgId } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
   
   // Organization data
   const [organization, setOrganization] = useState(null);
@@ -95,117 +50,185 @@ function EditOrganization() {
   const [removingMemberId, setRemovingMemberId] = useState(null);
   const [removingAdminId, setRemovingAdminId] = useState(null);
 
-  // Format image URLs
+  // Format image URLs - keep this inside the component
   const formatImageUrl = (url) => {
     if (!url) return null;
+    
     if (url === '') return null;
     
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      if (url.includes('r2.cloudflarestorage.com')) {
-        const pathMatch = url.match(/\/images\/(.+)$/);
-        if (pathMatch && pathMatch[1]) {
-          return `${API_URL}/images/${pathMatch[1]}`;
-        }
-      }
       return url;
     }
     
     if (url.startsWith('/images/')) {
-      return `${API_URL}${url}`;
+      const pathSegments = url.substring(8).split('/');
+      const encodedPath = pathSegments
+        .map(segment => encodeURIComponent(segment))
+        .join('/');
+      return `${API_URL}/images/${encodedPath}`;
     }
     
-    return `${API_URL}/images/${url}`;
+    return `${API_URL}/images/${encodeURIComponent(url)}`;
   };
-  
+
+  // Function to fetch organization members - moved inside component
+  const fetchMembers = async (orgId) => {
+    try {
+      console.log("Fetching members for organization:", orgId);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Log the request details
+      console.log(`Making request to ${API_URL}/api/organizations/${orgId}/members with token: ${token.substring(0, 15)}...`);
+      
+      const response = await fetch(`${API_URL}/api/organizations/${orgId}/members`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        let errorText;
+        try {
+          // Try to get response body for better debugging
+          const errorBody = await response.text();
+          console.error("Error response body:", errorBody);
+          errorText = errorBody;
+        } catch (e) {
+          errorText = "Could not extract error details";
+        }
+        throw new Error(`Failed to fetch members: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("Members data:", JSON.stringify(data));
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch members');
+      }
+
+      return data.members;
+    } catch (error) {
+      console.error("Error fetching members:", error);
+      setMemberFetchError(true);
+      // Fall back to alternative method
+      return fetchAlternativeMembersList(orgId);
+    }
+  };
+
+  // Fallback method to get members - moved inside component
+  const fetchAlternativeMembersList = async (orgId) => {
+    console.log("Using fallback method to get members");
+    try {
+      const token = localStorage.getItem('token');
+      
+      const orgResponse = await fetch(`${API_URL}/api/organizations/${orgId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!orgResponse.ok) {
+        return [];
+      }
+      
+      const orgData = await orgResponse.json();
+      if (!orgData.success || !orgData.organization || !orgData.organization.admins) {
+        return [];
+      }
+      
+      // Use admins as a fallback member list
+      const adminList = orgData.organization.admins;
+      console.log(`Found ${adminList.length} admins to use as fallback members`);
+      return adminList;
+    } catch (error) {
+      console.error("Error in fallback member fetch:", error);
+      return [];
+    }
+  };
+
+  // Function to fetch organization data - moved inside component
+  const fetchOrganizationData = async () => {
+    try {
+      setLoading(true); // Now accessible since we're inside the component
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication required. Please log in.');
+        navigate('/login');
+        return;
+      }
+      
+      // Fetch organization details
+      const orgResponse = await fetch(`${API_URL}/api/organizations/${orgId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!orgResponse.ok) {
+        throw new Error(`Failed to fetch organization: ${orgResponse.status}`);
+      }
+      
+      const orgData = await orgResponse.json();
+      if (!orgData.success) {
+        throw new Error(orgData.error || 'Failed to fetch organization');
+      }
+      
+      const organization = orgData.organization;
+      setOrganization(organization);
+      
+      // Set initial form data
+      setFormData({
+        name: organization.name || '',
+        description: organization.description || '',
+        privacy: organization.privacy || 'public',
+        thumbnail: null,
+        banner: null
+      });
+      
+      // Set preview images if available
+      if (organization.thumbnail) {
+        setThumbnailPreview(formatImageUrl(organization.thumbnail));
+      }
+      
+      if (organization.banner) {
+        setBannerPreview(formatImageUrl(organization.banner));
+      }
+      
+      // Fetch members with proper authentication
+      try {
+        const membersList = await fetchMembers(orgId);
+        setMembers(membersList);
+      } catch (memberError) {
+        console.error("Members API not available, trying alternative method", memberError);
+        const fallbackMembers = await fetchAlternativeMembersList(orgId);
+        setMembers(fallbackMembers);
+      }
+      
+      // Extract admins from the organization data
+      if (organization.admins) {
+        setAdmins(organization.admins);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching organization:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Check if user is admin and load organization data
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
       return;
-    }
-    
-    async function fetchOrganizationData() {
-      try {
-        setLoading(true);
-        
-        // Fetch organization details
-        const response = await fetch(`${API_URL}/api/organizations/${orgId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch organization details');
-        }
-        
-        const data = await response.json();
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to load organization');
-        }
-        
-        // Verify current user is an admin
-        const currentUserId = currentUser?.id || currentUser?.userID;
-        const isAdmin = data.organization.admins?.some(
-          admin => (admin.id === currentUserId || admin.userID === currentUserId)
-        );
-        
-        if (!isAdmin) {
-          navigate(`/organizations/${orgId}`);
-          return;
-        }
-        
-        setOrganization(data.organization);
-        setAdmins(data.organization.admins || []);
-        
-        // Set form data
-        setFormData({
-          name: data.organization.name || '',
-          description: data.organization.description || '',
-          privacy: data.organization.privacy || 'public',
-          thumbnail: null,
-          banner: null
-        });
-        
-        // Set image previews
-        if (data.organization.thumbnail) {
-          setThumbnailPreview(formatImageUrl(data.organization.thumbnail));
-        }
-        
-        if (data.organization.banner) {
-          setBannerPreview(formatImageUrl(data.organization.banner));
-        }
-        
-        // Fetch members - try multiple approaches
-        try {
-          // First try the dedicated members endpoint
-          const membersResponse = await fetch(`${API_URL}/api/organizations/${orgId}/members`);
-          if (membersResponse.ok) {
-            const membersData = await membersResponse.json();
-            if (membersData.success) {
-              setMembers(membersData.members || []);
-              setMemberFetchError(false);
-              return; // Stop here if successful
-            }
-          }
-          
-          // If that fails, try an alternative approach
-          console.log("Members API not available, trying alternative method");
-          const alternativeMembers = await fetchAlternativeMembersList(orgId);
-          if (alternativeMembers.length > 0) {
-            setMembers(alternativeMembers);
-            setMemberFetchError(false);
-            return; // Stop here if successful
-          }
-          
-          // If all attempts fail, use the fallback
-          setMemberFetchError(true);
-          console.log("All member fetch attempts failed, using email fallback");
-        } catch (memberError) {
-          setMemberFetchError(true);
-          console.log("Error fetching members:", memberError);
-        }
-      } catch (error) {
-        console.error('Error loading organization:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
     }
     
     fetchOrganizationData();
@@ -217,32 +240,35 @@ function EditOrganization() {
 
   // Update available members
   const updateAvailableMembers = () => {
-    const adminUserIds = admins.map(admin => admin.userID || admin.id);
-    const filteredMembers = members.filter(member => 
-      !adminUserIds.includes(member.userID || member.id)
+    // Filter out members who are already admins
+    const adminIds = admins.map(admin => admin.id || admin.userID);
+    const available = members.filter(member => 
+      !adminIds.includes(member.userID) && !adminIds.includes(member.id)
     );
-    setAvailableMembers(filteredMembers);
+    setAvailableMembers(available);
   };
 
   // Form change handlers
   const handleChange = (e) => {
-    const { name, value, type, files } = e.target;
+    const { name, value, files } = e.target;
     
-    if (type === 'file') {
-      const file = files[0];
+    if (files) {
       setFormData(prev => ({
         ...prev,
-        [name]: file
+        [name]: files[0]
       }));
       
-      // Create preview URL
-      if (file) {
-        const previewUrl = URL.createObjectURL(file);
-        if (name === 'thumbnail') {
-          setThumbnailPreview(previewUrl);
-        } else if (name === 'banner') {
-          setBannerPreview(previewUrl);
-        }
+      // Create preview for images
+      if (name === 'thumbnail' || name === 'banner') {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (name === 'thumbnail') {
+            setThumbnailPreview(reader.result);
+          } else {
+            setBannerPreview(reader.result);
+          }
+        };
+        reader.readAsDataURL(files[0]);
       }
     } else {
       setFormData(prev => ({
@@ -705,12 +731,12 @@ function EditOrganization() {
               ) : (
                 <div className="members-list">
                   {members.map(member => (
-                    <div key={member.userID} className="member-item">
+                    <div key={member.userID || member.id} className="member-item">
                       <div className="member-info">
                         <div className="member-avatar">
                           {member.profileImage ? (
                             <ImageLoader 
-                              src={member.profileImage} 
+                              src={formatImageUrl(member.profileImage)} 
                               alt={`${member.firstName} ${member.lastName}`} 
                             />
                           ) : (
@@ -730,9 +756,9 @@ function EditOrganization() {
                         disabled={removingMemberId === member.userID}
                       >
                         {removingMemberId === member.userID ? (
-                          <span className="spinner"></span>
+                          <span className="spinner small"></span>
                         ) : (
-                          <i className="fas fa-user-minus"></i>
+                          <i className="fas fa-times"></i>
                         )}
                         Remove
                       </button>
