@@ -1,7 +1,11 @@
 .personal-calendar-container {
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;  /* Make container full width */
+  max-width: 100%; /* Override the max-width restriction */
+  margin: 0;  /* Remove auto margins */
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+  color: white;
 }
 
 .calendar-header {
@@ -11,30 +15,82 @@
   margin-bottom: 20px;
 }
 
-.calendar-sidebar {
-  margin-bottom: 20px;
+.calendar-header h2 {
+  margin: 0;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-.error-message {
-  padding: 10px;
-  background-color: #ffdddd;
-  border: 1px solid #f44336;
-  border-radius: 4px;
-  margin-bottom: 20px;
+.auth-buttons {
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 
-.loading {
-  padding: 20px;
-  text-align: center;
-  color: #666;
+.view-toggle {
+  display: flex;
+  margin-right: 15px;
 }
 
+.view-toggle button {
+  padding: 6px 12px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.view-toggle button.active {
+  background: #4285f4;
+  color: white;
+  border-color: #3367d6;
+}
+
+.view-toggle button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.view-toggle button:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+/* Layout with sidebar - adjust width proportions */
+.calendar-layout {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.calendar-sidebar {
+  width: 220px;
+  min-width: 220px;
+  flex-shrink: 0;
+  flex-basis: 220px;
+  max-width: 220px;
+}
+
+.calendar-content {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-width: 0; /* This is crucial for flexbox to respect container width */
+  background: transparent; /* Make it transparent to let the calendar wrapper handle styling */
+  border-radius: 4px;
+  width: calc(100% - 240px); /* Account for sidebar width + gap */
+}
+
+/* Ensure the calendar itself gets appropriate width */
+.full-calendar-wrapper {
+  padding: 15px;
+  background: rgba(30, 30, 40, 0.8);
+  border-radius: 8px;
+  width: 100%; /* Make sure it takes full width of parent */
+  box-sizing: border-box;
+}
+
+/* Calendar list */
 .calendar-list {
   list-style: none;
   padding: 0;
+  margin: 0 0 20px 0;
 }
 
 .calendar-item {
@@ -45,6 +101,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  color: white;
+  font-weight: 500;
 }
 
 .calendar-color {
@@ -54,43 +113,380 @@
   border-radius: 2px;
 }
 
-.events-list ul {
-  padding: 0;
-  list-style: none;
-}
-
-.event-item {
-  padding: 12px 15px;
-  margin-bottom: 10px;
-  border-radius: 4px;
-  background-color: #f5f5f5;
-}
-
-.event-item h4 {
+/* View selector */
+.calendar-view-selector h3 {
   margin-top: 0;
-  margin-bottom: 5px;
 }
 
-.event-time {
-  color: #666;
-  font-size: 0.9em;
-  margin-bottom: 5px;
+.view-selector-list {
+  list-style: none;
+  padding: 0;
 }
 
-.event-calendar {
-  color: #666;
-  font-size: 0.9em;
-  margin-bottom: 5px;
-}
-
-.event-location, .event-description {
-  font-size: 0.9em;
-  margin-top: 5px;
-}
-
-.connect-message {
-  text-align: center;
-  padding: 30px;
-  background-color: #f5f5f5;
+.view-selector-list button {
+  background: transparent;
+  border: 1px solid #ddd;
   border-radius: 4px;
+  padding: 5px 10px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.view-selector-list button.active {
+  background: #4285f4;
+  color: white;
+  border-color: #3367d6;
+}
+
+.view-selector-list button:hover {
+  color: white;
+  background-color: rgba(125, 76, 219, 0.4);
+}
+
+/* FullCalendar customizations */
+.full-calendar-wrapper {
+  padding: 15px;
+}
+
+/* Make sure events have proper text contrast */
+.fc-event {
+  cursor: pointer;
+}
+
+.fc-event-title {
+  font-weight: 500;
+}
+
+/* Modal for event details */
+.event-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.event-details-content {
+  width: 90%;
+  max-width: 500px;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+}
+
+.event-details-header {
+  padding: 15px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-details-header button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.event-details-body {
+  padding: 20px;
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.event-details-body p {
+  margin: 0 0 10px;
+}
+
+/* Modern dark theme for FullCalendar */
+.full-calendar-wrapper {
+  padding: 15px;
+  background: rgba(30, 30, 40, 0.8);
+  border-radius: 8px;
+}
+
+/* Calendar header styling */
+.fc .fc-toolbar {
+  margin-bottom: 1.5rem !important;
+  flex-wrap: wrap;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.5rem;
+  color: #fff;
+  font-weight: 600;
+  color: white;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.fc .fc-button-primary {
+  background-color: rgba(125, 76, 219, 0.7) !important;
+  border-color: rgba(125, 76, 219, 0.3) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+}
+
+.fc .fc-button-primary:hover {
+  background-color: rgb(125, 76, 219) !important;
+  border-color: rgb(125, 76, 219) !important;
+}
+
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: #6535c9 !important;
+  border-color: #6535c9 !important;
+}
+
+/* Calendar table styling */
+.fc .fc-view-harness {
+  background-color: rgba(40, 40, 55, 0.7);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fc .fc-scrollgrid {
+  border: none !important;
+}
+
+.fc .fc-scrollgrid-section > td {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.fc .fc-daygrid-day-frame {
+  padding: 4px;
+}
+
+/* Day headers */
+.fc .fc-col-header-cell {
+  background-color: rgba(70, 70, 90, 0.9);
+}
+
+.fc .fc-col-header-cell-cushion {
+  padding: 10px 4px;
+  color: white;
+  font-weight: 500;
+}
+
+/* Day cells */
+.fc .fc-daygrid-day {
+  background-color: rgba(50, 50, 70, 0.5);
+  transition: background-color 0.2s;
+}
+
+.fc .fc-daygrid-day:hover {
+  background-color: rgba(60, 60, 85, 0.8);
+}
+
+.fc .fc-daygrid-day-number {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  padding: 8px;
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Today highlight */
+.fc .fc-day-today {
+  background-color: rgba(125, 76, 219, 0.2) !important;
+}
+
+/* Event styling */
+.fc .fc-event {
+  border: none !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin: 1px 0;
+}
+
+.fc .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fc .fc-event-main {
+  padding: 2px 4px;
+}
+
+.fc .fc-event-time,
+.fc .fc-event-title {
+  font-weight: 500;
+}
+
+.fc .fc-event-time,
+.fc .fc-event-title-container {
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+}
+
+/* Week view specific styling */
+.fc .fc-timegrid-slot-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.fc .fc-timegrid-slot {
+  height: 40px;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.fc .fc-timegrid-now-indicator-line {
+  border-color: rgba(255, 50, 50, 0.7);
+}
+
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-timegrid-slot-label-cushion {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* List view styling */
+.fc .fc-list {
+  background-color: rgba(40, 40, 55, 0.7);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fc .fc-list-day-cushion {
+  background-color: rgba(70, 70, 90, 0.9) !important;
+  color: white;
+}
+
+.fc .fc-list-event:hover td {
+  background-color: rgba(125, 76, 219, 0.2) !important;
+}
+
+.fc .fc-list-event-dot {
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.fc .fc-list-event-title,
+.fc .fc-list-event-time {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
+}
+
+/* Calendar sidebar improvements */
+.calendar-sidebar {
+  background-color: rgba(30, 30, 40, 0.5);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.calendar-sidebar h3 {
+  color: white;
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+/* More modern checkbox styles */
+.calendar-checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.calendar-checkbox input[type="checkbox"]:checked::before {
+  content: "✓";
+  color: white;
+  font-size: 12px;
+}
+
+.calendar-checkbox input[type="checkbox"]:checked {
+  background-color: #7d4cdb;
+}
+
+/* Fix any parent containers that might constrain width */
+.fc {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.fc-view-harness {
+  width: 100% !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .calendar-layout {
+    flex-direction: column;
+  }
+  
+  .calendar-sidebar {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .calendar-content,
+  .full-calendar-wrapper {
+    width: 100%;
+  }
+
+  .fc .fc-toolbar {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .fc .fc-toolbar-chunk {
+    margin: 5px 0;
+  }
+}
+
+/* Fix month name header */
+.fc .fc-toolbar-chunk {
+  color: white;
+}
+
+/* Make week numbers visible if enabled */
+.fc .fc-daygrid-week-number {
+  color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+}
+
+/* Ensure "all-day" text is visible */
+.fc .fc-daygrid-all-day-cushion,
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-timegrid-all-day-cushion {
+  color: white;
+  font-weight: 500;
+}
+
+/* Fix "no events" or other messages */
+.fc .fc-day-today .fc-daygrid-day-number,
+.fc .fc-list-empty-cushion {
+  color: white;
+  font-weight: 600;
+}
+
+.fc .fc-list-empty {
+  background-color: rgba(40, 40, 55, 0.7);
 }
