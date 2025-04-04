@@ -65,6 +65,15 @@ function PersonalCalendar() {
         if (isSignedIn) {
           console.log("User already signed in, fetching calendar data...");
           onAuthChange(true);
+          
+          // Trigger calendar sync on load
+          try {
+            console.log("Syncing calendar on load...");
+            await calendarController.syncCalendarWithRsvp();
+            console.log("Calendar sync completed successfully");
+          } catch (syncError) {
+            console.error("Failed to sync calendar on load:", syncError);
+          }
         } else {
           console.log("User not signed in");
           onAuthChange(false);

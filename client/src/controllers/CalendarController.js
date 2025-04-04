@@ -1,3 +1,6 @@
+// Import API_URL from EventPage.js
+import { API_URL } from '../components/EventPage';
+
 /**
  * CalendarController - Manages Google Calendar integration
  */
@@ -708,6 +711,147 @@ class CalendarController {
     } catch (error) {
       this.log(`Initialization failed: ${error.message}`);
       return false;
+    }
+  }
+
+  /**
+   * Synchronize calendar events with RSVP data
+   */
+  async syncCalendarWithRsvp() {
+    try {
+      this.log("Starting calendar synchronization...");
+      
+      if (!this.isAuthenticated) {
+        throw new Error("User is not authenticated with Google Calendar");
+      }
+      
+      // Get "The Quad" calendar ID
+      const calendarId = await this.findOrCreateQuadCalendar();
+      this.log(`Using calendar ID: ${calendarId}`);
+      
+      // Fetch all events from "The Quad" calendar
+      const calendarEventsResponse = await window.gapi.client.calendar.events.list({
+        calendarId: calendarId,
+        timeMin: new Date(new Date().getTime() - 31536000000).toISOString(), // 1 year ago
+        timeMax: new Date(new Date().getTime() + 31536000000).toISOString(), // 1 year in future
+        singleEvents: true
+      });
+      
+      const calendarEvents = calendarEventsResponse.result.items || [];
+      this.log(`Found ${calendarEvents.length} events in The Quad calendar`);
+      console.log("Calendar Events:", calendarEvents);
+      
+      // Fetch all RSVP'd events from the backend
+      const rsvpEvents = await this.fetchRsvpEventsFromBackend();
+      this.log(`Fetched ${rsvpEvents.length} RSVP'd events from backend`);
+      console.log("RSVP Events:", rsvpEvents);
+      
+      // Add events that are in RSVP but not in calendar
+      for (const rsvpEvent of rsvpEvents) {
+        // Check if event exists in calendar
+        const eventExists = calendarEvents.some(calendarEvent => calendarEvent.summary === rsvpEvent.title);
+        
+        if (!eventExists) {
+          this.log(`Event "${rsvpEvent.title}" not found in calendar, adding...`);
+          try {
+            await this.addRsvpToCalendar(rsvpEvent);
+            this.log(`Successfully added event "${rsvpEvent.title}" to calendar`);
+          } catch (addError) {
+            this.log(`Failed to add event "${rsvpEvent.title}" to calendar: ${addError.message}`);
+            console.error("Add error details:", addError);
+          }
+        } else {
+          this.log(`Event "${rsvpEvent.title}" already exists in calendar`);
+        }
+      }
+      
+      // Remove events that are in calendar but not in RSVP
+      for (const calendarEvent of calendarEvents) {
+        // Check if event exists in RSVP
+        const eventExists = rsvpEvents.some(rsvpEvent => rsvpEvent.title === calendarEvent.summary);
+        
+        if (!eventExists) {
+          this.log(`Event "${calendarEvent.summary}" not found in RSVP, removing...`);
+          try {
+            await window.gapi.client.calendar.events.delete({
+              calendarId: calendarId,
+              eventId: calendarEvent.id
+            });
+            this.log(`Successfully removed event "${calendarEvent.summary}" from calendar`);
+          } catch (removeError) {
+            this.log(`Failed to remove event "${calendarEvent.summary}" from calendar: ${removeError.message}`);
+            console.error("Remove error details:", removeError);
+          }
+        } else {
+          this.log(`Event "${calendarEvent.summary}" already exists in RSVP`);
+        }
+      }
+      
+      this.log("Calendar synchronization complete");
+    } catch (error) {
+      this.log(`Calendar synchronization error: ${error.message}`);
+      console.error("Calendar sync error:", error);
+    }
+  }
+
+  /**
+   * Fetch RSVP'd events from the backend
+   * @returns {Promise<Array>} List of events
+   */
+  async fetchRsvpEventsFromBackend() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+      
+      // First try to get from the backend API endpoint
+      try {
+        this.log("Attempting to fetch from RSVP API endpoint...");
+        const response = await fetch(`${API_URL}/api/events/rsvps`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && Array.isArray(data.rsvps)) {
+            this.log(`Fetched ${data.rsvps.length} RSVP'd events from backend`);
+            console.log("RSVP Events:", data.rsvps);
+            
+            // Extract just the event data from each RSVP
+            return data.rsvps.map(rsvp => rsvp.event);
+          }
+        } else {
+          this.log(`API returned status ${response.status}, falling back to local data`);
+        }
+      } catch (fetchError) {
+        this.log(`API fetch error: ${fetchError.message}, falling back to local data`);
+      }
+      
+      // Then try to get from localStorage if API failed
+      const pendingEvent = localStorage.getItem('pendingCalendarEvent');
+      if (pendingEvent) {
+        try {
+          const eventData = JSON.parse(pendingEvent);
+          this.log("Using pending event from localStorage");
+          console.log("Using pending event:", eventData);
+          
+          // We'll keep the event in localStorage until it's successfully synced
+          
+          return [eventData];
+        } catch (parseError) {
+          this.log("Failed to parse pending event");
+        }
+      }
+      
+      this.log("No RSVP data available");
+      return [];
+    } catch (error) {
+      this.log(`Error fetching RSVP events from backend: ${error.message}`);
+      console.error("Backend fetch error:", error);
+      return [];
     }
   }
 }

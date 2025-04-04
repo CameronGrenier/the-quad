@@ -137,6 +137,11 @@ export default {
         return await eventCtrl.getUserEvents(request);
       }
       
+      // Add this route for getting user's RSVP'd events
+      if (path === "/api/events/rsvps" && request.method === "GET") {
+        return await eventCtrl.getUserRsvpEvents(request);
+      }
+      
       if (path === "/api/check-membership" && request.method === "GET") {
         return await orgCtrl.checkMembership(request);
       }
