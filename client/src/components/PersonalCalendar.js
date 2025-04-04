@@ -53,10 +53,31 @@ function PersonalCalendar() {
       onLog: (message) => console.log(message)
     });
 
-    // Initialize calendar controller
-    calendarController.initialize().catch(err => {
-      setError(`Failed to initialize calendar integration: ${err.message}`);
-    });
+    // Initialize calendar controller with persistent auth check
+    const initializeController = async () => {
+      try {
+        setLoading(true);
+        // Initialize and check existing token
+        await calendarController.initialize();
+        
+        // Check if we already have a valid token
+        const isSignedIn = await calendarController.checkIfSignedIn();
+        if (isSignedIn) {
+          console.log("User already signed in, fetching calendar data...");
+          onAuthChange(true);
+        } else {
+          console.log("User not signed in");
+          onAuthChange(false);
+        }
+      } catch (err) {
+        setError(`Failed to initialize calendar integration: ${err.message}`);
+        console.error("Calendar initialization error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeController();
     
     return () => {
       // Clean up listeners

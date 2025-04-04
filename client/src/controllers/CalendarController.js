@@ -45,6 +45,21 @@ class CalendarController {
       await this.loadGapiScript();
       // Load the GIS script
       await this.loadGisScript();
+      
+      // Try to restore token from localStorage
+      const storedToken = this.retrieveStoredToken();
+      if (storedToken && storedToken.access_token) {
+        this.log("Found stored token, attempting to restore");
+        
+        // Check if token has expired
+        if (storedToken.expires_at && Date.now() < storedToken.expires_at) {
+          window.gapi.client.setToken(storedToken);
+          this.log("Restored token from storage");
+        } else {
+          this.log("Stored token has expired");
+          this.clearStoredToken();
+        }
+      }
     } catch (error) {
       this.listeners.onError?.(error.message);
     }
@@ -169,6 +184,18 @@ class CalendarController {
     
     this.log("Successfully authenticated with Google");
     this.isAuthenticated = true;
+    
+    // Make sure we update the token in gapi client for persistence
+    if (resp.access_token) {
+      const token = {
+        access_token: resp.access_token,
+        expires_at: Date.now() + (resp.expires_in * 1000) // Convert seconds to milliseconds
+      };
+      
+      window.gapi.client.setToken(token);
+      this.storeToken(token); // Store token in localStorage
+    }
+    
     this.listeners.onAuthChange?.(true);
   }
 
@@ -200,12 +227,14 @@ class CalendarController {
       window.google.accounts.oauth2.revoke(token.access_token, () => {
         this.log("Token revoked");
         window.gapi.client.setToken('');
+        this.clearStoredToken(); // Clear from localStorage
         this.isAuthenticated = false;
         this.listeners.onAuthChange?.(false);
       });
       return true;
     } else {
       this.log("No token to revoke");
+      this.clearStoredToken(); // Clear any potential remains
       this.isAuthenticated = false;
       this.listeners.onAuthChange?.(false);
       return false;
@@ -389,6 +418,118 @@ class CalendarController {
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
       }
     };
+  }
+
+  /**
+   * Check if the user is already signed in
+   */
+  async checkIfSignedIn() {
+    try {
+      // Check if gapi client is initialized
+      if (!window.gapi || !window.gapi.client) {
+        console.log("GAPI client not initialized");
+        return false;
+      }
+      
+      // First check current token
+      let token = window.gapi.client.getToken();
+      
+      // If no token in client, check localStorage
+      if (!token) {
+        console.log("No token in client, checking localStorage");
+        const storedToken = this.retrieveStoredToken();
+        
+        if (storedToken && storedToken.access_token) {
+          console.log("Found token in localStorage");
+          
+          // Check if token has expired
+          if (storedToken.expires_at && Date.now() < storedToken.expires_at) {
+            console.log("Stored token is still valid");
+            window.gapi.client.setToken(storedToken);
+            token = storedToken;
+          } else {
+            console.log("Stored token has expired");
+            this.clearStoredToken();
+          }
+        }
+      }
+      
+      if (!token) {
+        console.log("No valid token found");
+        return false;
+      }
+      
+      console.log("Found token, verifying with API call");
+      
+      // Verify token with API call
+      try {
+        await window.gapi.client.calendar.calendarList.list({
+          maxResults: 1
+        });
+        console.log("Token verified with successful API call");
+        
+        this.isAuthenticated = true;
+        return true;
+      } catch (apiError) {
+        console.error("API call with token failed:", apiError);
+        
+        if (apiError.result && apiError.result.error && apiError.result.error.code === 401) {
+          console.log("Token is invalid or expired, clearing it");
+          window.gapi.client.setToken(null);
+          this.clearStoredToken();
+          this.isAuthenticated = false;
+          return false;
+        }
+        
+        // For other errors (network etc.), assume token is still valid
+        this.isAuthenticated = true;
+        return true;
+      }
+    } catch (error) {
+      console.error("Error checking sign-in status:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Store the token in local storage
+   */
+  storeToken(token) {
+    if (!token) return;
+    
+    try {
+      localStorage.setItem('googleCalendarToken', JSON.stringify(token));
+      this.log('Token stored in local storage');
+    } catch (error) {
+      this.log(`Failed to store token: ${error.message}`);
+    }
+  }
+
+  /**
+   * Retrieve the token from local storage
+   */
+  retrieveStoredToken() {
+    try {
+      const storedToken = localStorage.getItem('googleCalendarToken');
+      if (storedToken) {
+        return JSON.parse(storedToken);
+      }
+    } catch (error) {
+      this.log(`Failed to retrieve token: ${error.message}`);
+    }
+    return null;
+  }
+
+  /**
+   * Clear the stored token
+   */
+  clearStoredToken() {
+    try {
+      localStorage.removeItem('googleCalendarToken');
+      this.log('Token removed from local storage');
+    } catch (error) {
+      this.log(`Failed to remove token: ${error.message}`);
+    }
   }
 }
 
