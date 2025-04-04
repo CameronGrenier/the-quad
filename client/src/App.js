@@ -22,6 +22,7 @@ import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import EditOrganization from './components/EditOrganization';
 import AdminDashboard from './components/AdminDashboard';
+import PersonalCalendar from './components/PersonalCalendar';
 import './App.css';
 
 function App() {
@@ -49,7 +50,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/calendar" element={<PersonalCalendar />} />
               <Route path="/events/:id" element={<EventPage />} />
               <Route path="/register-event" element={<EventRegistration />} />
               <Route path="/register-organization" element={<OrganizationRegistration />} /> 
