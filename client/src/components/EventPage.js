@@ -395,6 +395,60 @@ const handleDeleteEvent = async () => {
   }
 };
 
+// Add these functions near the top of your EventPage component
+
+// Function to handle sharing to various platforms
+const handleShare = (platform) => {
+  console.log("handleShare triggered for platform:", platform);
+  // Get the current URL for sharing
+  const eventUrl = window.location.href;
+  const eventTitle = event.title;
+  const eventDescription = event.description ? 
+    (event.description.length > 100 ? event.description.substring(0, 100) + '...' : event.description) : 
+    'Check out this event on The Quad!';
+
+  switch (platform) {
+    case 'facebook':
+      // Open Facebook share dialog
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`, 
+        'facebook-share-dialog', 
+        'width=626,height=436');
+      break;
+    case 'twitter':
+      // Open Twitter share dialog with pre-populated content
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(eventTitle)}&url=${encodeURIComponent(eventUrl)}`,
+        'twitter-share-dialog',
+        'width=626,height=436');
+      break;
+    case 'email': {
+      // Open email client with pre-populated subject and body
+      const emailSubject = `Check out this event: ${eventTitle}`;
+      const emailBody = `${eventTitle}\n\nEvent Details: ${eventUrl}`;
+      const mailtoLink = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      console.log("Mailto link:", mailtoLink);
+      
+      window.location.href = mailtoLink;
+      break;
+    }
+    case 'link':
+      // Copy link to clipboard
+      navigator.clipboard.writeText(eventUrl)
+        .then(() => {
+          // Show temporary success message
+          setSuccessMessage('Event link copied to clipboard!');
+          setTimeout(() => setSuccessMessage(''), 3000);
+        })
+        .catch(err => {
+          console.error('Failed to copy link: ', err);
+          setError('Failed to copy link to clipboard');
+          setTimeout(() => setError(null), 3000);
+        });
+      break;
+    default:
+      break;
+  }
+};
+
   if (loading) {
     return (
       <div className="event-page-loading">
@@ -618,19 +672,32 @@ const handleDeleteEvent = async () => {
           <div className="share-card">
             <h3>Share This Event</h3>
             <div className="share-buttons">
-              <button className="share-button facebook">
+              <button 
+                className="share-button facebook"
+                onClick={() => handleShare('facebook')}
+                aria-label="Share on Facebook"
+              >
                 <i className="fab fa-facebook-f"></i>
               </button>
-              <button className="share-button twitter">
+              <button 
+                className="share-button twitter"
+                onClick={() => handleShare('twitter')}
+                aria-label="Share on Twitter"
+              >
                 <i className="fab fa-twitter"></i>
               </button>
-              <button className="share-button email">
+              <button 
+                className="share-button email"
+                onClick={() => handleShare('email')}
+                aria-label="Share via Email"
+              >
                 <i className="fas fa-envelope"></i>
               </button>
-              <button className="share-button link" onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                alert("Link copied to clipboard!");
-              }}>
+              <button 
+                className="share-button link"
+                onClick={() => handleShare('link')}
+                aria-label="Copy Link"
+              >
                 <i className="fas fa-link"></i>
               </button>
             </div>
