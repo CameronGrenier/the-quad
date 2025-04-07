@@ -22,7 +22,9 @@ import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import EditOrganization from './components/EditOrganization';
 import AdminDashboard from './components/AdminDashboard';
+import PersonalCalendar from './components/PersonalCalendar';
 import './App.css';
+import calendarController from './controllers/CalendarController';
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1370);
@@ -39,6 +41,20 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    // Initialize calendar controller once at app startup
+    const initCalendar = async () => {
+      try {
+        await calendarController.initialize();
+        console.log("Calendar controller initialized at app level");
+      } catch (err) {
+        console.error("Failed to initialize calendar controller:", err);
+      }
+    };
+    
+    initCalendar();
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
@@ -49,7 +65,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/calendar" element={<PersonalCalendar />} />
               <Route path="/events/:id" element={<EventPage />} />
               <Route path="/register-event" element={<EventRegistration />} />
               <Route path="/register-organization" element={<OrganizationRegistration />} /> 

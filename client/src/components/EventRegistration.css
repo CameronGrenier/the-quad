@@ -612,3 +612,95 @@
   border-color: rgba(125, 55, 160, 0.8);
   box-shadow: 0 0 0 2px rgba(192, 86, 33, 0.4);
 }
+
+/* File upload styling */
+
+.custom-file-upload {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* Hide the default file input */
+.custom-file-upload input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* The visible button styling */
+.custom-file-upload .file-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90%;
+  padding: 12px 15px;
+  color: white;
+  background: linear-gradient(135deg, rgba(107, 70, 193, 0.8), rgba(192, 86, 33, 0.8));
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Visual change for file upload buttons after a file is selected */
+.custom-file-upload.uploaded .file-label {
+  background: linear-gradient(135deg, rgba(34, 139, 34, 0.8), rgba(50, 205, 50, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transform: translateY(0);
+  transition: all 0.3s ease;
+}
+
+/* Hover state for already-uploaded buttons */
+.custom-file-upload.uploaded:hover .file-label {
+  background: linear-gradient(135deg, rgba(34, 139, 34, 0.9), rgba(50, 205, 50, 0.9));
+  transform: translateY(-1px);
+}
+
+/* Icon inside the button */
+.custom-file-upload .file-label svg {
+  margin-right: 8px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Hover state */
+.custom-file-upload:hover .file-label {
+  background: linear-gradient(135deg, rgba(107, 70, 193, 0.9), rgba(192, 86, 33, 0.9));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Selected file name display */
+.file-name {
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.file-name svg {
+  margin-right: 6px;
+  min-width: 16px;
+}
+
+/* Fix form spacing with custom file inputs */
+.form-group .custom-file-upload {
+  margin-top: 8px;
+}

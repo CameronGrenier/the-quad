@@ -1,10 +1,11 @@
+export const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './EventPage.css';
 import MarkdownRenderer from './MarkdownRenderer';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
+import calendarController from '../controllers/CalendarController';
 
 function EventPage() {
   const { id } = useParams();
@@ -152,51 +153,212 @@ function EventPage() {
     fetchEventData();
   }, [id, currentUser]);
 
-  const handleRSVP = async (status) => {
-    if (!currentUser) {
-      navigate('/login', { state: { from: `/events/${id}`, message: 'You need to log in to RSVP for events.' } });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
+  // Add this near your other useEffects
+  useEffect(() => {
+    // Set up a listener for Google Calendar auth changes
+    const handleAuthChange = async (isAuthenticated) => {
+      console.log("Google Calendar auth changed:", isAuthenticated);
       
-      const response = await fetch(`${API_URL}/api/events/${id}/rsvp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          rsvpStatus: status
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setRsvpStatus(status);
-        let message = '';
-        if (status === 'attending') {
-          message = "RSVP successful! You're now attending this event.";
-        } else if (status === 'maybe') {
-          message = "You've marked this event as maybe attending.";
-        } else {
-          message = "You've declined this event.";
+      if (isAuthenticated) {
+        // Check for pending calendar event
+        const pendingEvent = localStorage.getItem('pendingCalendarEvent');
+        if (pendingEvent) {
+          try {
+            console.log("Found pending event to add to calendar");
+            const eventData = JSON.parse(pendingEvent);
+            console.log("Pending event data:", eventData);
+            
+            // Add delay to ensure auth is fully processed
+            setTimeout(async () => {
+              try {
+                await calendarController.addRsvpToCalendar(eventData);
+                console.log("Successfully added event to Google Calendar");
+                setSuccessMessage("RSVP successful! Event was added to your Google Calendar.");
+                localStorage.removeItem('pendingCalendarEvent');
+              } catch (delayedError) {
+                console.error('Failed to add event with delay:', delayedError);
+              }
+            }, 1000);
+          } catch (error) {
+            console.error('Failed to add pending event to calendar:', error);
+          }
         }
-        setSuccessMessage(message);
-        setTimeout(() => setSuccessMessage(''), 5000);
-      } else {
-        throw new Error(data.error || 'Failed to RSVP');
       }
-    } catch (error) {
-      console.error('RSVP error:', error);
-      setError(`Failed to RSVP: ${error.message}`);
-      setTimeout(() => setError(null), 5000);
-    } finally {
-      setIsSubmitting(false);
+    };
+
+    // Update event auth listener right away
+    calendarController.setListeners({
+      onAuthChange: handleAuthChange,
+      onError: (error) => console.error("Calendar error:", error)
+    });
+
+    return () => {
+      calendarController.setListeners({
+        onAuthChange: () => {},
+        onError: () => {}
+      });
+    };
+  }, []);
+
+  // Update the useEffect hook to prevent sync loops
+
+useEffect(() => {
+  // Set up a listener for Google Calendar auth changes
+  const handleAuthChange = async (isAuthenticated) => {
+    console.log("Google Calendar auth changed:", isAuthenticated);
+    
+    // Store auth state to prevent repeated syncs
+    if (isAuthenticated && !window._lastCalendarAuthState) {
+      window._lastCalendarAuthState = true;
+      console.log("User is authenticated, syncing calendar...");
+      try {
+        await calendarController.ensureInitialized();
+        await calendarController.syncCalendarWithRsvp();
+        console.log("Calendar sync completed successfully");
+      } catch (syncError) {
+        console.error("Failed to sync calendar:", syncError);
+      }
+    } else if (!isAuthenticated) {
+      window._lastCalendarAuthState = false;
     }
   };
+
+  // Update event auth listener right away
+  calendarController.setListeners({
+    onAuthChange: handleAuthChange,
+    onError: (error) => console.error("Calendar error:", error)
+  });
+  
+  return () => {
+    // Clean up listeners when component unmounts
+    calendarController.setListeners({
+      onAuthChange: () => {},
+      onError: () => {}
+    });
+  };
+}, []);
+
+// Update the handleRSVP function to manually add/remove events
+
+const handleRSVP = async (status) => {
+  if (!currentUser) {
+    navigate('/login', { state: { from: `/events/${id}`, message: 'You need to log in to RSVP for events.' } });
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+    
+    // Submit RSVP to backend
+    const response = await fetch(`${API_URL}/api/events/${id}/rsvp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({
+        rsvpStatus: status
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      setRsvpStatus(status);
+      let message = '';
+      
+      // Format event data for calendar operations
+      const calendarEventData = {
+        ...event,
+        organizationName: organization ? organization.name : undefined
+      };
+      
+      // If attending, add to calendar
+      if (status === 'attending') {
+        message = "RSVP successful! You're now attending this event.";
+        
+        // Check if Google Calendar is connected
+        if (calendarController.isAuthenticated) {
+          try {
+            await calendarController.ensureInitialized();
+            
+            // Instead of syncing, directly add the event
+            await calendarController.addRsvpToCalendar(calendarEventData);
+            message += " Added to your Google Calendar.";
+          } catch (calError) {
+            console.error('Failed to add to Google Calendar:', calError);
+            message += " Failed to update your Google Calendar.";
+          }
+        } else {
+          message += " Connect your Google Calendar to sync events.";
+          
+          // Store the event data for when they connect
+          localStorage.setItem('pendingCalendarEvent', JSON.stringify(calendarEventData));
+          
+          if (window.confirm("Connect your Google Calendar to sync events?")) {
+            calendarController.signIn();
+          }
+        }
+      } 
+      // If maybe or declined, remove from calendar
+      else if (status === 'maybe' || status === 'declined') {
+        message = status === 'maybe' ? 
+          "You've marked this event as maybe attending." : 
+          "You've declined this event.";
+        
+        // Check if Google Calendar is connected
+        if (calendarController.isAuthenticated) {
+          try {
+            await calendarController.ensureInitialized();
+            const calendarId = await calendarController.findOrCreateQuadCalendar();
+            
+            // Get events from calendar
+            const calendarEventsResponse = await window.gapi.client.calendar.events.list({
+              calendarId: calendarId,
+              q: event.title, // Search for this event title
+              timeMin: new Date(event.startDate).toISOString(),
+              timeMax: new Date(new Date(event.endDate).getTime() + 86400000).toISOString(),
+              singleEvents: true
+            });
+            
+            const calendarEvents = calendarEventsResponse.result.items || [];
+            const eventsToDelete = calendarEvents.filter(calEvent => 
+              calEvent.summary === event.title
+            );
+            
+            // Remove matching events
+            for (const eventToDelete of eventsToDelete) {
+              await window.gapi.client.calendar.events.delete({
+                calendarId: calendarId,
+                eventId: eventToDelete.id
+              });
+            }
+            
+            if (eventsToDelete.length > 0) {
+              message += " Event removed from your Google Calendar.";
+            }
+          } catch (calError) {
+            console.error('Failed to update Google Calendar:', calError);
+            message += " Failed to update your Google Calendar.";
+          }
+        } else {
+          message += " Connect your Google Calendar to sync events.";
+        }
+      }
+      
+      setSuccessMessage(message);
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } else {
+      throw new Error(data.error || 'Failed to RSVP');
+    }
+  } catch (error) {
+    console.error('RSVP error:', error);
+    setError(`Failed to RSVP: ${error.message}`);
+    setTimeout(() => setError(null), 5000);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (loading) {
     return (
