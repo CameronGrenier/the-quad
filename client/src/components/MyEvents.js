@@ -126,7 +126,6 @@ function MyEvents() {
       // Track which event is being updated
       setUpdating(prev => ({ ...prev, [eventId]: true }));
       
-      // Your existing RSVP code...
       const response = await fetch(`${API_URL}/api/events/${eventId}/rsvp`, {
         method: 'POST',
         headers: {
@@ -168,26 +167,6 @@ function MyEvents() {
   return (
     <div className="my-events-container">
       <h1>My Events</h1>
-      
-      {/* <div className="debug-section">
-        <button onClick={toggleDebug} className="debug-toggle">
-          {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
-        </button>
-        
-        {showDebug && (
-          <div className="debug-info">
-            <h3>Debug Information</h3>
-            <p>Total events: {events.length}</p>
-            <p>Filtered events: {filteredEvents.length}</p>
-            <p>Active tab: {activeTab}</p>
-            <details>
-              <summary>Event Data</summary>
-              <pre>{JSON.stringify(events, null, 2)}</pre>
-            </details>
-          </div>
-        )}
-      </div> */}
-
       <div className="event-tabs">
         <button 
           className={`tab-button ${activeTab === 'attending' ? 'active' : ''}`} 
@@ -261,31 +240,6 @@ function MyEvents() {
                            event.isOrganizer || event.role === 'admin' ? 'Organizing' : ''}
                         </span>
                       </div>
-                      {!event.isOrganizer && event.role !== 'admin' && (
-                        <div className="event-rsvp-actions">
-                          <button 
-                            className={`rsvp-button attending ${event.rsvpStatus === 'attending' || event.role === 'attending' ? 'active' : ''}`}
-                            onClick={() => handleRSVP(event.eventID, 'attending')}
-                            disabled={updating[event.eventID]}
-                          >
-                            {updating[event.eventID] ? 'Updating...' : 'Attend'}
-                          </button>
-                          <button 
-                            className={`rsvp-button maybe ${event.rsvpStatus === 'maybe' || event.role === 'maybe' ? 'active' : ''}`}
-                            onClick={() => handleRSVP(event.eventID, 'maybe')}
-                            disabled={updating[event.eventID]}
-                          >
-                            Maybe
-                          </button>
-                          <button 
-                            className={`rsvp-button declined ${event.rsvpStatus === 'declined' || event.role === 'declined' ? 'active' : ''}`}
-                            onClick={() => handleRSVP(event.eventID, 'declined')}
-                            disabled={updating[event.eventID]}
-                          >
-                            Decline
-                          </button>
-                        </div>
-                      )}
                       <Link to={`/events/${event.eventID}`} className="view-event-button">
                         View Event
                       </Link>
