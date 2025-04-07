@@ -20,7 +20,7 @@ export default {
     const auth = new Auth();
     
     const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": request.headers.get("Origin") || "http://localhost:3000",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
       "Access-Control-Allow-Credentials": "true",

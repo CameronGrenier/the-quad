@@ -54,9 +54,9 @@
   border-radius: 8px;
   box-sizing: border-box;
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.8); /* More opaque background */
-  color: #000 !important; /* Force black text for user input */
-  -webkit-text-fill-color: #000 !important; /* Safari-specific property */
+  background: rgba(255, 255, 255, 0.8); /* Light background */
+  color: #333 !important; /* Dark text for contrast */
+  -webkit-text-fill-color: #333 !important; /* Safari compatibility */
   font-family: inherit;
 }
 
@@ -75,11 +75,9 @@
   caret-color: #000;
 }
 
-/* Target input and label text specifically for Safari */
-.form-group label,
-.form-group input {
-  color: white !important; /* Force white text */
-  -webkit-text-fill-color: rgb(255, 255, 255) !important; /* Safari-specific property */
+.form-group label {
+  color: white !important;
+  -webkit-text-fill-color: white !important;
 }
 
 /* Also target the placeholder text */
