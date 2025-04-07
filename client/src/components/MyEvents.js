@@ -6,6 +6,17 @@ import './MyEvents.css';
 const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
 
 function MyEvents() {
+  // Add this missing state variable
+  const [updating, setUpdating] = useState({});
+  
+  // Keep your existing state variables
+  const { currentUser } = useAuth();
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('attending');
+  const [showDebug, setShowDebug] = useState(false);
+
   // Add this function to properly format image URLs
   const formatImageUrl = (url) => {
     if (!url) return null;
@@ -31,13 +42,6 @@ function MyEvents() {
     // For just a filename
     return `${API_URL}/images/${encodeURIComponent(url)}`;
   };
-
-  const { currentUser } = useAuth();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('attending');
-  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     const fetchUserEvents = async () => {
@@ -116,40 +120,37 @@ function MyEvents() {
 
   const toggleDebug = () => setShowDebug(!showDebug);
 
+  // Update the handleRSVP function to use the updating state
   const handleRSVP = async (eventId, status) => {
     try {
-      setUpdating(eventId); // Show loading state for this specific event
+      // Track which event is being updated
+      setUpdating(prev => ({ ...prev, [eventId]: true }));
       
-      const token = localStorage.getItem('token');
+      // Your existing RSVP code...
       const response = await fetch(`${API_URL}/api/events/${eventId}/rsvp`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ rsvpStatus: status })
+        body: JSON.stringify({ status })
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update RSVP: ${response.status}`);
-      }
-
+      
       const data = await response.json();
+      
       if (data.success) {
-        // Update the local state to reflect the change
+        // Update the events array with the new status
         setEvents(events.map(event => 
-          event.eventID === eventId 
-            ? { ...event, rsvpStatus: status, role: status } 
-            : event
+          event.eventID === eventId ? {...event, rsvpStatus: status} : event
         ));
       } else {
-        throw new Error(data.error || 'Failed to update RSVP status');
+        console.error("Failed to update RSVP status:", data.error);
       }
-    } catch (error) {
-      console.error('Error updating RSVP:', error);
-      setError(`RSVP update failed: ${error.message}`);
+    } catch (err) {
+      console.error("RSVP error:", err);
     } finally {
-      setUpdating(null); // Clear loading state
+      // Clear the updating state for this event
+      setUpdating(prev => ({ ...prev, [eventId]: false }));
     }
   };
 
@@ -265,21 +266,21 @@ function MyEvents() {
                           <button 
                             className={`rsvp-button attending ${event.rsvpStatus === 'attending' || event.role === 'attending' ? 'active' : ''}`}
                             onClick={() => handleRSVP(event.eventID, 'attending')}
-                            disabled={updating === event.eventID}
+                            disabled={updating[event.eventID]}
                           >
-                            {updating === event.eventID ? '...' : 'Attend'}
+                            {updating[event.eventID] ? 'Updating...' : 'Attend'}
                           </button>
                           <button 
                             className={`rsvp-button maybe ${event.rsvpStatus === 'maybe' || event.role === 'maybe' ? 'active' : ''}`}
                             onClick={() => handleRSVP(event.eventID, 'maybe')}
-                            disabled={updating === event.eventID}
+                            disabled={updating[event.eventID]}
                           >
                             Maybe
                           </button>
                           <button 
                             className={`rsvp-button declined ${event.rsvpStatus === 'declined' || event.role === 'declined' ? 'active' : ''}`}
                             onClick={() => handleRSVP(event.eventID, 'declined')}
-                            disabled={updating === event.eventID}
+                            disabled={updating[event.eventID]}
                           >
                             Decline
                           </button>
