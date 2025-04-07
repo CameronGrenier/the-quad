@@ -25,6 +25,7 @@ import AdminDashboard from './components/AdminDashboard';
 import PersonalCalendar from './components/PersonalCalendar';
 import './App.css';
 import calendarController from './controllers/CalendarController';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1370);

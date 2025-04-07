@@ -464,7 +464,7 @@ const handleDeleteEvent = async () => {
             <h2>Event Details</h2>
             <div className="event-meta">
               <div className="event-meta-item">
-                <i className="fas fa-calendar"></i>
+                <i className="fas fa-calendar-day"></i> {/* Changed from fa-calendar for a more modern look */}
                 <div className="event-meta-text">
                   <span className="meta-label">Date & Time</span>
                   <span className="meta-value">{formatDate(event.startDate)}</span>
@@ -472,7 +472,7 @@ const handleDeleteEvent = async () => {
               </div>
               
               <div className="event-meta-item">
-                <i className="fas fa-clock"></i>
+                <i className="fas fa-hourglass-half"></i> {/* Changed from fa-clock for a more distinctive look */}
                 <div className="event-meta-text">
                   <span className="meta-label">Duration</span>
                   <span className="meta-value">{getEventDuration(event.startDate, event.endDate)}</span>
@@ -480,7 +480,7 @@ const handleDeleteEvent = async () => {
               </div>
               
               <div className="event-meta-item">
-                <i className="fas fa-map-marker-alt"></i>
+                <i className="fas fa-map-marker-alt"></i> {/* This icon is good as is */}
                 <div className="event-meta-text">
                   <span className="meta-label">Location</span>
                   <span className="meta-value">

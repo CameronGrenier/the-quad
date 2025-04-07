@@ -120,16 +120,40 @@
   gap: 15px;
 }
 
+/* Enhanced icon styling for event meta items */
+
 .event-meta-item i {
-  font-size: 20px;
-  width: 40px;
-  height: 40px;
+  font-size: 22px; /* Slightly larger */
+  width: 46px; /* Slightly larger */
+  height: 46px; /* Slightly larger */
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(124, 77, 255, 0.2);
-  color: #b794f4;
+  background: rgba(124, 77, 255, 0.25); /* Slightly more vibrant */
+  color: #c5a9ff; /* Lighter purple for better contrast */
   border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(124, 77, 255, 0.2); /* Add subtle shadow */
+  transition: all 0.3s ease;
+}
+
+.event-meta-item:hover i {
+  transform: scale(1.1); /* Grow slightly on hover */
+  background: rgba(124, 77, 255, 0.35);
+}
+
+/* Icon-specific colors for better visual distinction */
+.event-meta-item:nth-child(1) i {
+  background: rgba(124, 77, 255, 0.25); /* Purple for date */
+}
+
+.event-meta-item:nth-child(2) i {
+  background: rgba(77, 171, 255, 0.25); /* Blue for duration */
+  color: #a9d4ff;
+}
+
+.event-meta-item:nth-child(3) i {
+  background: rgba(255, 77, 108, 0.25); /* Red for location */
+  color: #ffb3c0;
 }
 
 .event-meta-text {
