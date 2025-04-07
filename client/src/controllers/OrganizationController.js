@@ -577,9 +577,6 @@ class OrganizationController {
       }
       
       // Get members by joining ORG_MEMBER with USERS
-      // Using the exact schema you provided:
-      // ORG_MEMBER has orgID, userID
-      // USERS has userID, f_name, l_name, email, phone, profile_picture, password, username
       const members = await this.backendService.query(
         `SELECT u.userID, u.email, u.f_name as firstName, u.l_name as lastName, 
          u.profile_picture as profileImage

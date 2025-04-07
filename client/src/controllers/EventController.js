@@ -300,13 +300,13 @@ class EventController {
       );
       
       if (existingRSVP) {
-        // Update existing RSVP - use rsvpStatus column name instead of status
+        // Update existing RSVP\
         await this.backendService.query(
           "UPDATE EVENT_RSVP SET rsvpStatus = ? WHERE eventID = ? AND userID = ?",
           [rsvpStatus, eventId, userId]
         );
       } else {
-        // Create new RSVP - use rsvpStatus column name instead of status
+        // Create new RSVP\
         await this.backendService.query(
           "INSERT INTO EVENT_RSVP (eventID, userID, rsvpStatus) VALUES (?, ?, ?)",
           [eventId, userId, rsvpStatus]
@@ -368,7 +368,7 @@ class EventController {
         );
       }
       
-      // Get RSVP status - use rsvpStatus column name instead of status
+      // Get RSVP status
       const rsvp = await this.backendService.queryFirst(
         "SELECT rsvpStatus FROM EVENT_RSVP WHERE eventID = ? AND userID = ?",
         [eventId, userId]
@@ -439,7 +439,7 @@ class EventController {
         WHERE ea.userID = ?
       `;
       
-      // Get events that the user has RSVP'd to - IMPORTANT: Add both rsvpStatus and role fields
+      // Get events that the user has RSVP'd to
       const rsvpQuery = `
         SELECT e.*, o.name as organizationName, er.rsvpStatus, er.rsvpStatus as role
         FROM EVENT e

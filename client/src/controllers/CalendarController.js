@@ -213,7 +213,6 @@ class CalendarController {
     this.log("Initializing GIS client...");
     
     try {
-      // Here's the fix - use CLIENT_ID instead of GOOGLE_CLIENT_ID
       this.tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: this.CLIENT_ID,  // Changed from this.GOOGLE_CLIENT_ID
         scope: 'https://www.googleapis.com/auth/calendar.readonly',
