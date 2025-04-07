@@ -2,10 +2,8 @@
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 15px;
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .map-search-container {
@@ -263,4 +261,36 @@ div[class*="gm-title"],
 .gm-style .gm-style-cc span,
 .gm-style .gm-style-cc a {
   color: #000000 !important;
+}
+
+.location-search-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  margin-bottom: 10px;
+}
+
+.location-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.location-details {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+}
+
+.location-details h4 {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+.location-details p {
+  margin: 0;
+  font-size: 14px;
 }
