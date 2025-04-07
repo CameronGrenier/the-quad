@@ -229,6 +229,12 @@ export default {
         return await eventCtrl.getOfficialEvents(request);
       }
 
+      // Delete event route
+      if (path.match(/^\/api\/events\/\d+$/) && request.method === "DELETE") {
+        const eventId = parseInt(path.split('/')[3]);
+        return await eventCtrl.deleteEvent(eventId, request);
+      }
+
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });
     } catch (error) {
       return new Response(JSON.stringify({ error: "Server error", message: error.message }),

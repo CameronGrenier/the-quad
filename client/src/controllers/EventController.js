@@ -778,6 +778,120 @@ class EventController {
       );
     }
   }
+
+  /**
+   * Delete an event by ID
+   * @param {number} eventId - The event ID to delete
+   * @param {Request} request - The request object with auth headers
+   * @returns {Response} JSON response with result
+   */
+  async deleteEvent(eventId, request) {
+    try {
+      // Verify authorization
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer ', '');
+      
+      if (!token) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Authentication required" }),
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      // Get user from token
+      const userData = this.auth.verifyJWT(token);
+      const userId = userData.userId;
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid authentication token" }),
+          { status: 401, headers: this.corsHeaders }
+        );
+      }
+      
+      // Get the event to check if it exists and get its organizationID
+      const event = await this.backendService.queryFirst(
+        "SELECT * FROM EVENT WHERE eventID = ?",
+        [eventId]
+      );
+      
+      if (!event) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Event not found" }),
+          { status: 404, headers: this.corsHeaders }
+        );
+      }
+      
+      // Check if user is an event admin
+      const isEventAdmin = await this.backendService.queryFirst(
+        "SELECT 1 FROM EVENT_ADMIN WHERE eventID = ? AND userID = ?",
+        [eventId, userId]
+      );
+      
+      // Check if user is an org admin (if event belongs to an organization)
+      let isOrgAdmin = false;
+      if (event.organizationID) {
+        isOrgAdmin = await this.backendService.queryFirst(
+          "SELECT 1 FROM ORG_ADMIN WHERE orgID = ? AND userID = ?",
+          [event.organizationID, userId]
+        );
+      }
+      
+      // If not authorized to delete this event
+      if (!isEventAdmin && !isOrgAdmin) {
+        return new Response(
+          JSON.stringify({ success: false, error: "You don't have permission to delete this event" }),
+          { status: 403, headers: this.corsHeaders }
+        );
+      }
+      
+      // Begin deleting event and related records
+      
+      // Delete from EVENT_RSVP
+      await this.backendService.query(
+        "DELETE FROM EVENT_RSVP WHERE eventID = ?",
+        [eventId]
+      );
+      
+      // Delete from EVENT_ADMIN
+      await this.backendService.query(
+        "DELETE FROM EVENT_ADMIN WHERE eventID = ?",
+        [eventId]
+      );
+      
+      // Delete from OFFICIAL_PENDING
+      await this.backendService.query(
+        "DELETE FROM OFFICIAL_PENDING WHERE eventID = ?",
+        [eventId]
+      );
+      
+      // Delete from OFFICIAL
+      await this.backendService.query(
+        "DELETE FROM OFFICIAL WHERE eventID = ?",
+        [eventId]
+      );
+      
+      // Finally, delete the event itself
+      await this.backendService.query(
+        "DELETE FROM EVENT WHERE eventID = ?",
+        [eventId]
+      );
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Event deleted successfully" 
+        }),
+        { headers: this.corsHeaders }
+      );
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: this.corsHeaders }
+      );
+    }
+  }
 }
 
 export default EventController;

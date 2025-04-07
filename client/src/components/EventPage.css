@@ -595,6 +595,39 @@
   cursor: not-allowed;
 }
 
+.delete-event-button {
+  background: linear-gradient(to right, #e53935, #e35d5b);
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 10px rgba(229, 57, 53, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.delete-event-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(229, 57, 53, 0.4);
+}
+
+.delete-event-button:disabled {
+  background: rgba(229, 57, 53, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.delete-event-button i {
+  font-size: 16px;
+}
+
 /* Media queries for responsiveness */
 @media (max-width: 600px) {
   .rsvp-button-group {

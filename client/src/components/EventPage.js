@@ -360,6 +360,41 @@ const handleRSVP = async (status) => {
   }
 };
 
+// Add event deletion handler
+const handleDeleteEvent = async () => {
+  if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+    
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/api/events/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Redirect to homepage or events page after successful deletion
+      navigate('/my-events');
+    } else {
+      setError(`Failed to delete event: ${data.error}`);
+      setTimeout(() => setError(null), 5000);
+    }
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    setError(`Failed to delete event: ${error.message}`);
+    setTimeout(() => setError(null), 5000);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
   if (loading) {
     return (
       <div className="event-page-loading">
@@ -531,6 +566,17 @@ const handleRSVP = async (status) => {
                       </button>
                     </div>
                   </div>
+                )}
+                {/* Add delete button if user is logged in */}
+                {currentUser && (
+                  <button 
+                    className="delete-event-button"
+                    onClick={handleDeleteEvent}
+                    disabled={isSubmitting}
+                  >
+                    <i className="fas fa-trash"></i>
+                    <span>Delete Event</span>
+                  </button>
                 )}
               </>
             ) : (
