@@ -26,9 +26,13 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1370);
+  const [appReady, setAppReady] = useState(false);
   
   // Handle window resize and update isMobile state
   useEffect(() => {
+    // Mark app as ready after initial render
+    setAppReady(true);
+    
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1370);
     };

@@ -11,9 +11,18 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for stored credentials on component mount
+  // Add this at the start of your AuthProvider function:
   useEffect(() => {
     console.log("AuthContext initializing...");
+    
+    // Set up a safety timeout to prevent infinite loading states
+    const safetyTimer = setTimeout(() => {
+      if (loading) {
+        console.log("Auth loading safety timeout triggered");
+        setLoading(false);
+      }
+    }, 3000);
+    
     const checkExistingSession = async () => {
       try {
         // Try localStorage first
@@ -68,6 +77,8 @@ export function AuthProvider({ children }) {
     };
     
     checkExistingSession();
+    
+    return () => clearTimeout(safetyTimer);
   }, []);
 
   // Function to refresh user data from the server
@@ -281,7 +292,13 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div className="auth-loading-placeholder">
+          <p>Loading...</p>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }
