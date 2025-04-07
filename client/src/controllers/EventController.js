@@ -892,6 +892,34 @@ class EventController {
       );
     }
   }
+
+  async checkEventAdminStatus(eventId, request) {
+    try {
+      const { isAuthenticated, userId } = this.auth.getAuthFromRequest(request);
+      
+      if (!isAuthenticated) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Authentication required" 
+        }), { status: 401, headers: this.corsHeaders });
+      }
+      
+      const adminRecord = await this.backendService.queryFirst(
+        "SELECT 1 FROM EVENT_ADMIN WHERE eventID = ? AND userID = ?",
+        [eventId, userId]
+      );
+      
+      return new Response(JSON.stringify({
+        success: true,
+        isAdmin: !!adminRecord
+      }), { headers: this.corsHeaders });
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), { status: 500, headers: this.corsHeaders });
+    }
+  }
 }
 
 export default EventController;

@@ -18,6 +18,7 @@ function EventPage() {
   const [rsvpStatus, setRsvpStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isEventAdmin, setIsEventAdmin] = useState(false);
 
   // Fix the formatImageUrl function
   const formatImageUrl = (url) => {
@@ -153,7 +154,6 @@ function EventPage() {
     fetchEventData();
   }, [id, currentUser]);
 
-  // Add this near your other useEffects
   useEffect(() => {
     // Set up a listener for Google Calendar auth changes
     const handleAuthChange = async (isAuthenticated) => {
@@ -449,6 +449,35 @@ const handleShare = (platform) => {
   }
 };
 
+// Add this function to check admin status
+const checkEventAdminStatus = async () => {
+  if (!currentUser || !id) return;
+  
+  try {
+    const response = await fetch(`${API_URL}/api/events/${id}/admin-status`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    const data = await response.json();
+    setIsEventAdmin(data.isAdmin || false);
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    setIsEventAdmin(false);
+  }
+};
+
+// Add this to your fetchData useEffect
+useEffect(() => {
+  // Your existing code to fetch event data...
+  
+  // After event data is loaded
+  if (event) {
+    checkEventAdminStatus();
+  }
+}, [event, currentUser]);
+
   if (loading) {
     return (
       <div className="event-page-loading">
@@ -622,7 +651,7 @@ const handleShare = (platform) => {
                   </div>
                 )}
                 {/* Add delete button if user is logged in */}
-                {currentUser && (
+                {isEventAdmin && (
                   <button 
                     className="delete-event-button"
                     onClick={handleDeleteEvent}

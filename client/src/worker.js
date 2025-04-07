@@ -228,6 +228,11 @@ export default {
         const eventId = parseInt(path.split('/')[3]);
         return await eventCtrl.deleteEvent(eventId, request);
       }
+      
+      if (path.match(/^\/api\/events\/\d+\/admin-status$/) && request.method === "GET") {
+        const eventId = parseInt(path.split('/')[3]);
+        return await eventCtrl.checkEventAdminStatus(eventId, request);
+      }
 
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: corsHeaders });
     } catch (error) {
