@@ -124,12 +124,12 @@ class Auth {
     try {
       const authHeader = request.headers.get('Authorization') || '';
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return { isAuthenticated: false };
+        return { isAuthenticated: false, userId: null };
       }
       
       const token = authHeader.split(' ')[1];
       if (!token) {
-        return { isAuthenticated: false };
+        return { isAuthenticated: false, userId: null };
       }
       
       // Add some debug logging
@@ -146,7 +146,7 @@ class Auth {
       
     } catch (error) {
       console.error('Authentication error:', error.message);
-      return { isAuthenticated: false };
+      return { isAuthenticated: false, userId: null };
     }
   }
 }

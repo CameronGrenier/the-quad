@@ -239,5 +239,65 @@ describe('Auth', () => {
       expect(authInfo.isAuthenticated).toBe(false);
       expect(authInfo.userId).toBeNull();
     });
+
+    test('getAuthFromRequest should handle token with both userId and id fields', () => {
+      const userId = 123;
+      const id = 456;
+      const payload = { userId, id };
+      const token = auth.generateJWT(payload);
+      
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockImplementation((header) => {
+            if (header === 'Authorization') {
+              return `Bearer ${token}`;
+            }
+            return null;
+          })
+        }
+      };
+      
+      const authInfo = auth.getAuthFromRequest(mockRequest);
+      
+      expect(authInfo.isAuthenticated).toBe(true);
+      expect(authInfo.userId).toBe(userId); // Should prefer userId over id
+      expect(authInfo.token).toBe(token);
+    });
+
+    test('getAuthFromRequest should handle token without userId or id fields', () => {
+      const payload = { email: 'test@example.com' }; // No userId or id
+      const token = auth.generateJWT(payload);
+      
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockImplementation((header) => {
+            if (header === 'Authorization') {
+              return `Bearer ${token}`;
+            }
+            return null;
+          })
+        }
+      };
+      
+      const authInfo = auth.getAuthFromRequest(mockRequest);
+      
+      expect(authInfo.isAuthenticated).toBe(true);
+      expect(authInfo.userId).toBeUndefined(); // Should be undefined if no userId/id in token
+      expect(authInfo.email).toBe('test@example.com');
+      expect(authInfo.token).toBe(token);
+    });
+
+    test('getAuthFromRequest should handle malformed authorization header', () => {
+      const mockRequest = {
+        headers: {
+          get: jest.fn().mockReturnValue('Not-A-Bearer-Token')
+        }
+      };
+      
+      const authInfo = auth.getAuthFromRequest(mockRequest);
+      
+      expect(authInfo.isAuthenticated).toBe(false);
+      expect(authInfo.userId).toBeNull();
+    });
   });
 });
