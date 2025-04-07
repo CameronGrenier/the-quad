@@ -16,8 +16,18 @@ export function AuthProvider({ children }) {
     console.log("AuthContext initializing...");
     const checkExistingSession = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const savedUser = localStorage.getItem('user');
+        // Try localStorage first
+        let token = null;
+        let savedUser = null;
+        
+        try {
+          token = localStorage.getItem('token');
+          savedUser = localStorage.getItem('user');
+        } catch (e) {
+          // Fall back to memory storage
+          token = window._authToken;
+          savedUser = window._authUser ? JSON.stringify(window._authUser) : null;
+        }
         
         if (token && savedUser) {
           try {
@@ -85,32 +95,57 @@ export function AuthProvider({ children }) {
     try {
       setLoading(true);
       
+      // 1. Check if localStorage is available
+      const isStorageAvailable = checkStorageAvailability();
+      
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json' // Add explicit Accept header for Safari
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include' // Add this to handle cookies properly
       });
       
+      console.log("Login response status:", response.status);
       const data = await response.json();
+      console.log("Login response:", data);
       
       if (data.success && data.token) {
-        localStorage.setItem('token', data.token);
+        // Try to store the token, with fallback handling
+        try {
+          localStorage.setItem('token', data.token);
+        } catch (storageError) {
+          console.warn("LocalStorage unavailable, using memory storage:", storageError);
+          window._authToken = data.token; // Fallback to memory storage
+        }
         
-        // After successful login, fetch the latest user profile
-        const userResponse = await fetch(`${API_URL}/api/user-profile`, {
-          headers: { 'Authorization': `Bearer ${data.token}` }
-        });
-        
-        const userData = await userResponse.json();
-        
-        if (userData.success) {
-          // Use the fresh user data
-          localStorage.setItem('user', JSON.stringify(userData.user));
-          setCurrentUser(userData.user);
-        } else {
-          // Fall back to login response user data
-          localStorage.setItem('user', JSON.stringify(data.user));
-          setCurrentUser(data.user);
+        // Fetch user profile with more robust error handling
+        try {
+          const userResponse = await fetch(`${API_URL}/api/user-profile`, {
+            headers: { 
+              'Authorization': `Bearer ${data.token}`,
+              'Accept': 'application/json'
+            },
+            credentials: 'include'
+          });
+          
+          const userData = await userResponse.json();
+          
+          if (userData.success) {
+            try {
+              localStorage.setItem('user', JSON.stringify(userData.user));
+            } catch (e) {
+              window._authUser = userData.user; // Fallback
+            }
+            setCurrentUser(userData.user);
+          } else {
+            setUserDataFromLoginResponse(data);
+          }
+        } catch (profileError) {
+          console.warn("Failed to fetch profile, using login data:", profileError);
+          setUserDataFromLoginResponse(data);
         }
         
         return { success: true };
@@ -119,9 +154,31 @@ export function AuthProvider({ children }) {
       }
     } catch (error) {
       console.error("Login error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: `Login error: ${error.message}` };
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to set user data from login response
+  const setUserDataFromLoginResponse = (data) => {
+    try {
+      localStorage.setItem('user', JSON.stringify(data.user));
+    } catch (e) {
+      window._authUser = data.user;
+    }
+    setCurrentUser(data.user);
+  };
+
+  // Helper function to check if storage is available
+  const checkStorageAvailability = () => {
+    try {
+      const testKey = '__storage_test__';
+      localStorage.setItem(testKey, testKey);
+      localStorage.removeItem(testKey);
+      return true;
+    } catch (e) {
+      return false;
     }
   };
 

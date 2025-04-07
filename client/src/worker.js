@@ -22,7 +22,8 @@ export default {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+      "Access-Control-Allow-Credentials": "true",
       "Content-Type": "application/json"
     };
     
@@ -39,7 +40,6 @@ export default {
     const adminCtrl = new AdminController(env, corsHeaders, backendService, auth);
 
     try {
-      // Routes remain the same - no changes needed here
       if (path === "/api/signup" && request.method === "POST") {
         return await accountCtrl.createAccount(request);
       }
@@ -93,7 +93,7 @@ export default {
       }
       if (path.match(/^\/api\/organizations\/\d+\/admins$/) && request.method === "POST") {
         const parts = path.split('/');
-        const orgId = parseInt(parts[3]); // This gets the orgId properly
+        const orgId = parseInt(parts[3]);
         return await orgCtrl.addAdmin(orgId, request);
       }
       if (path.match(/^\/api\/organizations\/\d+\/admins\/\d+$/) && request.method === "DELETE") {
@@ -106,7 +106,6 @@ export default {
         return await orgCtrl.getUserMemberOrganizations(request);
       }
       
-      // Add these new routes for events
       if (path === "/api/events" && request.method === "GET") {
         return await eventCtrl.getAllEvents(request);
       }
@@ -132,22 +131,22 @@ export default {
         return await eventCtrl.registerEvent(request);
       }
       
-      // Add this new route for user events
+      // user events
       if (path === "/api/user/events" && request.method === "GET") {
         return await eventCtrl.getUserEvents(request);
       }
       
-      // Add this route for getting user's RSVP'd events
+      // getting user's RSVP'd events
       if (path === "/api/events/rsvps" && request.method === "GET") {
         return await eventCtrl.getUserRsvpEvents(request);
       }
 
-      // Add this route for getting landmarks
+      // getting landmarks
       if (path === "/api/landmarks" && request.method === "GET") {
         return await eventCtrl.getLandmarks(request);
       }
 
-      // Add this route for checking landmark availability
+      //checking landmark availability
       if (path === "/api/check-landmark-availability" && request.method === "POST") {
         return await eventCtrl.checkLandmarkAvailability(request);
       }
@@ -164,8 +163,6 @@ export default {
         const imagePath = path.substring(8);
         return await backendService.serveImage(imagePath, corsHeaders);
       }
-
-      // Add these routes to handle admin requests for pending items
 
       // Test if a user is staff
       if (path === "/api/admin/test-staff" && request.method === "GET") {
@@ -219,17 +216,14 @@ export default {
         return await adminCtrl.submitForOfficial(request);
       }
 
-      // Add this route to your existing routes
       if (path === "/api/official-organizations" && request.method === "GET") {
         return await orgCtrl.getOfficialOrganizations(request);
       }
 
-      // Add this route to your existing routes
       if (path === "/api/official-events" && request.method === "GET") {
         return await eventCtrl.getOfficialEvents(request);
       }
 
-      // Delete event route
       if (path.match(/^\/api\/events\/\d+$/) && request.method === "DELETE") {
         const eventId = parseInt(path.split('/')[3]);
         return await eventCtrl.deleteEvent(eventId, request);
