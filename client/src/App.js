@@ -5,8 +5,6 @@ import MobileNavbar from './components/MobileNavbar';
 import Home from './components/Home';
 import Login from './components/Login';
 import Signup from './components/Signup';
-import Calendar from './components/Calendar';
-import EventDetails from './components/EventDetails';
 import EventRegistration from './components/EventRegistration';
 import Questionnaire from './components/Questionnaire';
 import OrganizationRegistration from './components/OrganizationRegistration';
@@ -16,7 +14,6 @@ import OrganizationList from './components/OrganizationList';
 import MyOrganizations from './components/MyOrganizations';
 import ExploreEvents from './components/ExploreEvents';
 import EventPage from './components/EventPage';
-import EventList from './components/EventList'; // Note the 's' in EventsList
 import MyEvents from './components/MyEvents';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
