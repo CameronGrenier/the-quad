@@ -70,7 +70,6 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Update the org-list-controls to use flexbox for better alignment */
 .org-list-controls {
   display: flex;
   align-items: center;
@@ -80,29 +79,33 @@
   justify-content: center;
 }
 
-/* Update search container to have appropriate width */
+/* Ensure proper positioning context for the search container */
 .search-container {
   position: relative;
   width: auto;
   flex: 1;
   max-width: 500px;
   min-width: 200px;
+  padding-left: 10px;
   margin-right: 10px;
+  display: flex;
+  align-items: center;
 }
 
-/* Updated search input with white text and cursor */
+/* Adjust input padding to accommodate the icon */
 .org-search-input {
   width: 100%;
-  padding: 12px 20px 12px 45px;
-  background: rgba(48, 30, 103, 0.6);  /* Solid color, no gradient */
+  padding: 12px 12px 12px 45px;
+  background: rgba(48, 30, 103, 0.6);
   border: 1px solid rgba(124, 77, 255, 0.2);
   border-radius: 8px;
-  color: white !important; /* Force white text */
-  caret-color: white; /* Make cursor white */
+  color: white !important;
+  caret-color: white;
   font-size: 15px;
   letter-spacing: 0.3px;
   height: 46px;
   transition: border-color 0.2s ease;
+  box-sizing: border-box;
 }
 
 .org-search-input::placeholder {
@@ -121,7 +124,7 @@
   border-color: rgba(124, 77, 255, 0.5);
 }
 
-/* Search icon positioning */
+/* Update search icon positioning for better alignment */
 .search-icon {
   position: absolute;
   left: 15px;
@@ -130,6 +133,11 @@
   color: rgba(255, 255, 255, 0.6);
   font-size: 16px;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
 }
 
 /* Simple clear button */
