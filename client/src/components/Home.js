@@ -18,6 +18,7 @@ function Home() {
   const [officialEvents, setOfficialEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [landmarks, setLandmarks] = useState([]); // New state for landmarks
 
   useEffect(() => {
     async function fetchData() {
@@ -131,6 +132,21 @@ function Home() {
     fetchData();
   }, [currentUser]);
 
+  // New effect to fetch landmarks from the API
+  useEffect(() => {
+    async function fetchLandmarks() {
+      try {
+        const res = await fetch(`${API_URL}/api/landmarks`);
+        const data = await res.json();
+        // Assume the returned object has a "landmarks" array
+        setLandmarks(data.landmarks || []);
+      } catch (error) {
+        console.error("Error fetching landmarks:", error);
+      }
+    }
+    fetchLandmarks();
+  }, []);
+
   // Format date helper function
   const formatDate = (dateString) => {
     const options = { 
@@ -169,6 +185,50 @@ function Home() {
     
     // For just a filename
     return `${API_URL}/images/${encodeURIComponent(url)}`;
+  };
+
+  // Function to render event location
+  const renderEventLocation = (event) => {
+    console.log("Rendering location for event:", event);
+    console.log("Event landmarkID:", event.landmarkID);
+    console.log("Available landmarks:", landmarks);
+    if (landmarks && landmarks.length && typeof landmarks[0] === "object") {
+      console.log("Landmark keys:", Object.keys(landmarks[0]));
+    }
+    
+    if (event.landmarkID) {
+      // Use the key 'id' from landmark objects instead of landmarkID.
+      const landmark = landmarks.find(
+        item => String(item.id) === String(event.landmarkID)
+      );
+      console.log("Found landmark for event.landmarkID", event.landmarkID, ":", landmark);
+      if (landmark && landmark.name && landmark.name.trim() !== "") {
+        console.log("Returning landmark name:", landmark.name);
+        return (
+          <div className="event-location">
+            <i className="fas fa-map-marker-alt"></i> {landmark.name}
+          </div>
+        );
+      } else {
+        console.log("No valid name on landmark. event.landmarkID:", event.landmarkID);
+      }
+    }
+    
+    if (event.customLocation && event.customLocation.trim() !== "") {
+      console.log("Returning custom location:", event.customLocation);
+      return (
+        <div className="event-location">
+          <i className="fas fa-map-marker-alt"></i> {event.customLocation}
+        </div>
+      );
+    }
+    
+    console.log("No location specified for event", event.eventID);
+    return (
+      <div className="event-location">
+        <i className="fas fa-map-marker-alt"></i> Location not specified
+      </div>
+    );
   };
   
   return (
@@ -256,20 +316,16 @@ function Home() {
                 <div key={event.eventID} className="event-card">
                   <div 
                     className="event-image" 
-                    style={event.thumbnail ? { 
-                      backgroundImage: `url(${formatImageUrl(event.thumbnail)})` 
-                    } : {}}
+                    style={{ backgroundImage: event.thumbnail ? `url(${formatImageUrl(event.thumbnail)})` : 'none' }}
                   >
-                    <div className="event-date-badge">
-                      {formatDate(event.startDate)}
-                    </div>
+                    <div className="event-date-badge">{formatDate(event.startDate)}</div>
                   </div>
                   <div className="event-details">
                     <h3>{event.title}</h3>
-                    <p className="event-location">
-                      {event.landmarkName || event.customLocation || 'Location not specified'}
-                    </p>
-                    <p className="event-organization">{event.organizationName}</p>
+                    {renderEventLocation(event)}
+                    <div className="event-organization">
+                      <i className="fas fa-users"></i> {event.organizationName || 'Unknown Organization'}
+                    </div>
                     <Link to={`/events/${event.eventID}`} className="view-event-button">
                       View Event
                     </Link>
@@ -449,9 +505,7 @@ function Home() {
                   </div>
                   <div className="event-details">
                     <h3>{event.title}</h3>
-                    <p className="event-location">
-                      <i className="fas fa-map-marker-alt"></i> {event.landmarkName || event.customLocation || 'Location TBA'}
-                    </p>
+                    {renderEventLocation(event)}
                     {event.organizationName && (
                       <p className="event-organization">
                         <i className="fas fa-users"></i> {event.organizationName}

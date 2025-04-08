@@ -200,8 +200,6 @@ function EventPage() {
     };
   }, []);
 
-  // Update the useEffect hook to prevent sync loops
-
 useEffect(() => {
   // Set up a listener for Google Calendar auth changes
   const handleAuthChange = async (isAuthenticated) => {
@@ -237,8 +235,6 @@ useEffect(() => {
     });
   };
 }, []);
-
-// Update the handleRSVP function to manually add/remove events
 
 const handleRSVP = async (status) => {
   if (!currentUser) {
@@ -360,7 +356,6 @@ const handleRSVP = async (status) => {
   }
 };
 
-// Add event deletion handler
 const handleDeleteEvent = async () => {
   if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
     return;
@@ -394,8 +389,6 @@ const handleDeleteEvent = async () => {
     setIsSubmitting(false);
   }
 };
-
-// Add these functions near the top of your EventPage component
 
 // Function to handle sharing to various platforms
 const handleShare = (platform) => {
@@ -468,11 +461,7 @@ const checkEventAdminStatus = async () => {
   }
 };
 
-// Add this to your fetchData useEffect
 useEffect(() => {
-  // Your existing code to fetch event data...
-  
-  // After event data is loaded
   if (event) {
     checkEventAdminStatus();
   }
@@ -547,7 +536,7 @@ useEffect(() => {
             <h2>Event Details</h2>
             <div className="event-meta">
               <div className="event-meta-item">
-                <i className="fas fa-calendar-day"></i> {/* Changed from fa-calendar for a more modern look */}
+                <i className="fas fa-calendar-day"></i>
                 <div className="event-meta-text">
                   <span className="meta-label">Date & Time</span>
                   <span className="meta-value">{formatDate(event.startDate)}</span>
@@ -555,7 +544,7 @@ useEffect(() => {
               </div>
               
               <div className="event-meta-item">
-                <i className="fas fa-hourglass-half"></i> {/* Changed from fa-clock for a more distinctive look */}
+                <i className="fas fa-hourglass-half"></i>
                 <div className="event-meta-text">
                   <span className="meta-label">Duration</span>
                   <span className="meta-value">{getEventDuration(event.startDate, event.endDate)}</span>
@@ -563,7 +552,7 @@ useEffect(() => {
               </div>
               
               <div className="event-meta-item">
-                <i className="fas fa-map-marker-alt"></i> {/* This icon is good as is */}
+                <i className="fas fa-map-marker-alt"></i>
                 <div className="event-meta-text">
                   <span className="meta-label">Location</span>
                   <span className="meta-value">
