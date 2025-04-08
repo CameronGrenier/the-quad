@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css'; // Import the new CSS file
@@ -9,7 +9,14 @@ function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, currentUser } = useAuth();
+  
+  // Add this effect to redirect when user is logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -22,10 +29,7 @@ function Login() {
       setLoading(true);
       const result = await login(email, password);
       
-      if (result.success) {
-        // Redirect to homepage after successful login
-        navigate('/');
-      } else {
+      if (!result.success) {
         setError(result.error || 'Failed to log in');
       }
     } catch (error) {
