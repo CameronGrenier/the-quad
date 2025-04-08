@@ -10,7 +10,7 @@ body {
 /* Main container */
 .home-container {
   width: 100%;
-  min-height: 100vh;
+  min-height: calc(100vh - 80px);
   background-color: rgba(28, 16, 51, 0.95);
   display: flex;
   flex-direction: column;
@@ -22,8 +22,8 @@ body {
               url('../../public/images/campus_photo.jpg');
   background-size: cover;
   background-position: center;
-  height: 85vh; /* Increased from 70vh to 85vh - much bigger */
-  min-height: 650px; /* Increased minimum height from 500px to 650px */
+  height: 85vh; 
+  min-height: 650px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -99,6 +99,8 @@ body {
   padding: 2rem 1rem 4rem;
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Welcome section for logged in users */
@@ -556,7 +558,7 @@ body {
 
 .view-org-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(124, 77, 255, 0.3);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
   background: linear-gradient(135deg, rgba(133, 89, 255, 1), rgba(124, 77, 255, 1));
 }
 
@@ -1621,5 +1623,25 @@ body {
 @media (max-width: 768px) {
   .calendar-container {
     padding: 10px;
+  }
+}
+
+/* Fix footer positioning for mobile */
+@media (max-width: 1369px) {
+  .footer {
+    margin-bottom: 80px;
+    margin-top: 0; /* Remove any top margin causing gaps */
+  }
+  
+  /* Make home sections more compact on mobile */
+  .events-section,
+  .orgs-section,
+  .welcome-section {
+    margin-bottom: 2rem; /* Reduce spacing between sections */
+  }
+  
+  /* Ensure smooth connection to footer */
+  .home-container > *:last-child {
+    margin-bottom: 0;
   }
 }
