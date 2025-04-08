@@ -361,7 +361,7 @@ function OrganizationPage() {
         >
           <div className="org-banner-overlay"></div>
         </div>
-        {console.log("Formatted banner URL:", organization.banner ? formatImageUrl(organization.banner) : "No banner")}
+        {/* {console.log("Formatted banner URL:", organization.banner ? formatImageUrl(organization.banner) : "No banner")} */}
       </div>
       
       <div className="org-header">

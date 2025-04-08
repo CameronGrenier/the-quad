@@ -500,9 +500,9 @@ useEffect(() => {
 
   return (
     <div className="event-page">
-      {console.log("Event object:", event)}
+      {/* {console.log("Event object:", event)}
       {console.log("Banner URL:", event.banner)}
-      {console.log("Formatted banner URL:", event.banner ? formatImageUrl(event.banner) : "No banner")}
+      {console.log("Formatted banner URL:", event.banner ? formatImageUrl(event.banner) : "No banner")} */}
       
       <div 
         className="event-banner" 
