@@ -7,16 +7,17 @@
   width: 100%; /* Use 100% instead of 100vw */
   max-width: 100%; /* Ensure it doesn't exceed the viewport */
   /* Enhanced frosted glass effect */
-  background-color: rgba(19, 7, 44, 0.747); /* Darker, semi-transparent background */
+  background-color: rgba(19, 7, 44, 0.9); /* Darker, semi-transparent background */
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border-top: 1px solid rgba(255, 255, 255, 0.08); /* Subtle highlight */
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3); /* Deeper shadow */
-  z-index: 999;
+  z-index: 1000;
   box-sizing: border-box;
   padding: 0;
   margin: 0; /* Remove any margins */
-  overflow: hidden;
+  overflow: visible;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Ensure the nav-list covers the entire navbar */
@@ -33,6 +34,7 @@
   background: transparent; /* Make sure the list itself doesn't have a background */
 }
 
+/* Navigation items */
 .mobile-navbar .nav-item {
   position: relative;
   flex: 1 1 0; /* Equal flex-grow, no flex-shrink, 0 base width */
@@ -49,8 +51,9 @@
   background: transparent; /* Make sure the item itself doesn't have a background */
 }
 
-/* Fixed alignment between icons and text */
-.mobile-navbar .nav-item a {
+/* Links and buttons */
+.mobile-navbar .nav-item a,
+.mobile-navbar .nav-item .more-button {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -58,10 +61,12 @@
   text-decoration: none;
   height: 100%;
   width: 100%;
-  padding: 0; /* Remove top padding that was creating misalignment */
   box-sizing: border-box;
   margin: 0;
   background: transparent; /* Make sure the link itself doesn't have a background */
+  border: none;
+  color: white;
+  cursor: pointer;
 }
 
 /* Create a container for icon and label to ensure alignment */
@@ -72,7 +77,15 @@
   justify-content: center;
   height: 100%;
   position: relative; /* Add position relative for absolute positioning context */
-  padding-bottom: 12px; /* Add some padding at the bottom to make room for indicator */
+  padding-bottom: 12px;
+}
+
+/* Icon styling */
+.mobile-navbar .nav-content i {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 5px 0;
+  transition: all 0.2s ease;
 }
 
 .mobile-navbar .nav-item svg {
@@ -85,33 +98,39 @@
 
 .mobile-navbar .nav-label {
   margin: 0; /* Remove margins that cause misalignment */
-  font-size: 10px; /* Slightly smaller for better fit */
+  font-size: 11px; /* Slightly smaller for better fit */
   font-weight: 500;
   width: 100%;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis; /* Truncate with ellipsis if needed */
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.8);
   line-height: 1; /* Tighter line height */
+  transition: all 0.2s ease;
 }
 
 /* Modern active state styling with improved alignment */
 .mobile-navbar .nav-item.active::after {
   content: '';
   position: absolute;
-  bottom: 6px; /* Move up from bottom (was 0px) */
+  bottom: 8px; /* Move up from bottom (was 0px) */
   left: 50%;
   transform: translateX(-50%);
   width: 40%;
   height: 3px;
-  background: #9e7bff; /* Brighter purple */
-  border-radius: 3px 3px 0 0;
-  box-shadow: 0 0 8px rgba(158, 123, 255, 0.4);
+  background: linear-gradient(90deg, #6b46c1, #e05e00); /* Brighter purple */
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(107, 70, 193, 0.4);
 }
 
 .mobile-navbar .nav-item.active svg {
   fill: #fff;
+}
+
+.mobile-navbar .nav-item.active .nav-content i {
+  color: white;
+  transform: translateY(-2px);
 }
 
 .mobile-navbar .nav-item.active .nav-label {
@@ -120,13 +139,9 @@
 }
 
 /* Special styling for the "hero" Fire/Explore icon */
-.mobile-navbar .nav-item:nth-child(3) svg {
-  width: 28px; /* Larger than other icons */
-  height: 28px; 
-  fill: url(#explore-gradient); /* Apply gradient fill */
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.219)); /* Subtle glow */
-  margin-top: -4px; /* Adjust positioning due to larger size */
-  transform: scale(1.1); /* Slightly scaled up */
+.mobile-navbar .nav-item:nth-child(4) svg {
+  width: 22px; /* Reset to normal size */
+  height: 22px;
   transition: all 0.2s ease;
 }
 
@@ -148,6 +163,219 @@
 
 /* Add a special indicator for the Explore icon when active */
 .mobile-navbar .nav-item.active:nth-child(3)::after {
-  background: linear-gradient(90deg, #6b46c1, #e6975f);
-  box-shadow: 0 0 8px rgba(128, 54, 2, 0.6);
+  background: linear-gradient(90deg, #e05e00, #f6ad55);
+  box-shadow: 0 0 8px rgba(224, 94, 0, 0.6);
+}
+
+/* More menu styling */
+.more-menu {
+  position: absolute;
+  bottom: 75px;
+  right: 10px; /* Position slightly inward from edge */
+  width: 240px;
+  background: rgba(28, 16, 51, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  padding: 16px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1001;
+  animation: slideUp 0.25s ease-out forwards;
+  transform-origin: bottom center;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Menu items */
+.more-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  color: white;
+  text-decoration: none;
+  transition: all 0.2s;
+  margin-bottom: 2px;
+  border-radius: 0;
+}
+
+.more-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.more-item i {
+  font-size: 18px;
+  margin-right: 12px;
+  width: 24px;
+  text-align: center;
+}
+
+.more-item span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Section divider */
+.create-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 8px 0;
+  padding-top: 8px;
+}
+
+/* Admin item special styling */
+.admin-item {
+  background: linear-gradient(90deg, rgba(107, 70, 193, 0.2), rgba(192, 86, 33, 0.2));
+}
+
+.admin-item i {
+  color: #ffcc57;
+}
+
+/* Special highlight for create button */
+.mobile-navbar .nav-item:nth-child(3) .nav-content i {
+  color: #e05e00;
+  font-size: 22px;
+  background: transparent !important; /* Force transparent background */
+  box-shadow: none !important; /* Remove any shadow */
+  text-shadow: 0 0 8px rgba(224, 94, 0, 0.0);
+  transition: text-shadow 0.3s ease;
+  padding: 0; /* Ensure no extra padding */
+  margin-bottom: 5px; /* Keep consistent spacing with other icons */
+  display: inline-flex; /* Ensure proper alignment */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+}
+
+.mobile-navbar .nav-item:nth-child(3):hover .nav-content i {
+  text-shadow: 0 0 8px rgba(224, 94, 0, 0.5);
+}
+
+/* Active state for create button */
+.mobile-navbar .nav-item.active:nth-child(3)::after {
+  background: linear-gradient(90deg, #e05e00, #f6ad55);
+  box-shadow: 0 0 8px rgba(224, 94, 0, 0.6);
+}
+
+/* Ensure button has no background */
+.mobile-navbar .nav-item:nth-child(3) .create-button {
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Media queries */
+@media (min-width: 768px) {
+  .mobile-navbar {
+    display: none; /* Hide on larger screens */
+  }
+}
+
+@media (max-height: 600px) {
+  .more-menu {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+}
+
+/* Create menu styling - add after the existing styles */
+.create-menu {
+  position: absolute;
+  bottom: 75px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 190px;
+  background: rgba(28, 16, 51, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  padding: 12px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1001;
+  animation: popUp 0.3s ease-out forwards;
+  transform-origin: bottom center;
+}
+
+/* Animation for create menu popup */
+@keyframes popUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Create menu items */
+.create-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  color: white;
+  text-decoration: none;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.create-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #e05e00;
+}
+
+.create-item i {
+  font-size: 18px;
+  margin-right: 12px;
+  width: 24px;
+  text-align: center;
+  color: #e05e00;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.create-item span {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Update More menu styling with improved spacing and sections */
+.menu-section {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.menu-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 16px;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
