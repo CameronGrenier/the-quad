@@ -26,13 +26,6 @@ The Quad uses Cloudflare Workers as its serverless backend with:
 - Development: `http://localhost:8787`
 - Production: `https://the-quad.pages.dev`
 
-### Available Endpoints
-
-- `GET /api/users`: List all users
-- `GET /api/users/:id`: Get user by ID
-- `GET /api/organizations/public/banners`: Get organization banners
-- `GET /images/:path`: Serve images from R2 storage
-
 ### Example Usage
 
 ```javascript

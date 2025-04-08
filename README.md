@@ -110,27 +110,39 @@ Once deployed, users can register/log in, browse scheduled events, create new ev
 A high-level overview of the project's structure:
 ```csharp
 the-quad/
-├── client/                   # React front-end
-│   ├── public/
-│   └── src/
-│       ├── components/       # React UI components
-│       ├── pages/            # Page-level components
-│       ├── controllers/      # Backend logic controllers
-│       │   ├── AdminController.js
-│       │   ├── EventController.js
-│       │   ├── OrganizationController.js
-│       │   └── UserController.js
-│       ├── services/         # Backend services
-│       │   └── BackendService.js  # Database and storage operations
-│       ├── utils/            # Utility functions and helpers
-│       │   ├── auth.js       # Authentication utilities
-│       │   └── formData.js   # Form data processing
-│       └── App.js
-├── client/src/worker.js      # Cloudflare Worker entry point (route definitions)
-├── wrangler.toml             # Cloudflare Workers configuration
-├── backend_info.md           # Backend documentation
-├── README.md                 # This file
-└── package.json              # Root-level package configuration
+├── client/                     # React front-end
+│   ├── public/                 # Static assets
+│   │   └── images/             # Public images including logos
+│   ├── src/
+│   │   ├── components/         # React UI components
+│   │   │   ├── Admin/          # Admin dashboard components
+│   │   │   ├── Calendar/       # Calendar-related components
+│   │   │   ├── Events/         # Event-related components
+│   │   │   └── Organizations/  # Organization-related components
+│   │   ├── context/            # React Context providers
+│   │   │   └── AuthContext.js  # Authentication context
+│   │   ├── controllers/        # Client-side controller logic
+│   │   │   ├── AdminController.js
+│   │   │   ├── CalendarController.js
+│   │   │   ├── EventController.js
+│   │   │   └── OrganizationController.js
+│   │   ├── services/           # Service layer
+│   │   │   └── BackendService.js # Database and storage operations
+│   │   ├── utils/              # Utility functions
+│   │   │   ├── auth.js         # Authentication utilities
+│   │   │   └── formData.js     # Form data processing
+│   │   └── App.js              # Main React application
+│   ├── package.json            # Frontend dependencies
+│   └── README.md               # Frontend documentation
+├── src/                        # Backend source code
+│   ├── controllers/            # Backend controllers
+│   ├── services/               # Backend services
+│   └── utils/                  # Backend utilities
+├── worker.js                   # Cloudflare Worker entry point
+├── wrangler.toml               # Cloudflare Workers configuration
+├── schema.sql                  # Database schema
+├── README.md                   # This file
+└── package.json                # Root-level package configuration
 ```
 
 ### Backend Architecture
