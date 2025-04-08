@@ -282,7 +282,7 @@
 }
 
 /* Media queries */
-@media (min-width: 768px) {
+@media (min-width: 1370px) {
   .mobile-navbar {
     display: none; /* Hide on larger screens */
   }
