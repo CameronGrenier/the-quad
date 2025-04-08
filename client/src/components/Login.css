@@ -34,11 +34,11 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.form-group {
+.login-container .form-group {
   margin-bottom: 20px;
 }
 
-.form-group label {
+.login-container .form-group label {
   display: block;
   margin-bottom: 8px;
   font-weight: bold;
@@ -47,7 +47,7 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.form-group input {
+.login-container .form-group input {
   width: 100%;
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -60,28 +60,29 @@
   font-family: inherit;
 }
 
-.form-group input::placeholder {
+.login-container .form-group input::placeholder {
   color: rgba(0, 0, 0, 0.5) !important;
   -webkit-text-fill-color: rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Fix auto-fill background color issues in Safari */
-.form-group input:-webkit-autofill,
-.form-group input:-webkit-autofill:hover,
-.form-group input:-webkit-autofill:focus {
+/* Fix auto-fill background color issues in Safari for login only */
+.login-container .form-group input:-webkit-autofill,
+.login-container .form-group input:-webkit-autofill:hover,
+.login-container .form-group input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.8) inset !important;
   -webkit-text-fill-color: #000 !important;
   transition: background-color 5000s ease-in-out 0s;
   caret-color: #000;
 }
 
-.form-group label {
+/* Keep labels white in login */
+.login-container .form-group label {
   color: white !important;
   -webkit-text-fill-color: white !important;
 }
 
 /* Also target the placeholder text */
-.form-group input::placeholder {
+.login-container .form-group input::placeholder {
   color: rgba(255, 255, 255, 0.7) !important;
   -webkit-text-fill-color: rgba(0, 0, 0, 0.7) !important;
 }
