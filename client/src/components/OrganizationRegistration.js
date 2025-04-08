@@ -24,11 +24,11 @@ function OrganizationRegistration() {
   // Redirect if not logged in
   useEffect(() => {
     if (!currentUser) {
-      console.log("No user found, redirecting to login");
+// console.log("No user found, redirecting to login");
       navigate('/login');
       return;
     } else {
-      console.log("Current user found:", currentUser);
+// console.log("Current user found:", currentUser);
     }
   }, [currentUser, navigate]);
   
@@ -186,7 +186,7 @@ function OrganizationRegistration() {
       
       if (data.success) {
         // Redirect to the new organization page
-        console.log("Organization created successfully:", data);
+// console.log("Organization created successfully:", data);
         navigate(`/organizations/${data.orgID}`);
       } else {
         console.error("Organization creation failed:", data.error);

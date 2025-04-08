@@ -74,14 +74,14 @@ function EditOrganization() {
   // Function to fetch organization members - moved inside component
   const fetchMembers = async (orgId) => {
     try {
-      console.log("Fetching members for organization:", orgId);
+// console.log("Fetching members for organization:", orgId);
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
 
       // Log the request details
-      console.log(`Making request to ${API_URL}/api/organizations/${orgId}/members with token: ${token.substring(0, 15)}...`);
+// console.log(`Making request to ${API_URL}/api/organizations/${orgId}/members with token: ${token.substring(0, 15)}...`);
       
       const response = await fetch(`${API_URL}/api/organizations/${orgId}/members`, {
         headers: {
@@ -89,7 +89,7 @@ function EditOrganization() {
         }
       });
 
-      console.log("Response status:", response.status);
+// console.log("Response status:", response.status);
       
       if (!response.ok) {
         let errorText;
@@ -105,7 +105,7 @@ function EditOrganization() {
       }
 
       const data = await response.json();
-      console.log("Members data:", JSON.stringify(data));
+// console.log("Members data:", JSON.stringify(data));
       
       if (!data.success) {
         throw new Error(data.error || 'Failed to fetch members');
@@ -122,7 +122,7 @@ function EditOrganization() {
 
   // Fallback method to get members - moved inside component
   const fetchAlternativeMembersList = async (orgId) => {
-    console.log("Using fallback method to get members");
+// console.log("Using fallback method to get members");
     try {
       const token = localStorage.getItem('token');
       
@@ -143,7 +143,7 @@ function EditOrganization() {
       
       // Use admins as a fallback member list
       const adminList = orgData.organization.admins;
-      console.log(`Found ${adminList.length} admins to use as fallback members`);
+// console.log(`Found ${adminList.length} admins to use as fallback members`);
       return adminList;
     } catch (error) {
       console.error("Error in fallback member fetch:", error);

@@ -48,7 +48,7 @@ function App() {
     const initCalendar = async () => {
       try {
         await calendarController.initialize();
-        console.log("Calendar controller initialized at app level");
+// console.log("Calendar controller initialized at app level");
       } catch (err) {
         console.error("Failed to initialize calendar controller:", err);
       }

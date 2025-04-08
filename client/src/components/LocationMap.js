@@ -59,7 +59,7 @@ function LocationMap({ onLocationSelect, initialLocation, searchInputRef }) {
         const bounds = new window.google.maps.LatLngBounds();
         places.forEach(place => {
           if (!place.geometry || !place.geometry.location) {
-            console.log("Returned place contains no geometry");
+// console.log("Returned place contains no geometry");
             return;
           }
           

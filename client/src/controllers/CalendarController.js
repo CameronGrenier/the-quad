@@ -43,7 +43,7 @@ class CalendarController {
     if (this.listeners.onLog) {
       this.listeners.onLog(message);
     }
-    console.log(message);
+// console.log(message);
   }
 
   /**
@@ -524,7 +524,7 @@ class CalendarController {
       if (!window.gapi || !window.gapi.client) {
         await this.ensureInitialized();
         if (!window.gapi || !window.gapi.client) {
-          console.log("GAPI client still not initialized");
+// console.log("GAPI client still not initialized");
           return false;
         }
       }
@@ -534,26 +534,26 @@ class CalendarController {
       
       // If no token in client, check localStorage
       if (!token) {
-        console.log("No token in client, checking localStorage");
+// console.log("No token in client, checking localStorage");
         const storedToken = this.retrieveStoredToken();
         
         if (storedToken && storedToken.access_token) {
-          console.log("Found token in localStorage");
+// console.log("Found token in localStorage");
           
           // Check if token has expired
           if (storedToken.expires_at && Date.now() < storedToken.expires_at) {
-            console.log("Stored token is still valid");
+// console.log("Stored token is still valid");
             window.gapi.client.setToken(storedToken);
             token = storedToken;
           } else {
-            console.log("Stored token has expired");
+// console.log("Stored token has expired");
             this.clearStoredToken();
           }
         }
       }
       
       if (!token) {
-        console.log("No valid token found");
+// console.log("No valid token found");
         this.isAuthenticated = false;
         return false;
       }
@@ -563,7 +563,7 @@ class CalendarController {
         await window.gapi.client.calendar.calendarList.list({
           maxResults: 1
         });
-        console.log("Token verified with successful API call");
+// console.log("Token verified with successful API call");
         
         this.isAuthenticated = true;
         return true;
@@ -572,7 +572,7 @@ class CalendarController {
         
         // Handle 401 errors
         if (apiError.result?.error?.code === 401) {
-          console.log("Token is invalid or expired, clearing it");
+// console.log("Token is invalid or expired, clearing it");
           window.gapi.client.setToken(null);
           this.clearStoredToken();
           this.isAuthenticated = false;
@@ -799,7 +799,7 @@ class CalendarController {
       
       const calendarEvents = calendarEventsResponse.result.items || [];
       this.log(`Found ${calendarEvents.length} events in The Quad calendar`);
-      console.log("Calendar Events:", calendarEvents);
+// console.log("Calendar Events:", calendarEvents);
       
       // Use local data directly instead of calling the failing API endpoint
       let rsvpEvents = [];
@@ -810,7 +810,7 @@ class CalendarController {
         try {
           const parsedEvent = JSON.parse(pendingEvent);
           this.log("Using pending event from localStorage");
-          console.log("Using pending event:", parsedEvent);
+// console.log("Using pending event:", parsedEvent);
           rsvpEvents.push(parsedEvent);
           
           // Check if the event is already in the calendar
@@ -829,7 +829,7 @@ class CalendarController {
       }
       
       this.log(`Using ${rsvpEvents.length} RSVP'd events from local data`);
-      console.log("RSVP Events:", rsvpEvents);
+// console.log("RSVP Events:", rsvpEvents);
       
       // Add events that are in RSVP but not in calendar
       for (const rsvpEvent of rsvpEvents) {
@@ -887,7 +887,7 @@ class CalendarController {
         
         if (response.ok && responseData.success && Array.isArray(responseData.rsvps)) {
           this.log(`Fetched ${responseData.rsvps.length} RSVP'd events from backend`);
-          console.log("RSVP Events:", responseData.rsvps);
+// console.log("RSVP Events:", responseData.rsvps);
           
           // Extract just the event data from each RSVP
           return responseData.rsvps.map(rsvp => rsvp.event);
@@ -905,7 +905,7 @@ class CalendarController {
         try {
           const eventData = JSON.parse(pendingEvent);
           this.log("Using pending event from localStorage");
-          console.log("Using pending event:", eventData);
+// console.log("Using pending event:", eventData);
           
           // Return the pending event
           return [eventData];

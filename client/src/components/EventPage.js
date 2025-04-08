@@ -23,7 +23,7 @@ function EventPage() {
   // Fix the formatImageUrl function
   const formatImageUrl = (url) => {
     // Debug the URL being processed
-    console.log("Processing image URL:", url);
+// console.log("Processing image URL:", url);
     
     if (!url) return null;
     if (url === '') return null;
@@ -104,8 +104,8 @@ function EventPage() {
         }
         
         setEvent(eventData.event);
-        console.log("Fetched event:", eventData.event);
-        console.log("Banner from API:", eventData.event.banner);
+// console.log("Fetched event:", eventData.event);
+// console.log("Banner from API:", eventData.event.banner);
         
         // Fetch organization details
         const orgResponse = await fetch(`${API_URL}/api/organizations/${eventData.event.organizationID}`);
@@ -157,22 +157,22 @@ function EventPage() {
   useEffect(() => {
     // Set up a listener for Google Calendar auth changes
     const handleAuthChange = async (isAuthenticated) => {
-      console.log("Google Calendar auth changed:", isAuthenticated);
+// console.log("Google Calendar auth changed:", isAuthenticated);
       
       if (isAuthenticated) {
         // Check for pending calendar event
         const pendingEvent = localStorage.getItem('pendingCalendarEvent');
         if (pendingEvent) {
           try {
-            console.log("Found pending event to add to calendar");
+// console.log("Found pending event to add to calendar");
             const eventData = JSON.parse(pendingEvent);
-            console.log("Pending event data:", eventData);
+// console.log("Pending event data:", eventData);
             
             // Add delay to ensure auth is fully processed
             setTimeout(async () => {
               try {
                 await calendarController.addRsvpToCalendar(eventData);
-                console.log("Successfully added event to Google Calendar");
+// console.log("Successfully added event to Google Calendar");
                 setSuccessMessage("RSVP successful! Event was added to your Google Calendar.");
                 localStorage.removeItem('pendingCalendarEvent');
               } catch (delayedError) {
@@ -203,16 +203,16 @@ function EventPage() {
 useEffect(() => {
   // Set up a listener for Google Calendar auth changes
   const handleAuthChange = async (isAuthenticated) => {
-    console.log("Google Calendar auth changed:", isAuthenticated);
+// console.log("Google Calendar auth changed:", isAuthenticated);
     
     // Store auth state to prevent repeated syncs
     if (isAuthenticated && !window._lastCalendarAuthState) {
       window._lastCalendarAuthState = true;
-      console.log("User is authenticated, syncing calendar...");
+// console.log("User is authenticated, syncing calendar...");
       try {
         await calendarController.ensureInitialized();
         await calendarController.syncCalendarWithRsvp();
-        console.log("Calendar sync completed successfully");
+// console.log("Calendar sync completed successfully");
       } catch (syncError) {
         console.error("Failed to sync calendar:", syncError);
       }
@@ -392,7 +392,7 @@ const handleDeleteEvent = async () => {
 
 // Function to handle sharing to various platforms
 const handleShare = (platform) => {
-  console.log("handleShare triggered for platform:", platform);
+// console.log("handleShare triggered for platform:", platform);
   // Get the current URL for sharing
   const eventUrl = window.location.href;
   const eventTitle = event.title;
@@ -418,7 +418,7 @@ const handleShare = (platform) => {
       const emailSubject = `Check out this event: ${eventTitle}`;
       const emailBody = `${eventTitle}\n\nEvent Details: ${eventUrl}`;
       const mailtoLink = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-      console.log("Mailto link:", mailtoLink);
+// console.log("Mailto link:", mailtoLink);
       
       window.location.href = mailtoLink;
       break;

@@ -81,15 +81,15 @@ function OrganizationPage() {
             const currentUserId = currentUser.id || currentUser.userID;
             
             // Debug the admin check
-            console.log("Admin check - Current user ID:", currentUserId);
-            console.log("Admins:", orgData.organization.admins);
+// console.log("Admin check - Current user ID:", currentUserId);
+// console.log("Admins:", orgData.organization.admins);
             
             // Check against both possible ID properties in the admin objects
             const isUserAdmin = orgData.organization.admins?.some(
               admin => (admin.id === currentUserId || admin.userID === currentUserId)
             );
             
-            console.log("Is admin result:", isUserAdmin);
+// console.log("Is admin result:", isUserAdmin);
             setIsAdmin(isUserAdmin);
             
             // Also check if the user is already a member
@@ -106,8 +106,8 @@ function OrganizationPage() {
         }
         
         // Add inside useEffect after fetching organization data
-        console.log("Organization data:", orgData.organization);
-        console.log("Banner URL:", orgData.organization.banner);
+// console.log("Organization data:", orgData.organization);
+// console.log("Banner URL:", orgData.organization.banner);
         
         // Fetch organization events
         const eventsResponse = await fetch(`${API_URL}/api/organizations/${orgId}/events`);
@@ -177,11 +177,11 @@ function OrganizationPage() {
     
     try {
       setIsDeleting(true);
-      console.log("Deleting organization:", orgId);
+// console.log("Deleting organization:", orgId);
       
       // Get the user ID (checking both property names)
       const userId = currentUser.id || currentUser.userID;
-      console.log("Using user ID for deletion:", userId);
+// console.log("Using user ID for deletion:", userId);
       
       const token = localStorage.getItem('token');
       
@@ -194,10 +194,10 @@ function OrganizationPage() {
         body: JSON.stringify({ userID: userId })
       });
       
-      console.log("Delete response status:", response.status);
+// console.log("Delete response status:", response.status);
       
       const data = await response.json();
-      console.log("Delete response data:", data);
+// console.log("Delete response data:", data);
       
       if (!response.ok) {
         throw new Error(data.error || 'Failed to delete organization');

@@ -189,11 +189,11 @@ function Home() {
 
   // Function to render event location
   const renderEventLocation = (event) => {
-    console.log("Rendering location for event:", event);
-    console.log("Event landmarkID:", event.landmarkID);
-    console.log("Available landmarks:", landmarks);
+// console.log("Rendering location for event:", event);
+// console.log("Event landmarkID:", event.landmarkID);
+// console.log("Available landmarks:", landmarks);
     if (landmarks && landmarks.length && typeof landmarks[0] === "object") {
-      console.log("Landmark keys:", Object.keys(landmarks[0]));
+// console.log("Landmark keys:", Object.keys(landmarks[0]));
     }
     
     if (event.landmarkID) {
@@ -201,21 +201,21 @@ function Home() {
       const landmark = landmarks.find(
         item => String(item.id) === String(event.landmarkID)
       );
-      console.log("Found landmark for event.landmarkID", event.landmarkID, ":", landmark);
+// console.log("Found landmark for event.landmarkID", event.landmarkID, ":", landmark);
       if (landmark && landmark.name && landmark.name.trim() !== "") {
-        console.log("Returning landmark name:", landmark.name);
+// console.log("Returning landmark name:", landmark.name);
         return (
           <div className="event-location">
             <i className="fas fa-map-marker-alt"></i> {landmark.name}
           </div>
         );
       } else {
-        console.log("No valid name on landmark. event.landmarkID:", event.landmarkID);
+// console.log("No valid name on landmark. event.landmarkID:", event.landmarkID);
       }
     }
     
     if (event.customLocation && event.customLocation.trim() !== "") {
-      console.log("Returning custom location:", event.customLocation);
+// console.log("Returning custom location:", event.customLocation);
       return (
         <div className="event-location">
           <i className="fas fa-map-marker-alt"></i> {event.customLocation}
@@ -223,7 +223,7 @@ function Home() {
       );
     }
     
-    console.log("No location specified for event", event.eventID);
+// console.log("No location specified for event", event.eventID);
     return (
       <div className="event-location">
         <i className="fas fa-map-marker-alt"></i> Location not specified

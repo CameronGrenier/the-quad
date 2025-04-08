@@ -93,7 +93,7 @@ class OrganizationController {
           `INSERT INTO OFFICIAL_PENDING (orgID, eventID) VALUES (?, NULL)`,
           [newOrgID]
         );
-        console.log(`Added organization ${newOrgID} to OFFICIAL_PENDING table`);
+// console.log(`Added organization ${newOrgID} to OFFICIAL_PENDING table`);
       }
       
       return new Response(JSON.stringify({
@@ -547,12 +547,12 @@ class OrganizationController {
    */
   async getOrganizationMembers(orgId, request) {
     try {
-      console.log(`Getting members for organization ${orgId}`);
+// console.log(`Getting members for organization ${orgId}`);
       
       // Verify authentication
       const auth = this.auth.getAuthFromRequest(request);
       if (!auth.isAuthenticated) {
-        console.log("Authentication failed");
+// console.log("Authentication failed");
         return new Response(JSON.stringify({
           success: false,
           error: "Authentication required"
@@ -569,7 +569,7 @@ class OrganizationController {
       );
       
       if (!org) {
-        console.log(`Organization ${orgId} not found`);
+// console.log(`Organization ${orgId} not found`);
         return new Response(JSON.stringify({
           success: false,
           error: "Organization not found"
@@ -587,7 +587,7 @@ class OrganizationController {
         [orgIdInt]
       );
       
-      console.log(`Found ${members.results ? members.results.length : 0} members`);
+// console.log(`Found ${members.results ? members.results.length : 0} members`);
       
       return new Response(JSON.stringify({
         success: true,
@@ -675,7 +675,7 @@ class OrganizationController {
    */
   async addAdmin(orgId, request) {
     try {
-      console.log("Entering addAdmin for org", orgId);
+// console.log("Entering addAdmin for org", orgId);
       // Verify authorization
       const auth = this.auth.getAuthFromRequest(request);
       if (!auth.isAuthenticated) {
@@ -684,13 +684,13 @@ class OrganizationController {
           error: "Authentication required" 
         }), { status: 401, headers: this.corsHeaders });
       }
-      console.log("Auth user ID:", auth.userId, "Number(auth.userId):", Number(auth.userId));
+// console.log("Auth user ID:", auth.userId, "Number(auth.userId):", Number(auth.userId));
       const adminResult = await this.backendService.queryFirst(
         "SELECT 1 AS isAdmin FROM ORG_ADMIN WHERE orgID = ? AND userID = ?",
         [Number(orgId), Number(auth.userId)]
       );
       
-      console.log("Admin check result (raw):", adminResult, "Keys:", adminResult ? Object.keys(adminResult) : "none");
+// console.log("Admin check result (raw):", adminResult, "Keys:", adminResult ? Object.keys(adminResult) : "none");
       
       if (!adminResult || !adminResult.isAdmin) {
         return new Response(JSON.stringify({

@@ -30,7 +30,7 @@ function PersonalCalendar() {
 
   // Handle authentication status changes
   const onAuthChange = useCallback((isAuthenticated) => {
-    console.log("Auth status changed:", isAuthenticated);
+// console.log("Auth status changed:", isAuthenticated);
     setAuthStatus(prev => ({ ...prev, isAuthenticated }));
     
     if (isAuthenticated) {
@@ -63,19 +63,19 @@ function PersonalCalendar() {
         // Check if we already have a valid token
         const isSignedIn = await calendarController.checkIfSignedIn();
         if (isSignedIn) {
-          console.log("User already signed in, fetching calendar data...");
+// console.log("User already signed in, fetching calendar data...");
           onAuthChange(true);
           
           // Trigger calendar sync on load
           try {
-            console.log("Syncing calendar on load...");
+// console.log("Syncing calendar on load...");
             await calendarController.syncCalendarWithRsvp();
-            console.log("Calendar sync completed successfully");
+// console.log("Calendar sync completed successfully");
           } catch (syncError) {
             console.error("Failed to sync calendar on load:", syncError);
           }
         } else {
-          console.log("User not signed in");
+// console.log("User not signed in");
           onAuthChange(false);
         }
       } catch (err) {
@@ -115,7 +115,7 @@ function PersonalCalendar() {
         end.toISOString()
       );
       
-      console.log('Raw calendar data:', result);
+// console.log('Raw calendar data:', result);
       
       // Process calendars
       if (result.calendars && Array.isArray(result.calendars)) {
@@ -150,7 +150,7 @@ function PersonalCalendar() {
         };
       });
       
-      console.log('Formatted events:', formattedEvents);
+// console.log('Formatted events:', formattedEvents);
       setEvents(formattedEvents);
     } catch (err) {
       setError(`Failed to load calendar events: ${err.message}`);

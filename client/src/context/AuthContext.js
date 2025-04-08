@@ -13,12 +13,12 @@ export function AuthProvider({ children }) {
 
   // Add this at the start of your AuthProvider function:
   useEffect(() => {
-    console.log("AuthContext initializing...");
+// console.log("AuthContext initializing...");
     
     // Set up a safety timeout to prevent infinite loading states
     const safetyTimer = setTimeout(() => {
       if (loading) {
-        console.log("Auth loading safety timeout triggered");
+// console.log("Auth loading safety timeout triggered");
         setLoading(false);
       }
     }, 3000);
@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
             
             // If we have a token but missing user ID, fetch fresh user data
             if (!parsedUser.id) {
-              console.log("User ID missing, fetching fresh user data");
+// console.log("User ID missing, fetching fresh user data");
               // Attempt to refresh user data
               await refreshUserData(token);
             } else {
@@ -119,9 +119,9 @@ export function AuthProvider({ children }) {
         credentials: 'include' // Add this to handle cookies properly
       });
       
-      console.log("Login response status:", response.status);
+// console.log("Login response status:", response.status);
       const data = await response.json();
-      console.log("Login response:", data);
+// console.log("Login response:", data);
       
       if (data.success && data.token) {
         // Try to store the token, with fallback handling
@@ -235,10 +235,10 @@ export function AuthProvider({ children }) {
       });
 
       // Log the full response for debugging
-      console.log("Signup response status:", response.status);
+// console.log("Signup response status:", response.status);
       
       const data = await response.json();
-      console.log("Signup response data:", data);
+// console.log("Signup response data:", data);
 
       if (data.success && data.token && data.user) {
         // Standardize user object structure

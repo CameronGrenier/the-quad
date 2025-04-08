@@ -85,7 +85,7 @@ function EventRegistration() {
       const userId = currentUser?.id || currentUser?.userID;
       
       if (!userId) {
-        console.log("No user ID available, skipping organization fetch");
+// console.log("No user ID available, skipping organization fetch");
         organizationsLoaded = true;
         checkAllLoaded();
         return;
@@ -102,7 +102,7 @@ function EventRegistration() {
         const data = await response.json();
         
         if (data.success) {
-          console.log("Organizations fetched:", data.organizations);
+// console.log("Organizations fetched:", data.organizations);
           setOrganizations(data.organizations);
           
           // Only set first org if organizations exist
@@ -115,7 +115,7 @@ function EventRegistration() {
             }));
           }
         } else {
-          console.log("API returned success: false");
+// console.log("API returned success: false");
           setOrganizations([]);
         }
       } catch (error) {
@@ -278,7 +278,7 @@ function EventRegistration() {
       }
     }
     
-    console.log("Validation errors:", tempErrors);
+// console.log("Validation errors:", tempErrors);
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -287,7 +287,7 @@ function EventRegistration() {
     const { name, value, type } = e.target;
     
     if (name === 'organizationID') {
-      console.log("Organization selected:", value);
+// console.log("Organization selected:", value);
       // Make sure it's stored as a number if it's not empty
       const parsedValue = value !== '' ? parseInt(value, 10) : '';
       setFormData({

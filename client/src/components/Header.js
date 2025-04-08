@@ -80,7 +80,7 @@ function Header() {
         const API_URL = process.env.REACT_APP_API_URL || 'https://the-quad-worker.gren9484.workers.dev';
         const token = localStorage.getItem('token');
         
-        console.log("Testing staff status with token:", token);
+// console.log("Testing staff status with token:", token);
         const response = await fetch(`${API_URL}/api/admin/test-staff`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -88,14 +88,14 @@ function Header() {
         });
         
         const data = await response.json();
-        console.log("Staff test response:", data);
+// console.log("Staff test response:", data);
         
         if (data.success && data.isInStaffTable) {
           setIsStaff(true);
-          console.log("Direct staff check: TRUE");
+// console.log("Direct staff check: TRUE");
         } else {
           setIsStaff(false);
-          console.log("Direct staff check: FALSE");
+// console.log("Direct staff check: FALSE");
         }
       } catch (error) {
         console.error("Error checking staff status:", error);

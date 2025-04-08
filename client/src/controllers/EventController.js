@@ -112,7 +112,7 @@ class EventController {
           `INSERT INTO OFFICIAL_PENDING (orgID, eventID) VALUES (NULL, ?)`,
           [newEventID]
         );
-        console.log(`Added event ${newEventID} to OFFICIAL_PENDING table`);
+// console.log(`Added event ${newEventID} to OFFICIAL_PENDING table`);
       }
       
       return new Response(JSON.stringify({
@@ -428,7 +428,7 @@ class EventController {
         );
       }
       
-      console.log("Fetching events for user ID:", userId);
+// console.log("Fetching events for user ID:", userId);
       
       // Get events that the user is admin of
       const adminQuery = `
@@ -453,8 +453,8 @@ class EventController {
         this.backendService.queryAll(rsvpQuery, [userId])
       ]);
       
-      console.log("Admin events:", adminEvents.results?.length || 0);
-      console.log("RSVP events:", rsvpEvents.results?.length || 0);
+// console.log("Admin events:", adminEvents.results?.length || 0);
+// console.log("RSVP events:", rsvpEvents.results?.length || 0);
       
       // Create a map of all events by ID to avoid duplicates
       const eventMap = new Map();
@@ -487,7 +487,7 @@ class EventController {
       
       // Convert to array
       const events = Array.from(eventMap.values());
-      console.log("Final events count:", events.length);
+// console.log("Final events count:", events.length);
       
       // Sort by start date (newest first)
       events.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
@@ -581,7 +581,7 @@ class EventController {
         );
       }
       
-      console.log(`Fetching RSVP events for user: ${userId}`);
+// console.log(`Fetching RSVP events for user: ${userId}`);
       
       try {
         // Get all RSVP entries for this user with status 'attending'
@@ -599,7 +599,7 @@ class EventController {
         const rsvpsResult = await this.backendService.queryAll(query, [userId]);
         const rsvps = rsvpsResult.results || [];
         
-        console.log(`Found ${rsvps.length} RSVP events for user ${userId}`);
+// console.log(`Found ${rsvps.length} RSVP events for user ${userId}`);
         
         // Format the response
         const formattedRsvps = rsvps.map(rsvp => {
@@ -665,7 +665,7 @@ class EventController {
       const landmarksResult = await this.backendService.queryAll(query, []);
       const landmarks = landmarksResult.results || [];
       
-      console.log(`Found ${landmarks.length} landmarks`);
+// console.log(`Found ${landmarks.length} landmarks`);
       
       return new Response(
         JSON.stringify({ 

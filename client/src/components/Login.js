@@ -22,7 +22,7 @@ function Login() {
     e.preventDefault();
     
     // Log the email and password being sent
-    console.log("Submitting login data:", { email, password });
+// console.log("Submitting login data:", { email, password });
     
     try {
       setError('');

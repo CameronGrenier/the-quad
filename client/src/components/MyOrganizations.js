@@ -43,7 +43,7 @@ function MyOrganizations() {
       const userId = currentUser?.id || currentUser?.userID;
       
       if (!userId) {
-        console.log("No user ID found in:", currentUser);
+// console.log("No user ID found in:", currentUser);
         setError('Please log in to view your organizations');
         setLoading(false);
         return;

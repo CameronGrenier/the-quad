@@ -133,7 +133,7 @@ class Auth {
       }
       
       // Add some debug logging
-      console.log("Processing auth token:", token.substring(0, 10) + "...");
+// console.log("Processing auth token:", token.substring(0, 10) + "...");
       
       const decoded = this.verifyJWT(token);
       
